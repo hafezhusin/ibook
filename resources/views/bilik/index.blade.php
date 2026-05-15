@@ -9,72 +9,87 @@
         <p class="text-gray-500 text-sm mt-1">{{ $bilik->count() }} bilik berdaftar</p>
     </div>
     <a href="{{ route('bilik.create') }}" class="btn-primary">
-        <i class="fa-solid fa-plus"></i> Tambah Bilik
+        <i class="fa-solid fa-plus" aria-hidden="true"></i> Tambah Bilik
     </a>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-    @forelse($bilik as $b)
-    <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div class="h-40 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-            <i class="fa-solid fa-door-open text-slate-400 text-5xl"></i>
-        </div>
-        <div class="p-5">
-            <div class="flex items-start justify-between mb-3">
-                <h3 class="font-bold text-gray-800">{{ $b->nama }}</h3>
-                <span class="text-xs font-semibold px-2 py-1 rounded-full {{ $b->isAktif() ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                    {{ $b->isAktif() ? 'Aktif' : 'Tidak Aktif' }}
-                </span>
+<section aria-labelledby="heading-bilik-senarai">
+    <h2 id="heading-bilik-senarai" class="sr-only">Senarai Bilik Mesyuarat</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        @forelse($bilik as $b)
+        <article class="bg-white rounded-xl shadow-sm overflow-hidden" aria-labelledby="bilik-{{ $b->id }}">
+            <div class="h-40 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center" aria-hidden="true">
+                <i class="fa-solid fa-door-open text-slate-400 text-5xl" aria-hidden="true"></i>
             </div>
+            <div class="p-5">
+                <div class="flex items-start justify-between mb-3">
+                    <h3 id="bilik-{{ $b->id }}" class="font-bold text-gray-800">{{ $b->nama }}</h3>
+                    <span class="text-xs font-semibold px-2 py-1 rounded-full {{ $b->isAktif() ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}"
+                        role="status">
+                        {{ $b->isAktif() ? 'Aktif' : 'Tidak Aktif' }}
+                    </span>
+                </div>
 
-            <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                <i class="fa-solid fa-users text-amber-400"></i>
-                {{ $b->kapasiti }} orang
-                @if($b->lokasi)
-                &middot; <i class="fa-solid fa-location-dot text-amber-400"></i> {{ $b->lokasi }}
+                <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                    <i class="fa-solid fa-users text-amber-400" aria-hidden="true"></i>
+                    <span>{{ $b->kapasiti }} orang</span>
+                    @if($b->lokasi)
+                    <span aria-hidden="true">&middot;</span>
+                    <i class="fa-solid fa-location-dot text-amber-400" aria-hidden="true"></i>
+                    <span>{{ $b->lokasi }}</span>
+                    @endif
+                </div>
+
+                @if($b->kemudahan && count($b->kemudahan) > 0)
+                <ul role="list" class="flex flex-wrap gap-1 mb-3" aria-label="Kemudahan {{ $b->nama }}">
+                    @foreach($b->kemudahan as $k)
+                    <li class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                        <i class="fa-solid fa-check text-amber-400 mr-1" aria-hidden="true"></i>{{ $k }}
+                    </li>
+                    @endforeach
+                </ul>
                 @endif
-            </div>
 
-            @if($b->kemudahan && count($b->kemudahan) > 0)
-            <div class="flex flex-wrap gap-1 mb-3">
-                @foreach($b->kemudahan as $k)
-                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                    <i class="fa-solid fa-check text-amber-400 mr-1"></i>{{ $k }}
-                </span>
-                @endforeach
-            </div>
-            @endif
-
-            <div class="mb-4">
-                <div class="flex justify-between text-sm mb-1">
-                    <span class="text-gray-500">Penggunaan bulan ini</span>
-                    <span class="font-semibold text-gray-700">{{ $b->penggunaan_bulan_ini }}%</span>
+                <div class="mb-4">
+                    <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-500">Penggunaan bulan ini</span>
+                        <span class="font-semibold text-gray-700">{{ $b->penggunaan_bulan_ini }}%</span>
+                    </div>
+                    <div class="progress-bar"
+                        role="progressbar"
+                        aria-valuenow="{{ $b->penggunaan_bulan_ini }}"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-label="{{ $b->nama }}: {{ $b->penggunaan_bulan_ini }}% digunakan bulan ini">
+                        <div class="progress-fill" style="width:{{ $b->penggunaan_bulan_ini }}%"></div>
+                    </div>
                 </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width:{{ $b->penggunaan_bulan_ini }}%"></div>
+
+                <div class="flex gap-2 pt-3 border-t border-gray-100">
+                    <a href="{{ route('bilik.edit', $b) }}"
+                        class="text-amber-500 text-sm font-semibold hover:underline flex items-center gap-1"
+                        aria-label="Edit bilik — {{ $b->nama }}">
+                        <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
+                    </a>
+                    <form method="POST" action="{{ route('bilik.destroy', $b) }}" class="ml-auto"
+                        onsubmit="return confirm('Padam bilik {{ addslashes($b->nama) }}?')">
+                        @csrf @method('DELETE')
+                        <button type="submit"
+                            class="text-red-400 text-sm hover:text-red-600"
+                            aria-label="Padam bilik — {{ $b->nama }}">
+                            <i class="fa-solid fa-trash" aria-hidden="true"></i> Padam
+                        </button>
+                    </form>
                 </div>
             </div>
-
-            <div class="flex gap-2 pt-3 border-t border-gray-100">
-                <a href="{{ route('bilik.edit', $b) }}" class="text-amber-500 text-sm font-semibold hover:underline flex items-center gap-1">
-                    <i class="fa-solid fa-pen"></i> Edit
-                </a>
-                <form method="POST" action="{{ route('bilik.destroy', $b) }}" class="ml-auto"
-                    onsubmit="return confirm('Padam bilik ini?')">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="text-red-400 text-sm hover:text-red-600">
-                        <i class="fa-solid fa-trash"></i> Padam
-                    </button>
-                </form>
-            </div>
+        </article>
+        @empty
+        <div class="col-span-3 text-center py-16 text-gray-400 bg-white rounded-xl">
+            <i class="fa-solid fa-door-open text-5xl mb-4" aria-hidden="true"></i>
+            <p>Tiada bilik mesyuarat berdaftar</p>
+            <a href="{{ route('bilik.create') }}" class="btn-primary mt-4 inline-flex">Tambah Bilik</a>
         </div>
+        @endforelse
     </div>
-    @empty
-    <div class="col-span-3 text-center py-16 text-gray-400 bg-white rounded-xl">
-        <i class="fa-solid fa-door-open text-5xl mb-4"></i>
-        <p>Tiada bilik mesyuarat berdaftar</p>
-        <a href="{{ route('bilik.create') }}" class="btn-primary mt-4 inline-flex">Tambah Bilik</a>
-    </div>
-    @endforelse
-</div>
+</section>
 @endsection
