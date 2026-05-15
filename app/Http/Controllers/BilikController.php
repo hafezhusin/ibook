@@ -7,6 +7,14 @@ use Illuminate\Http\Request;
 
 class BilikController extends Controller
 {
+    // Route awam - senarai bilik tanpa log masuk
+    public function publicList()
+    {
+        $bilik = BilikMesyuarat::where('status', 'aktif')
+            ->get(['id', 'nama', 'kapasiti', 'kemudahan', 'lokasi']);
+        return response()->json($bilik);
+    }
+
     public function index()
     {
         $bilik = BilikMesyuarat::all();

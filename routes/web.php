@@ -16,6 +16,10 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Route awam - boleh akses tanpa log masuk
+Route::get('/awam/events', [KalendarController::class, 'publicEvents'])->name('awam.events');
+Route::get('/awam/bilik', [BilikController::class, 'publicList'])->name('awam.bilik');
+
 // Routes yang memerlukan log masuk
 Route::middleware('auth.custom')->group(function () {
 
