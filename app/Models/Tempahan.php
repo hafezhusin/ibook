@@ -1,0 +1,104 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
+class Tempahan extends Model
+{
+    use HasFactory;
+
+    protected $table = 'tempahan';
+
+    const STATUS_MENUNGGU = 'menunggu';
+    const STATUS_DILULUSKAN = 'diluluskan';
+    const STATUS_DITOLAK = 'ditolak';
+
+    const SESI_PAGI = 'pagi';
+    const SESI_PETANG = 'petang';
+
+    const MASA_SESI = [
+        'pagi' => ['mula' => '09:00', 'tamat' => '13:00', 'label' => 'SESI PAGI 1 (9:00 AM - 1:00 PM)'],
+        'petang' => ['mula' => '14:00', 'tamat' => '18:00', 'label' => 'SESI PETANG 2 (2:00 PM - 6:00 PM)'],
+    ];
+
+    const KATEGORI = [
+        'pengurusan' => 'Mesyuarat Pengurusan',
+        'teknikal' => 'Mesyuarat Teknikal',
+        'taklimat' => 'Taklimat',
+        'bengkel' => 'Bengkel / Workshop',
+        'latihan' => 'Latihan',
+        'lain' => 'Lain-lain',
+    ];
+
+    protected $fillable = [
+        'nama_mesyuarat',
+        'tarikh',
+        'sesi',
+        'masa_mula',
+        'masa_tamat',
+        'bilik_id',
+        'user_id',
+        'bilangan_peserta',
+        'kategori',
+        'nama_pengerusi',
+        'tujuan',
+        'status',
+        'catatan_penolakan',
+        'diluluskan_oleh',
+        'diluluskan_pada',
+    ];
+
+    protected $casts = [
+        'tarikh' => 'date',
+        'diluluskan_pada' => 'datetime',
+    ];
+
+    public function bilik()
+    {
+        return $this->belongsTo(BilikMesyuarat::class, 'bilik_id');
+    }
+
+    public function pengguna()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function pelulus()
+    {
+        return $this->belongsTo(User::class, 'diluluskan_oleh');
+    }
+
+    public function getMasaLabelAttribute(): string
+    {
+        $mula = substr($this->masa_mula, 0, 5);
+        $tamat = substr($this->masa_tamat, 0, 5);
+        return "$mula - $tamat";
+    }
+
+    public function getStatusBadgeAttribute(): string
+    {
+        return match ($this->status) {
+            self::STATUS_MENUNGGU => '<span class="badge-menunggu">Menunggu Kelulusan</span>',
+            self::STATUS_DILULUSKAN => '<span class="badge-lulus">Diluluskan</span>',
+            self::STATUS_DITOLAK => '<span class="badge-tolak">Ditolak</span>',
+            default => '-',
+        };
+    }
+
+    public function getKategoriLabelAttribute(): string
+    {
+        return self::KATEGORI[$this->kategori] ?? $this->kategori;
+    }
+
+    public function isMenunggu(): bool
+    {
+        return $this->status === self::STATUS_MENUNGGU;
+    }
+
+    public function isDiluluskan(): bool
+    {
+        return $this->status === self::STATUS_DILULUSKAN;
+    }
+}

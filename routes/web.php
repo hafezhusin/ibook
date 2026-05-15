@@ -1,0 +1,67 @@
+<?php
+
+use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\BilikController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\KalendarController;
+use App\Http\Controllers\KelulusanController;
+use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\PenggunaController;
+use App\Http\Controllers\TempahanController;
+use App\Http\Controllers\TetapanController;
+use Illuminate\Support\Facades\Route;
+
+// Auth routes (tanpa middleware)
+Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Routes yang memerlukan log masuk
+Route::middleware('auth.custom')->group(function () {
+
+    // Dashboard
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Kalendar
+    Route::get('/kalendar', [KalendarController::class, 'index'])->name('kalendar');
+    Route::get('/kalendar/events', [KalendarController::class, 'events'])->name('kalendar.events');
+
+    // Tempahan
+    Route::get('/tempahan', [TempahanController::class, 'index'])->name('tempahan.index');
+    Route::get('/tempahan/baru', [TempahanController::class, 'create'])->name('tempahan.create');
+    Route::post('/tempahan', [TempahanController::class, 'store'])->name('tempahan.store');
+    Route::get('/tempahan/{tempahan}', [TempahanController::class, 'show'])->name('tempahan.show');
+    Route::get('/tempahan/eksport/pdf', [TempahanController::class, 'exportPdf'])->name('tempahan.pdf');
+    Route::get('/tempahan/eksport/excel', [TempahanController::class, 'exportExcel'])->name('tempahan.excel');
+
+    // Laporan
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
+
+    // Hanya Pentadbir & Urus Setia
+    Route::middleware('role:pentadbir_sistem,urus_setia')->group(function () {
+        Route::get('/kelulusan', [KelulusanController::class, 'index'])->name('kelulusan');
+        Route::post('/kelulusan/{tempahan}/lulus', [KelulusanController::class, 'lulus'])->name('kelulusan.lulus');
+        Route::post('/kelulusan/{tempahan}/tolak', [KelulusanController::class, 'tolak'])->name('kelulusan.tolak');
+    });
+
+    // Hanya Pentadbir Sistem
+    Route::middleware('role:pentadbir_sistem')->group(function () {
+        // Bilik Mesyuarat
+        Route::get('/bilik-mesyuarat', [BilikController::class, 'index'])->name('bilik.index');
+        Route::get('/bilik-mesyuarat/tambah', [BilikController::class, 'create'])->name('bilik.create');
+        Route::post('/bilik-mesyuarat', [BilikController::class, 'store'])->name('bilik.store');
+        Route::get('/bilik-mesyuarat/{bilik}/edit', [BilikController::class, 'edit'])->name('bilik.edit');
+        Route::put('/bilik-mesyuarat/{bilik}', [BilikController::class, 'update'])->name('bilik.update');
+        Route::delete('/bilik-mesyuarat/{bilik}', [BilikController::class, 'destroy'])->name('bilik.destroy');
+
+        // Pengguna
+        Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
+        Route::post('/pengguna', [PenggunaController::class, 'store'])->name('pengguna.store');
+        Route::put('/pengguna/{pengguna}', [PenggunaController::class, 'update'])->name('pengguna.update');
+        Route::post('/pengguna/{pengguna}/reset-password', [PenggunaController::class, 'resetPassword'])->name('pengguna.reset-password');
+
+        // Tetapan
+        Route::get('/tetapan', [TetapanController::class, 'index'])->name('tetapan.index');
+        Route::post('/tetapan', [TetapanController::class, 'update'])->name('tetapan.update');
+    });
+});
