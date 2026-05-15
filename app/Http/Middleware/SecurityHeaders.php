@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class SecurityHeaders
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        $response = $next($request);
+
+        // Cegah MIME-type sniffing
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+
+        // Cegah clickjacking
+        $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+
+        // Cegah XSS (lapisan browser lama)
+        $response->headers->set('X-XSS-Protection', '1; mode=block');
+
+        // Kawal maklumat referrer
+        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+        // Kawal ciri-ciri browser
+        $response->headers->set('Permissions-Policy',
+            'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+
+        // Content Security Policy
+        $csp = implode('; ', [
+            "default-src 'self'",
+            "script-src 'self' 'unsafe-inline' cdn.tailwindcss.com cdn.jsdelivr.net cdnjs.cloudflare.com",
+            "style-src 'self' 'unsafe-inline' cdn.tailwindcss.com cdn.jsdelivr.net cdnjs.cloudflare.com fonts.googleapis.com",
+            "font-src 'self' cdnjs.cloudflare.com fonts.gstatic.com data:",
+            "img-src 'self' data: blob:",
+            "connect-src 'self'",
+            "frame-ancestors 'self'",
+            "base-uri 'self'",
+            "form-action 'self'",
+        ]);
+        $response->headers->set('Content-Security-Policy', $csp);
+
+        // HSTS — hanya aktifkan jika HTTPS
+        if ($request->isSecure()) {
+            $response->headers->set(
+                'Strict-Transport-Security',
+                'max-age=31536000; includeSubDomains; preload'
+            );
+        }
+
+        // Buang header yang mendedahkan maklumat server
+        $response->headers->remove('X-Powered-By');
+        $response->headers->remove('Server');
+
+        return $response;
+    }
+}

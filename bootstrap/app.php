@@ -11,9 +11,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Daftarkan alias middleware
         $middleware->alias([
-            'role' => \App\Http\Middleware\CheckRole::class,
+            'role'        => \App\Http\Middleware\CheckRole::class,
             'auth.custom' => \App\Http\Middleware\Authenticate::class,
+        ]);
+
+        // Tambah security headers dan audit log pada semua web request
+        $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
+            \App\Http\Middleware\AuditLog::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
