@@ -29,13 +29,20 @@ class SecurityHeaders
             'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
 
         // Content Security Policy
+        // connect-src include http: & https: untuk sokong fetch API (awam/bilik, awam/events)
+        // pada apa-apa port (localhost:8000 atau domain sebenar)
+        $host      = $request->getHost();
+        $port      = $request->getPort();
+        $scheme    = $request->getScheme();
+        $origin    = $scheme . '://' . $host . ($port && !in_array($port, [80, 443]) ? ':' . $port : '');
+
         $csp = implode('; ', [
             "default-src 'self'",
             "script-src 'self' 'unsafe-inline' cdn.tailwindcss.com cdn.jsdelivr.net cdnjs.cloudflare.com",
             "style-src 'self' 'unsafe-inline' cdn.tailwindcss.com cdn.jsdelivr.net cdnjs.cloudflare.com fonts.googleapis.com",
             "font-src 'self' cdnjs.cloudflare.com fonts.gstatic.com data:",
             "img-src 'self' data: blob:",
-            "connect-src 'self'",
+            "connect-src 'self' {$origin}",
             "frame-ancestors 'self'",
             "base-uri 'self'",
             "form-action 'self'",
