@@ -164,21 +164,23 @@
             </p>
         </aside>
 
-        {{-- Pautan Manual Pengguna --}}
-        <a href="/docs/Manual_Pengguna_iBook2.pdf"
+        {{-- Pautan Manual Pengguna Staf --}}
+        <a href="/docs/Manual_Pengguna_Staf_iBook2.pdf"
             target="_blank"
             rel="noopener noreferrer"
-            class="mt-5 flex items-center gap-3 p-4 rounded-xl border border-amber-500/30 hover:border-amber-400/60 transition-all group"
-            style="background:rgba(245,158,11,0.08)"
-            aria-label="Muat turun Manual Pengguna iBook 2.0 dalam format PDF (buka dalam tab baharu)">
-            <span class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center" style="background:rgba(245,158,11,0.2)">
-                <i class="fa-solid fa-file-pdf text-amber-400 text-lg group-hover:scale-110 transition-transform" aria-hidden="true"></i>
+            class="mt-5 flex items-center gap-3 p-4 rounded-xl border transition-all group"
+            style="background:rgba(22,163,74,0.08); border-color:rgba(22,163,74,0.3)"
+            onmouseover="this.style.borderColor='rgba(22,163,74,0.6)'"
+            onmouseout="this.style.borderColor='rgba(22,163,74,0.3)'"
+            aria-label="Buka Manual Pengguna Staf iBook 2.0 dalam format PDF (buka dalam tab baharu)">
+            <span class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(22,163,74,0.2)">
+                <i class="fa-solid fa-file-pdf text-green-400 text-lg group-hover:scale-110 transition-transform" aria-hidden="true"></i>
             </span>
             <span>
-                <span class="block text-sm font-semibold text-amber-400">Manual Pengguna</span>
-                <span class="block text-xs text-slate-400 mt-0.5">Panduan lengkap penggunaan sistem iBook 2.0</span>
+                <span class="block text-sm font-semibold text-green-400">Manual Pengguna</span>
+                <span class="block text-xs text-slate-400 mt-0.5">Panduan lengkap cara menggunakan sistem iBook 2.0</span>
             </span>
-            <i class="fa-solid fa-arrow-up-right-from-square text-slate-500 group-hover:text-amber-400 ml-auto text-xs transition-colors" aria-hidden="true"></i>
+            <i class="fa-solid fa-arrow-up-right-from-square text-slate-500 group-hover:text-green-400 ml-auto text-xs transition-colors" aria-hidden="true"></i>
         </a>
     </div>
 
