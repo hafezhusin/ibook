@@ -29,7 +29,7 @@
                 <span class="text-xs text-amber-500 font-normal">(anda)</span>
                 @endif
             </div>
-            <div class="text-xs text-gray-500 truncate">{{ $p->jabatan ?? 'Tiada jabatan' }}</div>
+            <div class="text-xs text-gray-500 truncate">{{ $p->jabatan ?? 'Tiada unit' }}</div>
             <div class="text-xs text-gray-400 truncate">{{ $p->email }}</div>
         </div>
     </div>

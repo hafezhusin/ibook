@@ -1,4 +1,9 @@
-<div class="list-row hover:bg-gray-50 transition">
+<div class="list-row list-data-row hover:bg-gray-50 transition"
+    data-name="{{ strtolower($p->name) }}"
+    data-unit="{{ strtolower($p->jabatan ?? '') }}"
+    data-peranan="{{ $p->peranan }}"
+    data-tarikh="{{ $p->created_at->format('Y-m-d') }}"
+    data-status="{{ $isAktif ? 'aktif' : 'nyahaktif' }}">
 
     {{-- Nama + Emel --}}
     <div class="flex items-center gap-2 min-w-0">
@@ -24,7 +29,7 @@
         </div>
     </div>
 
-    {{-- Jabatan --}}
+    {{-- Unit --}}
     <div class="text-sm text-gray-600 truncate">{{ $p->jabatan ?? '—' }}</div>
 
     {{-- Peranan --}}
@@ -37,9 +42,7 @@
     </div>
 
     {{-- Tarikh Diwujudkan --}}
-    <div class="text-xs text-gray-500">
-        {{ $p->created_at->format('d M Y') }}
-    </div>
+    <div class="text-xs text-gray-500">{{ $p->created_at->format('d M Y') }}</div>
 
     {{-- Status --}}
     <div>
@@ -58,28 +61,24 @@
     <div class="flex items-center gap-2 flex-wrap">
         <button type="button"
             onclick="openEdit({{ $p->id }}, '{{ addslashes($p->name) }}', '{{ addslashes($p->jabatan ?? '') }}', '{{ $p->peranan }}', {{ $p->aktif ? 'true' : 'false' }})"
-            class="text-amber-500 text-xs hover:underline"
-            aria-label="Edit {{ $p->name }}">
+            class="text-amber-500 text-xs hover:underline" aria-label="Edit {{ $p->name }}">
             <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
         </button>
         <button type="button"
             onclick="openReset({{ $p->id }}, '{{ addslashes($p->name) }}')"
-            class="text-gray-400 text-xs hover:text-gray-600"
-            aria-label="Tukar kata laluan {{ $p->name }}">
+            class="text-gray-400 text-xs hover:text-gray-600" aria-label="Tukar kata laluan {{ $p->name }}">
             <i class="fa-solid fa-key" aria-hidden="true"></i>
         </button>
         @if($p->id !== auth()->id())
         <form method="POST" action="{{ route('pengguna.toggle-aktif', $p) }}" class="inline">
             @csrf
             @if($isAktif)
-            <button type="submit"
-                class="text-red-500 text-xs hover:underline"
+            <button type="submit" class="text-red-500 text-xs hover:underline"
                 onclick="return confirm('Nyahaktifkan akaun {{ addslashes($p->name) }}?')">
                 <i class="fa-solid fa-ban" aria-hidden="true"></i> Nyahaktifkan
             </button>
             @else
-            <button type="submit"
-                class="text-green-600 text-xs hover:underline"
+            <button type="submit" class="text-green-600 text-xs hover:underline"
                 onclick="return confirm('Aktifkan semula akaun {{ addslashes($p->name) }}?')">
                 <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Aktifkan
             </button>

@@ -19,6 +19,13 @@
     .list-row:last-child { border-bottom: none; }
     .list-header { background: #f9fafb; font-size: 11px; font-weight: 700;
                    color: #9ca3af; text-transform: uppercase; letter-spacing: .05em; }
+    .sort-btn { display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+                background: none; border: none; padding: 0; font: inherit; color: inherit;
+                text-transform: uppercase; letter-spacing: .05em; font-size: 11px; font-weight: 700; }
+    .sort-btn:hover { color: #1a1a2e; }
+    .sort-btn.sorted { color: #f59e0b; }
+    .sort-icon { font-size: 10px; opacity: .5; }
+    .sort-btn.sorted .sort-icon { opacity: 1; }
 </style>
 @endpush
 
@@ -138,15 +145,25 @@
     {{-- LIST VIEW --}}
     <div id="list-aktif" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-8">
         <div class="list-row list-header rounded-t-xl">
-            <div>
+            <div class="flex items-center gap-2">
                 <input type="checkbox" id="cb-semua-list" onchange="pilihSemuaList(this)"
                     style="accent-color:#f59e0b" aria-label="Pilih semua">
-                <span class="ml-2">Pengguna</span>
+                <button class="sort-btn" data-col="name" data-panel="aktif" onclick="sortList('aktif','name',this)" aria-label="Isih mengikut nama">
+                    Pengguna <span class="sort-icon">⇅</span>
+                </button>
             </div>
-            <div>Jabatan</div>
-            <div>Peranan</div>
-            <div>Tarikh Diwujudkan</div>
-            <div>Status</div>
+            <button class="sort-btn" data-col="unit" data-panel="aktif" onclick="sortList('aktif','unit',this)" aria-label="Isih mengikut unit">
+                Unit <span class="sort-icon">⇅</span>
+            </button>
+            <button class="sort-btn" data-col="peranan" data-panel="aktif" onclick="sortList('aktif','peranan',this)" aria-label="Isih mengikut peranan">
+                Peranan <span class="sort-icon">⇅</span>
+            </button>
+            <button class="sort-btn" data-col="tarikh" data-panel="aktif" onclick="sortList('aktif','tarikh',this)" aria-label="Isih mengikut tarikh diwujudkan">
+                Tarikh Diwujudkan <span class="sort-icon">⇅</span>
+            </button>
+            <button class="sort-btn" data-col="status" data-panel="aktif" onclick="sortList('aktif','status',this)" aria-label="Isih mengikut status">
+                Status <span class="sort-icon">⇅</span>
+            </button>
             <div>Tindakan</div>
         </div>
         @forelse($penggunaAktif as $p)
@@ -178,15 +195,25 @@
     {{-- LIST VIEW --}}
     <div id="list-nyahaktif" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-8">
         <div class="list-row list-header rounded-t-xl">
-            <div>
+            <div class="flex items-center gap-2">
                 <input type="checkbox" onchange="pilihSemuaList(this)"
                     style="accent-color:#f59e0b" aria-label="Pilih semua">
-                <span class="ml-2">Pengguna</span>
+                <button class="sort-btn" data-col="name" data-panel="nyahaktif" onclick="sortList('nyahaktif','name',this)" aria-label="Isih mengikut nama">
+                    Pengguna <span class="sort-icon">⇅</span>
+                </button>
             </div>
-            <div>Jabatan</div>
-            <div>Peranan</div>
-            <div>Tarikh Diwujudkan</div>
-            <div>Status</div>
+            <button class="sort-btn" data-col="unit" data-panel="nyahaktif" onclick="sortList('nyahaktif','unit',this)" aria-label="Isih mengikut unit">
+                Unit <span class="sort-icon">⇅</span>
+            </button>
+            <button class="sort-btn" data-col="peranan" data-panel="nyahaktif" onclick="sortList('nyahaktif','peranan',this)" aria-label="Isih mengikut peranan">
+                Peranan <span class="sort-icon">⇅</span>
+            </button>
+            <button class="sort-btn" data-col="tarikh" data-panel="nyahaktif" onclick="sortList('nyahaktif','tarikh',this)" aria-label="Isih mengikut tarikh diwujudkan">
+                Tarikh Diwujudkan <span class="sort-icon">⇅</span>
+            </button>
+            <button class="sort-btn" data-col="status" data-panel="nyahaktif" onclick="sortList('nyahaktif','status',this)" aria-label="Isih mengikut status">
+                Status <span class="sort-icon">⇅</span>
+            </button>
             <div>Tindakan</div>
         </div>
         @forelse($penggunaNyahaktif as $p)
@@ -236,9 +263,9 @@
                         placeholder="emel@jabatan.gov.my" required aria-required="true" autocomplete="off">
                 </div>
                 <div>
-                    <label for="tambah-jabatan" class="form-label">Jabatan</label>
+                    <label for="tambah-jabatan" class="form-label">Unit</label>
                     <input type="text" id="tambah-jabatan" name="jabatan" class="form-input"
-                        placeholder="cth: Bahagian ICT">
+                        placeholder="cth: Unit Pentadbiran">
                 </div>
                 <div>
                     <label for="tambah-peranan" class="form-label">Peranan <span class="text-red-500">*</span></label>
@@ -283,7 +310,7 @@
                     <input type="text" id="edit-name" name="name" class="form-input">
                 </div>
                 <div>
-                    <label for="edit-jabatan" class="form-label">Jabatan</label>
+                    <label for="edit-jabatan" class="form-label">Unit</label>
                     <input type="text" id="edit-jabatan" name="jabatan" class="form-input">
                 </div>
                 <div>
@@ -416,6 +443,46 @@ function submitBulk(tindakan) {
 }
 
 // ── Modal Edit ──
+// ── Sort senarai ──
+const _sortState = {}; // { 'aktif-name': 'asc', ... }
+
+function sortList(panel, col, btnEl) {
+    const container = document.getElementById('list-' + panel);
+    const rows = Array.from(container.querySelectorAll('.list-data-row'));
+    const key  = panel + '-' + col;
+
+    // Toggle arah
+    const dir = _sortState[key] === 'asc' ? 'desc' : 'asc';
+    _sortState[key] = dir;
+
+    rows.sort((a, b) => {
+        let va = (a.dataset[col] || '').trim();
+        let vb = (b.dataset[col] || '').trim();
+
+        if (col === 'tarikh') {
+            // Bandingkan sebagai tarikh
+            const da = va ? new Date(va) : new Date(0);
+            const db = vb ? new Date(vb) : new Date(0);
+            return dir === 'asc' ? da - db : db - da;
+        }
+        // Bandingkan sebagai teks
+        return dir === 'asc'
+            ? va.localeCompare(vb, 'ms', { sensitivity: 'base' })
+            : vb.localeCompare(va, 'ms', { sensitivity: 'base' });
+    });
+
+    // Susun semula dalam DOM
+    rows.forEach(r => container.appendChild(r));
+
+    // Kemaskini ikon sort
+    container.querySelectorAll('.sort-btn').forEach(btn => {
+        btn.classList.remove('sorted');
+        btn.querySelector('.sort-icon').textContent = '⇅';
+    });
+    btnEl.classList.add('sorted');
+    btnEl.querySelector('.sort-icon').textContent = dir === 'asc' ? '↑' : '↓';
+}
+
 function openEdit(id, name, jabatan, peranan, aktif) {
     document.getElementById('form-edit').action = '/pengguna/' + id;
     document.getElementById('edit-name').value    = name;
