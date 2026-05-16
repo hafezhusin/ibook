@@ -97,13 +97,55 @@ class PenggunaController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // Invalidate all existing sessions for this user (security best practice)
-        // This requires session driver to support user sessions
-        // For file driver, we log a note — in production use database sessions
         \Illuminate\Support\Facades\Log::info(
             "Kata laluan ditukar semula untuk pengguna ID:{$pengguna->id} oleh pentadbir ID:" . auth()->id()
         );
 
         return back()->with('success', 'Kata laluan pengguna berjaya ditukar semula.');
+    }
+
+    // ── Toggle aktif/nyahaktif satu pengguna ──
+    public function toggleAktif(User $pengguna)
+    {
+        if ($pengguna->id === auth()->id()) {
+            return back()->with('error', 'Anda tidak boleh menyahaktifkan akaun anda sendiri.');
+        }
+
+        $pengguna->update(['aktif' => !$pengguna->aktif]);
+
+        $tindakan = $pengguna->aktif ? 'diaktifkan' : 'dinyahaktifkan';
+
+        return back()->with('success', "Akaun {$pengguna->name} berjaya {$tindakan}.");
+    }
+
+    // ── Tindakan pukal: aktif/nyahaktif senarai pengguna ──
+    public function bulkAktif(Request $request)
+    {
+        $request->validate([
+            'ids'      => 'required|array|min:1',
+            'ids.*'    => 'integer|exists:users,id',
+            'tindakan' => 'required|in:aktifkan,nyahaktifkan',
+        ]);
+
+        $ids      = $request->ids;
+        $tindakan = $request->tindakan;
+
+        // Keluarkan ID pentadbir semasa jika tindakan nyahaktifkan
+        if ($tindakan === 'nyahaktifkan') {
+            $ids = array_filter($ids, fn($id) => $id !== auth()->id());
+        }
+
+        if (empty($ids)) {
+            return back()->with('error', 'Tiada pengguna yang boleh diproses — anda tidak boleh menyahaktifkan akaun sendiri.');
+        }
+
+        $nilaiAktif = ($tindakan === 'aktifkan') ? true : false;
+        $jumlah     = User::whereIn('id', $ids)->count();
+
+        User::whereIn('id', $ids)->update(['aktif' => $nilaiAktif]);
+
+        $label = $nilaiAktif ? 'diaktifkan' : 'dinyahaktifkan';
+
+        return back()->with('success', "{$jumlah} pengguna berjaya {$label}.");
     }
 }

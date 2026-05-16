@@ -61,8 +61,10 @@ Route::middleware('auth.custom')->group(function () {
         // Pengguna
         Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
         Route::post('/pengguna', [PenggunaController::class, 'store'])->name('pengguna.store');
+        Route::post('/pengguna/bulk-aktif', [PenggunaController::class, 'bulkAktif'])->name('pengguna.bulk-aktif');
         Route::put('/pengguna/{pengguna}', [PenggunaController::class, 'update'])->name('pengguna.update');
         Route::post('/pengguna/{pengguna}/reset-password', [PenggunaController::class, 'resetPassword'])->name('pengguna.reset-password');
+        Route::post('/pengguna/{pengguna}/toggle-aktif', [PenggunaController::class, 'toggleAktif'])->name('pengguna.toggle-aktif');
 
         // Tetapan
         Route::get('/tetapan', [TetapanController::class, 'index'])->name('tetapan.index');
