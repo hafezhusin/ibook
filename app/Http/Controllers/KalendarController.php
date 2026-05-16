@@ -11,7 +11,8 @@ class KalendarController extends Controller
 {
     public function index()
     {
-        return view('kalendar.index');
+        $bilik = BilikMesyuarat::where('status', 'aktif')->orderBy('nama')->get();
+        return view('kalendar.index', compact('bilik'));
     }
 
     public function events(Request $request)
@@ -28,6 +29,9 @@ class KalendarController extends Controller
         }
         if ($request->filled('end')) {
             $query->where('tarikh', '<=', $request->end);
+        }
+        if ($request->filled('bilik_id')) {
+            $query->where('bilik_id', $request->bilik_id);
         }
 
         return response()->json($this->formatEvents($query->get(), false, $user->id));
