@@ -7,6 +7,103 @@
 @endpush
 
 @section('content')
+
+@if($isStaf)
+{{-- ============================================================ --}}
+{{-- PAPARAN STAF — Statistik Unit Sendiri Sahaja                 --}}
+{{-- ============================================================ --}}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-800">Laporan Tempahan Unit</h1>
+        <p class="text-gray-500 text-sm mt-1">
+            <i class="fa-solid fa-building text-amber-400 mr-1" aria-hidden="true"></i>
+            {{ $jabatan ?? 'Unit Anda' }} &mdash; {{ $tahun }}
+        </p>
+    </div>
+    <form method="GET" aria-label="Tapis laporan mengikut tahun">
+        <label for="pilih-tahun" class="sr-only">Pilih tahun laporan</label>
+        <select id="pilih-tahun" name="tahun" class="form-input w-auto text-sm"
+            onchange="this.form.submit()" aria-label="Tahun laporan">
+            @foreach($senaraiTahun as $t)
+            <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
+            @endforeach
+        </select>
+    </form>
+</div>
+
+{{-- Kad Ringkasan Unit --}}
+<div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+            style="background:#dcfce7">
+            <i class="fa-solid fa-circle-check text-xl" style="color:#16a34a" aria-hidden="true"></i>
+        </div>
+        <div>
+            <p class="text-2xl font-bold text-gray-800">{{ $totalDiluluskan }}</p>
+            <p class="text-sm text-gray-500">Diluluskan</p>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+            style="background:#fef3c7">
+            <i class="fa-solid fa-clock text-xl" style="color:#d97706" aria-hidden="true"></i>
+        </div>
+        <div>
+            <p class="text-2xl font-bold text-gray-800">{{ $totalMenunggu }}</p>
+            <p class="text-sm text-gray-500">Menunggu Kelulusan</p>
+        </div>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+            style="background:#fee2e2">
+            <i class="fa-solid fa-circle-xmark text-xl" style="color:#dc2626" aria-hidden="true"></i>
+        </div>
+        <div>
+            <p class="text-2xl font-bold text-gray-800">{{ $totalDitolak }}</p>
+            <p class="text-sm text-gray-500">Ditolak</p>
+        </div>
+    </div>
+</div>
+
+{{-- Graf unit --}}
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <section class="bg-white rounded-xl shadow-sm p-6" aria-labelledby="heading-graf-bulan-unit">
+        <h2 id="heading-graf-bulan-unit" class="font-bold text-gray-800 mb-5">
+            Tempahan Diluluskan Mengikut Bulan — {{ $tahun }}
+        </h2>
+        <canvas id="chartBulan" height="220"
+            role="img"
+            aria-label="Graf bar: bilangan tempahan diluluskan bagi unit {{ $jabatan ?? '' }} mengikut bulan tahun {{ $tahun }}">
+        </canvas>
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm p-6" aria-labelledby="heading-graf-kategori-unit">
+        <h2 id="heading-graf-kategori-unit" class="font-bold text-gray-800 mb-5">
+            Tempahan Mengikut Kategori — {{ $tahun }}
+        </h2>
+        @if($mengikutKategori->isEmpty())
+        <div class="flex items-center justify-center h-48 text-gray-400">
+            <div class="text-center">
+                <i class="fa-solid fa-chart-pie text-3xl mb-2" aria-hidden="true"></i>
+                <p class="text-sm">Tiada data bagi tahun {{ $tahun }}</p>
+            </div>
+        </div>
+        @else
+        <canvas id="chartKategori" height="220"
+            role="img"
+            aria-label="Graf donat: taburan tempahan unit mengikut kategori mesyuarat bagi tahun {{ $tahun }}">
+        </canvas>
+        @endif
+    </section>
+</div>
+
+@else
+{{-- ============================================================ --}}
+{{-- PAPARAN PENTADBIR / URUS SETIA — Semua Statistik             --}}
+{{-- ============================================================ --}}
+
 <div class="flex items-center justify-between mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-800">Laporan</h1>
@@ -14,7 +111,8 @@
     </div>
     <form method="GET" aria-label="Tapis laporan mengikut tahun">
         <label for="pilih-tahun" class="sr-only">Pilih tahun laporan</label>
-        <select id="pilih-tahun" name="tahun" class="form-input w-auto text-sm" onchange="this.form.submit()" aria-label="Tahun laporan">
+        <select id="pilih-tahun" name="tahun" class="form-input w-auto text-sm"
+            onchange="this.form.submit()" aria-label="Tahun laporan">
             @foreach($senaraiTahun as $t)
             <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
             @endforeach
@@ -26,7 +124,9 @@
 
     {{-- Graf Tempahan Mengikut Bulan --}}
     <section class="bg-white rounded-xl shadow-sm p-6" aria-labelledby="heading-graf-bulan">
-        <h2 id="heading-graf-bulan" class="font-bold text-gray-800 mb-5">Tempahan Mengikut Bulan — {{ $tahun }}</h2>
+        <h2 id="heading-graf-bulan" class="font-bold text-gray-800 mb-5">
+            Tempahan Mengikut Bulan — {{ $tahun }}
+        </h2>
         <canvas id="chartBulan" height="200"
             role="img"
             aria-label="Graf bar: bilangan tempahan diluluskan bagi setiap bulan dalam tahun {{ $tahun }}. Lihat jadual di bawah untuk data lengkap.">
@@ -35,7 +135,9 @@
 
     {{-- Graf Tempahan Mengikut Kategori --}}
     <section class="bg-white rounded-xl shadow-sm p-6" aria-labelledby="heading-graf-kategori">
-        <h2 id="heading-graf-kategori" class="font-bold text-gray-800 mb-5">Tempahan Mengikut Kategori — {{ $tahun }}</h2>
+        <h2 id="heading-graf-kategori" class="font-bold text-gray-800 mb-5">
+            Tempahan Mengikut Kategori — {{ $tahun }}
+        </h2>
         <canvas id="chartKategori" height="200"
             role="img"
             aria-label="Graf donat: taburan tempahan mengikut kategori mesyuarat bagi tahun {{ $tahun }}. Lihat jadual di bawah untuk data lengkap.">
@@ -92,12 +194,14 @@
         </tbody>
     </table>
 </section>
+
+@endif
 @endsection
 
 @push('scripts')
 <script>
 const bulanLabel = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'];
-const dataBulan = @json($dataBulan);
+const dataBulan  = @json($dataBulan);
 
 new Chart(document.getElementById('chartBulan'), {
     type: 'bar',
@@ -122,8 +226,9 @@ new Chart(document.getElementById('chartBulan'), {
     }
 });
 
+@if(!$mengikutKategori->isEmpty())
 const kategoriLabel = @json($mengikutKategori->pluck('kategori'));
-const kategoriData = @json($mengikutKategori->pluck('jumlah'));
+const kategoriData  = @json($mengikutKategori->pluck('jumlah'));
 const colors = ['#f59e0b','#3b82f6','#10b981','#8b5cf6','#ef4444','#06b6d4'];
 
 new Chart(document.getElementById('chartKategori'), {
@@ -145,5 +250,6 @@ new Chart(document.getElementById('chartKategori'), {
         }
     }
 });
+@endif
 </script>
 @endpush
