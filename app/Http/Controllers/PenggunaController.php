@@ -11,8 +11,10 @@ class PenggunaController extends Controller
 {
     public function index()
     {
-        $pengguna = User::orderBy('name')->get();
-        return view('pengguna.index', compact('pengguna'));
+        $penggunaAktif       = User::where('aktif', true)->orderBy('name')->get();
+        $penggunaNyahaktif   = User::where('aktif', false)->orderBy('name')->get();
+
+        return view('pengguna.index', compact('penggunaAktif', 'penggunaNyahaktif'));
     }
 
     public function store(Request $request)
