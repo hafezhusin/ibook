@@ -48,11 +48,14 @@ class Tempahan extends Model
         'catatan_penolakan',
         'diluluskan_oleh',
         'diluluskan_pada',
+        'dikemaskini_oleh',
+        'dikemaskini_pada',
     ];
 
     protected $casts = [
-        'tarikh' => 'date',
+        'tarikh'          => 'date',
         'diluluskan_pada' => 'datetime',
+        'dikemaskini_pada'=> 'datetime',
     ];
 
     public function bilik()
@@ -68,6 +71,37 @@ class Tempahan extends Model
     public function pelulus()
     {
         return $this->belongsTo(User::class, 'diluluskan_oleh');
+    }
+
+    public function pengubah()
+    {
+        return $this->belongsTo(User::class, 'dikemaskini_oleh');
+    }
+
+    /**
+     * Semak sama ada pengguna dibenarkan mengedit/melihat tempahan ini.
+     * Staf boleh edit tempahan sendiri ATAU rakan seunit (jabatan sama).
+     * Pentadbir & Urus Setia boleh edit semua.
+     */
+    public function bolehDiEditOleh(User $user): bool
+    {
+        if (!$user->isStaf()) return true;
+        if ($this->user_id === $user->id) return true;
+
+        // Rakan seunit — semak jabatan pemohon asal
+        return $user->jabatan &&
+               $this->pengguna &&
+               $this->pengguna->jabatan === $user->jabatan;
+    }
+
+    /**
+     * Nombor rujukan unik: TMP-{tahun}-{id 4 digit}
+     * Contoh: TMP-2026-0042
+     */
+    public function getNoRujukanAttribute(): string
+    {
+        $year = $this->tarikh?->year ?? $this->created_at?->year ?? now()->year;
+        return 'TMP-' . $year . '-' . str_pad($this->id, 4, '0', STR_PAD_LEFT);
     }
 
     public function getMasaLabelAttribute(): string

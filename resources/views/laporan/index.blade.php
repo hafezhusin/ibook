@@ -33,7 +33,7 @@
 </div>
 
 {{-- Kad Ringkasan Unit --}}
-<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-2 gap-4 mb-6">
     <div class="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
         <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
             style="background:#dcfce7">
@@ -41,17 +41,7 @@
         </div>
         <div>
             <p class="text-2xl font-bold text-gray-800">{{ $totalDiluluskan }}</p>
-            <p class="text-sm text-gray-500">Diluluskan</p>
-        </div>
-    </div>
-    <div class="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-            style="background:#fef3c7">
-            <i class="fa-solid fa-clock text-xl" style="color:#d97706" aria-hidden="true"></i>
-        </div>
-        <div>
-            <p class="text-2xl font-bold text-gray-800">{{ $totalMenunggu }}</p>
-            <p class="text-sm text-gray-500">Menunggu Kelulusan</p>
+            <p class="text-sm text-gray-500">Jumlah Tempahan</p>
         </div>
     </div>
     <div class="bg-white rounded-xl shadow-sm p-5 flex items-center gap-4">
@@ -61,7 +51,7 @@
         </div>
         <div>
             <p class="text-2xl font-bold text-gray-800">{{ $totalDitolak }}</p>
-            <p class="text-sm text-gray-500">Ditolak</p>
+            <p class="text-sm text-gray-500">Dibatalkan</p>
         </div>
     </div>
 </div>
@@ -145,6 +135,161 @@
     </section>
 </div>
 
+{{-- Statistik Mengikut Unit --}}
+@if(isset($mengikutUnit) && $mengikutUnit->count() > 0)
+<section class="bg-white rounded-xl shadow-sm overflow-hidden mb-6" aria-labelledby="heading-unit">
+    <div class="p-6 border-b border-gray-100">
+        <h2 id="heading-unit" class="font-bold text-gray-800">
+            Tempahan Diluluskan Mengikut Unit ({{ $tahun }})
+        </h2>
+    </div>
+    <div class="p-6">
+        @php $maxUnit = $mengikutUnit->max('jumlah') ?: 1; @endphp
+        <div class="space-y-3">
+            @foreach($mengikutUnit as $u)
+            <div class="flex items-center gap-3">
+                <div class="w-48 text-sm text-gray-700 truncate flex-shrink-0" title="{{ $u->unit }}">
+                    {{ $u->unit }}
+                </div>
+                <div class="flex-1">
+                    <div class="progress-bar"
+                        role="progressbar"
+                        aria-valuenow="{{ $u->jumlah }}"
+                        aria-valuemin="0"
+                        aria-valuemax="{{ $maxUnit }}"
+                        aria-label="{{ $u->unit }}: {{ $u->jumlah }} tempahan">
+                        <div class="progress-fill" style="width:{{ round(($u->jumlah / $maxUnit) * 100) }}%"></div>
+                    </div>
+                </div>
+                <div class="w-8 text-sm font-bold text-gray-700 text-right flex-shrink-0">
+                    {{ $u->jumlah }}
+                </div>
+            </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
+{{-- Top 10 Pemohon Terbanyak --}}
+@if(isset($top10Pengguna) && $top10Pengguna->count() > 0)
+<section class="bg-white rounded-xl shadow-sm overflow-hidden mb-6" aria-labelledby="heading-top10">
+
+    <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 id="heading-top10" class="font-bold text-gray-800 flex items-center gap-2">
+            <i class="fa-solid fa-trophy text-amber-400" aria-hidden="true"></i>
+            Top 10 Pemohon Terbanyak
+            <span class="text-sm font-normal text-gray-400 ml-1">({{ $tahun }})</span>
+        </h2>
+        <span class="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">Semua status tempahan</span>
+    </div>
+
+    @php
+        $avatarColors = ['#f59e0b','#3b82f6','#10b981','#8b5cf6','#ef4444','#06b6d4','#ec4899','#84cc16','#f97316','#6366f1'];
+        $maxJumlah    = $top10Pengguna->first()->jumlah ?: 1;
+
+        $medalConfig = [
+            1 => ['bg' => '#fef3c7', 'border' => '#fcd34d', 'text' => '#b45309', 'icon' => 'fa-trophy',  'iconColor' => '#f59e0b'],
+            2 => ['bg' => '#f1f5f9', 'border' => '#cbd5e1', 'text' => '#475569', 'icon' => 'fa-medal',   'iconColor' => '#94a3b8'],
+            3 => ['bg' => '#fff7ed', 'border' => '#fdba74', 'text' => '#c2410c', 'icon' => 'fa-medal',   'iconColor' => '#f97316'],
+        ];
+    @endphp
+
+    <div class="divide-y divide-gray-50">
+        @foreach($top10Pengguna as $i => $p)
+        @php
+            $rank = $i + 1;
+            $pct  = round(($p->jumlah / $maxJumlah) * 100);
+            $med  = $medalConfig[$rank] ?? null;
+            $initials = collect(explode(' ', $p->name))
+                          ->filter()->take(2)
+                          ->map(fn($w) => strtoupper($w[0]))
+                          ->implode('');
+        @endphp
+        <div class="flex items-center gap-4 px-6 py-3 {{ $rank <= 3 ? 'hover:bg-amber-50/40' : 'hover:bg-gray-50' }} transition-colors">
+
+            {{-- Ranking --}}
+            <div class="w-9 flex-shrink-0 flex justify-center">
+                @if($med)
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2"
+                     style="background:{{ $med['bg'] }}; border-color:{{ $med['border'] }}; color:{{ $med['text'] }}">
+                    {{ $rank }}
+                </div>
+                @else
+                <span class="text-sm font-bold text-gray-300 tabular-nums">{{ $rank }}</span>
+                @endif
+            </div>
+
+            {{-- Avatar --}}
+            <div class="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm"
+                 style="background:{{ $avatarColors[$i % count($avatarColors)] }}"
+                 aria-hidden="true">
+                {{ $initials }}
+            </div>
+
+            {{-- Nama + unit --}}
+            <div class="flex-1 min-w-0">
+                <div class="font-semibold text-gray-800 text-sm leading-snug truncate">{{ $p->name }}</div>
+                <div class="text-xs text-gray-400 truncate" title="{{ $p->jabatan }}">
+                    {{ $p->jabatan ?? '—' }}
+                </div>
+            </div>
+
+            {{-- Breakdown status --}}
+            <div class="hidden sm:flex items-center gap-4 flex-shrink-0 text-right">
+                <div>
+                    <div class="text-xs text-gray-400">Diluluskan</div>
+                    <div class="text-sm font-semibold text-green-600">{{ $p->jumlah_diluluskan }}</div>
+                </div>
+                @if($p->jumlah_menunggu > 0)
+                <div>
+                    <div class="text-xs text-gray-400">Menunggu</div>
+                    <div class="text-sm font-semibold text-amber-500">{{ $p->jumlah_menunggu }}</div>
+                </div>
+                @endif
+                @if($p->jumlah_ditolak > 0)
+                <div>
+                    <div class="text-xs text-gray-400">Ditolak</div>
+                    <div class="text-sm font-semibold text-red-400">{{ $p->jumlah_ditolak }}</div>
+                </div>
+                @endif
+            </div>
+
+            {{-- Jumlah besar --}}
+            <div class="flex-shrink-0 text-right w-16">
+                <div class="text-xl font-extrabold {{ $rank === 1 ? 'text-amber-500' : 'text-gray-700' }} tabular-nums leading-none">
+                    {{ $p->jumlah }}
+                </div>
+                <div class="text-xs text-gray-400">tempahan</div>
+            </div>
+
+            {{-- Bar relatif --}}
+            <div class="w-28 flex-shrink-0 hidden md:block">
+                <div class="h-2 bg-gray-100 rounded-full overflow-hidden"
+                     role="progressbar"
+                     aria-valuenow="{{ $p->jumlah }}"
+                     aria-valuemin="0"
+                     aria-valuemax="{{ $maxJumlah }}"
+                     aria-label="{{ $p->name }}: {{ $p->jumlah }} tempahan">
+                    <div class="h-full rounded-full transition-all duration-500"
+                         style="width:{{ $pct }}%; background:{{ $rank === 1 ? '#f59e0b' : ($rank === 2 ? '#94a3b8' : ($rank === 3 ? '#f97316' : '#3b82f6')) }}">
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        @endforeach
+    </div>
+
+    <div class="px-6 py-3 bg-gray-50 border-t border-gray-100">
+        <p class="text-xs text-gray-400">
+            <i class="fa-solid fa-circle-info mr-1" aria-hidden="true"></i>
+            Kiraan berdasarkan semua tempahan (diluluskan + menunggu + ditolak) bagi tahun {{ $tahun }}.
+        </p>
+    </div>
+</section>
+@endif
+
 {{-- Ringkasan Penggunaan Bilik --}}
 <section class="bg-white rounded-xl shadow-sm overflow-hidden" aria-labelledby="heading-ringkasan-bilik">
     <div class="p-6 border-b border-gray-100">
@@ -161,7 +306,6 @@
                 <th scope="col">Bilik</th>
                 <th scope="col">Kapasiti</th>
                 <th scope="col">Jumlah Tempahan</th>
-                <th scope="col">Jam Digunakan</th>
                 <th scope="col">% Penggunaan</th>
             </tr>
         </thead>
@@ -171,7 +315,6 @@
                 <td class="font-semibold">{{ $b['nama'] }}</td>
                 <td>{{ $b['kapasiti'] }} orang</td>
                 <td>{{ $b['jumlah_tempahan'] }}</td>
-                <td>{{ $b['jam_digunakan'] }} jam</td>
                 <td>
                     <div class="flex items-center gap-3">
                         <div class="progress-bar flex-1"
@@ -188,7 +331,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="5" class="text-center py-8 text-gray-400">Tiada data</td>
+                <td colspan="4" class="text-center py-8 text-gray-400">Tiada data</td>
             </tr>
             @endforelse
         </tbody>

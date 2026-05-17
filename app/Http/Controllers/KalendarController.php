@@ -66,11 +66,8 @@ class KalendarController extends Controller
                 // Kalendar awam (halaman login)
                 $warna = '#dc2626';
                 $title = '🔴 ' . ($t->bilik->nama ?? 'Ditempah');
-            } elseif ($t->status === 'diluluskan') {
-                $warna = $isOwn ? '#16a34a' : '#2563eb'; // hijau=sendiri, biru=orang lain
-                $title = $t->nama_mesyuarat;
             } else {
-                $warna = '#d97706'; // oren = menunggu
+                $warna = $isOwn ? '#16a34a' : '#2563eb'; // hijau=sendiri, biru=orang lain
                 $title = $t->nama_mesyuarat;
             }
 
@@ -81,10 +78,14 @@ class KalendarController extends Controller
                 'end'   => $t->tarikh->format('Y-m-d') . 'T' . $t->masa_tamat,
                 'color' => $warna,
                 'extendedProps' => [
+                    'tempahan_id'    => $t->id,
                     'bilik'          => $t->bilik->nama ?? '-',
                     'lokasi'         => $t->bilik->lokasi ?? '',
+                    'bilik_id'       => $t->bilik_id,
                     'status'         => $t->status,
                     'sesi'           => $t->sesi === 'pagi' ? 'Sesi Pagi (9:00 - 13:00)' : 'Sesi Petang (14:00 - 18:00)',
+                    'sesi_key'       => $t->sesi,
+                    'tarikh'         => $t->tarikh->format('Y-m-d'),
                     'peserta'        => $t->bilangan_peserta,
                     'kategori'       => $t->kategori,
                     'nama_pengerusi' => $t->nama_pengerusi,

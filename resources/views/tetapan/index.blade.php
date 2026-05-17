@@ -17,10 +17,23 @@
             <legend class="font-bold text-gray-800 pb-3 border-b border-gray-100 w-full mb-5 block">
                 Maklumat Organisasi
             </legend>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div class="md:col-span-2">
+            <div class="space-y-5">
+
+                <div>
+                    <label for="nama_sistem" class="form-label">Nama Sistem</label>
+                    <input type="text" id="nama_sistem" name="nama_sistem"
+                        value="{{ old('nama_sistem', $tetapan['nama_sistem'] ?? '') }}"
+                        class="form-input"
+                        placeholder="cth: iBook 2.0"
+                        @error('nama_sistem') aria-invalid="true" aria-describedby="ralat-nama_sistem" @enderror>
+                    @error('nama_sistem')
+                    <p id="ralat-nama_sistem" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
                     <label for="nama_jabatan" class="form-label">
-                        Nama Jabatan <span class="text-red-500" aria-hidden="true">*</span>
+                        Nama Bahagian <span class="text-red-500" aria-hidden="true">*</span>
                         <span class="sr-only">(wajib)</span>
                     </label>
                     <input type="text" id="nama_jabatan" name="nama_jabatan"
@@ -29,62 +42,25 @@
                         placeholder="cth: Bahagian Pengurusan Teknologi Maklumat"
                         required aria-required="true"
                         @error('nama_jabatan') aria-invalid="true" aria-describedby="ralat-nama_jabatan" @enderror>
+                    <p class="form-hint">Nama ini akan dipaparkan di footer sistem.</p>
                     @error('nama_jabatan')
                     <p id="ralat-nama_jabatan" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
                     @enderror
                 </div>
-                <div>
-                    <label for="singkatan" class="form-label">
-                        Singkatan <span class="text-red-500" aria-hidden="true">*</span>
-                        <span class="sr-only">(wajib)</span>
-                    </label>
-                    <input type="text" id="singkatan" name="singkatan"
-                        value="{{ old('singkatan', $tetapan['singkatan'] ?? '') }}"
-                        class="form-input"
-                        placeholder="cth: BPTM"
-                        required aria-required="true"
-                        @error('singkatan') aria-invalid="true" aria-describedby="ralat-singkatan" @enderror>
-                    @error('singkatan')
-                    <p id="ralat-singkatan" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-        </fieldset>
 
-        {{-- Waktu Operasi --}}
-        <fieldset class="bg-white rounded-xl shadow-sm p-6 mb-5">
-            <legend class="font-bold text-gray-800 pb-3 border-b border-gray-100 w-full mb-5 block">
-                Waktu Operasi
-            </legend>
-            <div class="grid grid-cols-2 gap-5">
                 <div>
-                    <label for="masa_mula" class="form-label">
-                        Masa Mula <span class="text-red-500" aria-hidden="true">*</span>
-                        <span class="sr-only">(wajib)</span>
-                    </label>
-                    <input type="time" id="masa_mula" name="masa_mula"
-                        value="{{ old('masa_mula', $tetapan['masa_mula'] ?? '08:00') }}"
+                    <label for="emel_pentadbir" class="form-label">Emel Pentadbir Sistem</label>
+                    <input type="email" id="emel_pentadbir" name="emel_pentadbir"
+                        value="{{ old('emel_pentadbir', $tetapan['emel_pentadbir'] ?? '') }}"
                         class="form-input"
-                        required aria-required="true"
-                        @error('masa_mula') aria-invalid="true" aria-describedby="ralat-masa_mula" @enderror>
-                    @error('masa_mula')
-                    <p id="ralat-masa_mula" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                        placeholder="cth: admin@jabatan.gov.my"
+                        @error('emel_pentadbir') aria-invalid="true" aria-describedby="ralat-emel_pentadbir" @enderror>
+                    <p class="form-hint">Emel ini akan dipaparkan di footer sistem.</p>
+                    @error('emel_pentadbir')
+                    <p id="ralat-emel_pentadbir" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
                     @enderror
                 </div>
-                <div>
-                    <label for="masa_tamat" class="form-label">
-                        Masa Tamat <span class="text-red-500" aria-hidden="true">*</span>
-                        <span class="sr-only">(wajib)</span>
-                    </label>
-                    <input type="time" id="masa_tamat" name="masa_tamat"
-                        value="{{ old('masa_tamat', $tetapan['masa_tamat'] ?? '17:00') }}"
-                        class="form-input"
-                        required aria-required="true"
-                        @error('masa_tamat') aria-invalid="true" aria-describedby="ralat-masa_tamat" @enderror>
-                    @error('masa_tamat')
-                    <p id="ralat-masa_tamat" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
-                    @enderror
-                </div>
+
             </div>
         </fieldset>
 

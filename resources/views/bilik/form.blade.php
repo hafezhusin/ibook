@@ -82,7 +82,7 @@
         <fieldset class="mb-5">
             <legend class="form-label mb-3">Kemudahan</legend>
             @php
-            $kemudahanList = ['Projektor', 'Papan Putih', 'Sistem Audio', 'Video Conferencing', 'Skrin LCD', 'Pendingin Hawa', 'WiFi'];
+            $kemudahanList = ['TV', 'Papan Putih', 'Sistem Audio', 'Video Conferencing', 'Skrin LCD'];
             $selected = old('kemudahan', $bilik?->kemudahan ?? []);
             @endphp
             <div class="grid grid-cols-2 gap-3">

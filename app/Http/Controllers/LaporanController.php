@@ -53,12 +53,6 @@ class LaporanController extends Controller
 
             // Kad ringkasan unit
             $totalDiluluskan = Tempahan::whereYear('tarikh', $tahun)
-                ->where('status', Tempahan::STATUS_DILULUSKAN)
-                ->whereIn('user_id', $userIdUnit)
-                ->count();
-
-            $totalMenunggu = Tempahan::whereYear('tarikh', $tahun)
-                ->where('status', Tempahan::STATUS_MENUNGGU)
                 ->whereIn('user_id', $userIdUnit)
                 ->count();
 
@@ -74,7 +68,6 @@ class LaporanController extends Controller
                 'senaraiTahun',
                 'jabatan',
                 'totalDiluluskan',
-                'totalMenunggu',
                 'totalDitolak',
                 'isStaf'
             ));
@@ -104,6 +97,70 @@ class LaporanController extends Controller
             ->groupBy('kategori')
             ->get();
 
+        // Senarai unit rasmi dalam direktori BPTM ANM
+        $unitRasmi = [
+            'Pejabat Pengarah',
+            'Seksyen Pengurusan Pelanggan',
+            'Unit Pentadbiran dan Pengurusan Kewangan',
+            'Unit Authorization',
+            'Unit Pengurusan Antaramuka / Integrasi',
+            'Unit Khidmat Pelanggan',
+            'Seksyen Digital dan Projek Khas',
+            'Seksyen Pengurusan Aplikasi FICO',
+            'Unit Lejar Am dan Kawalan Data Induk',
+            'Unit Pengurusan Dana, Pinjaman dan Pelaburan',
+            'Sub Unit LMS',
+            'Sub Unit CM',
+            'Sub Unit TR',
+            'Unit Pelaporan Strategik (BWBI)',
+            'Unit Bayaran',
+            'Unit Logistik',
+            'Unit Terimaan',
+            'Unit Aset',
+            'Seksyen Pengurusan Aplikasi Non FICO',
+            'Unit Pengurusan Wang Tak Dituntut dan Pengkosan',
+            'Unit Pengurusan Wang Tak Dituntut',
+            'Unit Pengkosan',
+            'Unit Gaji',
+            'Unit Maklumat Online (eApps)',
+            'Seksyen Perkhidmatan ICT 1',
+            'Unit Pengurusan Infrastruktur',
+            'Unit Operasi Aplikasi Teras',
+            'Seksyen Perkhidmatan ICT 2',
+            'Unit Pengurusan Rangkaian dan Keselamatan ICT',
+            'Unit Aplikasi Gunasama',
+            'Seksyen Kualiti dan Perancangan',
+        ];
+
+        // Statistik mengikut unit (hanya unit rasmi direktori BPTM)
+        $mengikutUnit = DB::table('tempahan')
+            ->join('users', 'tempahan.user_id', '=', 'users.id')
+            ->whereYear('tempahan.tarikh', $tahun)
+            ->where('tempahan.status', Tempahan::STATUS_DILULUSKAN)
+            ->whereIn('users.jabatan', $unitRasmi)
+            ->select('users.jabatan as unit', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('users.jabatan')
+            ->orderByDesc('jumlah')
+            ->get();
+
+        // Top 10 pemohon terbanyak
+        $top10Pengguna = DB::table('tempahan')
+            ->join('users', 'tempahan.user_id', '=', 'users.id')
+            ->whereYear('tempahan.tarikh', $tahun)
+            ->select(
+                'users.id',
+                'users.name',
+                'users.jabatan',
+                DB::raw('COUNT(*) as jumlah'),
+                DB::raw('SUM(CASE WHEN tempahan.status = "diluluskan" THEN 1 ELSE 0 END) as jumlah_diluluskan'),
+                DB::raw('SUM(CASE WHEN tempahan.status = "ditolak" THEN 1 ELSE 0 END) as jumlah_ditolak'),
+                DB::raw('SUM(CASE WHEN tempahan.status = "menunggu" THEN 1 ELSE 0 END) as jumlah_menunggu')
+            )
+            ->groupBy('users.id', 'users.name', 'users.jabatan')
+            ->orderByDesc('jumlah')
+            ->limit(10)
+            ->get();
+
         // Ringkasan penggunaan bilik
         $bilik = BilikMesyuarat::with(['tempahan' => function ($q) use ($tahun) {
             $q->whereYear('tarikh', $tahun)->where('status', Tempahan::STATUS_DILULUSKAN);
@@ -130,6 +187,8 @@ class LaporanController extends Controller
             'dataBulan',
             'mengikutKategori',
             'bilik',
+            'mengikutUnit',
+            'top10Pengguna',
             'tahun',
             'senaraiTahun',
             'isStaf'

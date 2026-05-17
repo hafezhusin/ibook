@@ -2,9 +2,11 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BilikController;
+use App\Http\Controllers\CarianController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KalendarController;
 use App\Http\Controllers\KelulusanController;
+use App\Http\Controllers\KetersediaanController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\TempahanController;
@@ -30,13 +32,23 @@ Route::middleware('auth.custom')->group(function () {
     Route::get('/kalendar', [KalendarController::class, 'index'])->name('kalendar');
     Route::get('/kalendar/events', [KalendarController::class, 'events'])->name('kalendar.events');
 
+    // Carian Global
+    Route::get('/carian', [CarianController::class, 'index'])->name('carian');
+
+    // Semak Ketersediaan Bilik
+    Route::get('/semak-bilik', [KetersediaanController::class, 'index'])->name('ketersediaan');
+    Route::get('/semak-bilik/cek', [KetersediaanController::class, 'cek'])->name('ketersediaan.cek');
+
     // Tempahan
     Route::get('/tempahan', [TempahanController::class, 'index'])->name('tempahan.index');
     Route::get('/tempahan/baru', [TempahanController::class, 'create'])->name('tempahan.create');
     Route::post('/tempahan', [TempahanController::class, 'store'])->name('tempahan.store');
-    Route::get('/tempahan/{tempahan}', [TempahanController::class, 'show'])->name('tempahan.show');
     Route::get('/tempahan/eksport/pdf', [TempahanController::class, 'exportPdf'])->name('tempahan.pdf');
     Route::get('/tempahan/eksport/excel', [TempahanController::class, 'exportExcel'])->name('tempahan.excel');
+    Route::get('/tempahan/cek-konflik', [TempahanController::class, 'cekKonflik'])->name('tempahan.cek-konflik');
+    Route::get('/tempahan/{tempahan}', [TempahanController::class, 'show'])->name('tempahan.show');
+    Route::get('/tempahan/{tempahan}/edit', [TempahanController::class, 'edit'])->name('tempahan.edit');
+    Route::put('/tempahan/{tempahan}', [TempahanController::class, 'update'])->name('tempahan.update');
 
     // Laporan
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');

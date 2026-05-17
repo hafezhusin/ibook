@@ -13,11 +13,25 @@
     </a>
 </div>
 
+<div class="mb-4">
+    <div class="relative">
+        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" aria-hidden="true"></i>
+        <input type="search" id="carian-bilik"
+            placeholder="Cari nama bilik..."
+            oninput="cariBilik(this.value)"
+            class="form-input pl-9 text-sm w-full md:w-72"
+            aria-label="Cari bilik mesyuarat">
+    </div>
+</div>
+
 <section aria-labelledby="heading-bilik-senarai">
     <h2 id="heading-bilik-senarai" class="sr-only">Senarai Bilik Mesyuarat</h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div id="grid-bilik" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         @forelse($bilik as $b)
-        <article class="bg-white rounded-xl shadow-sm overflow-hidden" aria-labelledby="bilik-{{ $b->id }}">
+        <article class="bg-white rounded-xl shadow-sm overflow-hidden kad-bilik"
+            data-nama="{{ strtolower($b->nama) }}"
+            data-lokasi="{{ strtolower($b->lokasi ?? '') }}"
+            aria-labelledby="bilik-{{ $b->id }}">
             <div class="h-40 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center" aria-hidden="true">
                 <i class="fa-solid fa-door-open text-slate-400 text-5xl" aria-hidden="true"></i>
             </div>
@@ -92,4 +106,18 @@
         @endforelse
     </div>
 </section>
+
+@push('scripts')
+<script>
+function cariBilik(kata) {
+    const carian = kata.trim().toLowerCase();
+    document.querySelectorAll('.kad-bilik').forEach(kad => {
+        const nama   = kad.dataset.nama || '';
+        const lokasi = kad.dataset.lokasi || '';
+        const match  = !carian || nama.includes(carian) || lokasi.includes(carian);
+        kad.style.display = match ? '' : 'none';
+    });
+}
+</script>
+@endpush
 @endsection

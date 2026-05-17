@@ -97,21 +97,27 @@
     <div class="flex-1 bg-white rounded-xl shadow-sm p-5 flex flex-col">
 
         {{-- Legend --}}
-        <div class="flex flex-wrap items-center gap-4 mb-4 pb-3 border-b border-gray-100 text-xs text-gray-500 flex-shrink-0">
-            <span class="font-semibold text-gray-600">Kod Warna:</span>
-            <span class="flex items-center gap-1.5">
-                <span class="inline-block w-3 h-3 rounded-sm" style="background:#16a34a"></span>
+        <div class="flex flex-wrap items-center gap-3 mb-4 pb-3 border-b border-gray-100 flex-shrink-0" aria-label="Legenda warna kalendar">
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider mr-1">Legenda:</span>
+
+            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                  style="background:#dcfce7; color:#166534"
+                  title="Tempahan yang anda buat sendiri dan telah diluluskan">
+                <span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#16a34a" aria-hidden="true"></span>
                 Tempahan Saya
             </span>
-            <span class="flex items-center gap-1.5">
-                <span class="inline-block w-3 h-3 rounded-sm" style="background:#2563eb"></span>
+
+            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                  style="background:#dbeafe; color:#1e40af"
+                  title="Tempahan pengguna lain yang telah diluluskan">
+                <span class="inline-block w-2.5 h-2.5 rounded-sm" style="background:#2563eb" aria-hidden="true"></span>
                 Tempahan Lain
             </span>
-            <span class="flex items-center gap-1.5">
-                <span class="inline-block w-3 h-3 rounded-sm" style="background:#d97706"></span>
-                Menunggu Kelulusan
+
+            <span class="ml-auto text-xs text-gray-400 italic flex items-center gap-1">
+                <i class="fa-solid fa-hand-pointer" aria-hidden="true"></i>
+                Klik acara untuk butiran &amp; tindakan
             </span>
-            <span class="text-gray-400 italic ml-auto">Klik acara untuk butiran</span>
         </div>
 
         <div id="calendar" class="flex-1"
@@ -193,20 +199,27 @@
                 </dt>
                 <dd class="text-gray-700">Pemohon: <span id="ev-pemohon"></span></dd>
             </div>
-            <div id="ev-tujuan-row" class="flex items-start gap-3">
-                <dt class="flex-shrink-0 w-5 mt-0.5">
-                    <i class="fa-solid fa-align-left text-amber-400" aria-hidden="true"></i>
-                    <span class="sr-only">Tujuan:</span>
-                </dt>
-                <dd class="text-gray-600 text-xs leading-relaxed" id="ev-tujuan"></dd>
-            </div>
         </dl>
 
-        {{-- Footer --}}
-        <div class="px-6 pb-5">
+        {{-- Footer: Tindakan --}}
+        <div class="px-6 pb-5 space-y-2">
+            {{-- Butang utama --}}
+            <div class="flex gap-2">
+                <a id="ev-btn-butiran" href="#"
+                   class="btn-primary flex-1 justify-center text-sm"
+                   aria-label="Lihat butiran penuh tempahan ini">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i> Lihat Butiran
+                </a>
+                <a id="ev-btn-duplikat" href="{{ route('tempahan.create') }}"
+                   class="btn-secondary flex-1 justify-center text-sm"
+                   aria-label="Duplikat — buat tempahan baru berdasarkan acara ini">
+                    <i class="fa-solid fa-copy" aria-hidden="true"></i> Duplikat
+                </a>
+            </div>
+            {{-- Tutup --}}
             <button type="button"
                 onclick="document.getElementById('event-modal').classList.add('hidden')"
-                class="w-full btn-secondary justify-center"
+                class="w-full text-center text-sm text-gray-400 hover:text-gray-600 py-1"
                 aria-label="Tutup butiran acara">
                 Tutup
             </button>
@@ -238,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function () {
         events: fetchEvents,
 
         eventClick: function (info) {
-            const p = info.event.extendedProps;
+            const p     = info.event.extendedProps;
             const start = info.event.start;
             const end   = info.event.end;
 
@@ -261,15 +274,6 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('ev-peserta').textContent   = p.peserta || '0';
             document.getElementById('ev-pemohon').textContent   = p.pemohon || '-';
 
-            const tujuanRow = document.getElementById('ev-tujuan-row');
-            const tujuanEl  = document.getElementById('ev-tujuan');
-            if (p.tujuan && p.tujuan.trim()) {
-                tujuanEl.textContent = p.tujuan;
-                tujuanRow.classList.remove('hidden');
-            } else {
-                tujuanRow.classList.add('hidden');
-            }
-
             const statusEl = document.getElementById('ev-status');
             if (p.status === 'diluluskan') {
                 statusEl.style.cssText = 'background:#dcfce7;color:#166534';
@@ -281,8 +285,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
             document.getElementById('ev-header').style.background = p.is_own ? '#14532d' : '#1a1a2e';
 
+            // ── Butang tindakan ─────────────────────────────────────
+            // Lihat Butiran → /tempahan/{id}
+            const btnButiran = document.getElementById('ev-btn-butiran');
+            if (p.tempahan_id) {
+                btnButiran.href = '{{ url("/tempahan") }}/' + p.tempahan_id;
+                btnButiran.style.display = '';
+            } else {
+                btnButiran.style.display = 'none';
+            }
+
+            // Duplikat → /tempahan/baru?duplikat_id=X
+            const btnDuplikat = document.getElementById('ev-btn-duplikat');
+            if (p.tempahan_id) {
+                btnDuplikat.href = '{{ route("tempahan.create") }}?duplikat_id=' + p.tempahan_id;
+            }
+
             document.getElementById('event-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('event-modal').querySelector('button').focus(), 50);
+            setTimeout(() => document.getElementById('ev-btn-butiran').focus(), 50);
         },
 
         eventDidMount: function (info) {

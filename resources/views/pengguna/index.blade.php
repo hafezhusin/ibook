@@ -56,6 +56,18 @@
 </div>
 @endif
 
+{{-- ── Carian --}}
+<div class="mb-4">
+    <div class="relative">
+        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" aria-hidden="true"></i>
+        <input type="search" id="carian-pengguna"
+            placeholder="Cari nama, emel atau unit..."
+            oninput="caripenggunaFilter(this.value)"
+            class="form-input pl-9 text-sm w-full md:w-80"
+            aria-label="Cari pengguna">
+    </div>
+</div>
+
 {{-- ── Tab + View Toggle Bar ── --}}
 <div class="flex items-center justify-between mb-4">
 
@@ -368,8 +380,9 @@
 
 @push('scripts')
 <script>
+const LS_VIEW_KEY = 'ibook_pengguna_view';
 let tabSemasa  = 'aktif';
-let viewSemasa = 'kad';
+let viewSemasa = localStorage.getItem(LS_VIEW_KEY) || 'kad';
 
 // ── Tab ──
 function tukarTab(tab) {
@@ -383,11 +396,14 @@ function tukarTab(tab) {
     // reset checkbox semua bila tukar tab
     document.querySelectorAll('.checkbox-pengguna:checked').forEach(cb => cb.checked = false);
     kemaskiniToolbar();
+    // apply carian semula
+    caripenggunaFilter(document.getElementById('carian-pengguna').value);
 }
 
 // ── View Toggle ──
 function tukarView(view) {
     viewSemasa = view;
+    localStorage.setItem(LS_VIEW_KEY, view);   // simpan pilihan
     document.getElementById('btn-kad').classList.toggle('aktif-view', view === 'kad');
     document.getElementById('btn-senarai').classList.toggle('aktif-view', view === 'senarai');
     document.getElementById('btn-kad').setAttribute('aria-pressed', view === 'kad');
@@ -401,6 +417,29 @@ function tukarView(view) {
     // reset checkbox bila tukar view
     document.querySelectorAll('.checkbox-pengguna:checked').forEach(cb => cb.checked = false);
     kemaskiniToolbar();
+}
+
+// ── Carian Pengguna ──
+function caripenggunaFilter(kata) {
+    const carian = kata.trim().toLowerCase();
+
+    // Kad
+    document.querySelectorAll('#kad-aktif article, #kad-nyahaktif article').forEach(kad => {
+        const nama  = (kad.querySelector('[id^="pengguna-"]')?.textContent || '').toLowerCase();
+        const emel  = (kad.querySelector('.text-gray-400.truncate')?.textContent || '').toLowerCase();
+        const unit  = (kad.querySelectorAll('.text-gray-500.truncate')[0]?.textContent || '').toLowerCase();
+        const match = !carian || nama.includes(carian) || emel.includes(carian) || unit.includes(carian);
+        kad.style.display = match ? '' : 'none';
+    });
+
+    // Baris senarai
+    document.querySelectorAll('.list-data-row').forEach(baris => {
+        const nama  = (baris.dataset.name || '').toLowerCase();
+        const unit  = (baris.dataset.unit || '').toLowerCase();
+        const emel  = (baris.querySelector('.text-gray-400.truncate')?.textContent || '').toLowerCase();
+        const match = !carian || nama.includes(carian) || unit.includes(carian) || emel.includes(carian);
+        baris.style.display = match ? '' : 'none';
+    });
 }
 
 // ── Toolbar Pukal ──
@@ -506,6 +545,13 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         ['modal-tambah','modal-edit','modal-reset'].forEach(id =>
             document.getElementById(id).classList.add('hidden'));
+    }
+});
+
+// ── Mulakan paparan berdasarkan localStorage ──
+document.addEventListener('DOMContentLoaded', () => {
+    if (viewSemasa !== 'kad') {
+        tukarView(viewSemasa);
     }
 });
 </script>

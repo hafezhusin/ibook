@@ -18,7 +18,12 @@
     {{-- Maklumat Utama --}}
     <article class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
         <div class="flex items-center justify-between mb-6">
-            <h2 class="font-bold text-gray-800 text-lg">Maklumat Tempahan</h2>
+            <div>
+                <h2 class="font-bold text-gray-800 text-lg">Maklumat Tempahan</h2>
+                <p class="text-xs text-gray-400 font-mono mt-0.5" title="Nombor Rujukan Unik Tempahan">
+                    <i class="fa-solid fa-hashtag text-[9px] mr-0.5" aria-hidden="true"></i>{{ $tempahan->no_rujukan }}
+                </p>
+            </div>
             @if($tempahan->status === 'diluluskan')
                 <span class="badge-lulus text-sm" role="status">
                     <span aria-hidden="true">✓</span> Diluluskan
@@ -69,7 +74,12 @@
             </div>
             <div>
                 <dt class="text-xs text-gray-400 uppercase tracking-wider mb-1">Pemohon</dt>
-                <dd class="font-semibold text-gray-800">{{ $tempahan->pengguna->name ?? '-' }}</dd>
+                <dd class="font-semibold text-gray-800">
+                    {{ $tempahan->pengguna->name ?? '-' }}
+                    @if($tempahan->pengguna?->jabatan)
+                    <span class="block text-xs text-gray-400 font-normal mt-0.5">{{ $tempahan->pengguna->jabatan }}</span>
+                    @endif
+                </dd>
             </div>
             @if($tempahan->tujuan)
             <div class="col-span-2">
@@ -101,12 +111,58 @@
                     <div>
                         <div class="text-sm font-semibold text-gray-700">Permohonan Dihantar</div>
                         <div class="text-xs text-gray-400">
+                            oleh <strong>{{ $tempahan->pengguna->name ?? '—' }}</strong>
+                        </div>
+                        <div class="text-xs text-gray-400">
                             <time datetime="{{ $tempahan->created_at->format('Y-m-d\TH:i') }}">
                                 {{ $tempahan->created_at->format('d/m/Y H:i') }}
                             </time>
                         </div>
                     </div>
                 </li>
+
+                @if($tempahan->dikemaskini_oleh && $tempahan->dikemaskini_oleh !== $tempahan->user_id)
+                {{-- Pindaan oleh orang lain --}}
+                <li class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                        <i class="fa-solid fa-pen text-amber-600 text-xs" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-700">Dikemaskini</div>
+                        <div class="text-xs text-gray-400">
+                            oleh <strong>{{ $tempahan->pengubah->name ?? '—' }}</strong>
+                            @if($tempahan->pengubah?->jabatan)
+                            <span class="text-gray-400">({{ $tempahan->pengubah->jabatan }})</span>
+                            @endif
+                        </div>
+                        @if($tempahan->dikemaskini_pada)
+                        <div class="text-xs text-gray-400">
+                            <time datetime="{{ $tempahan->dikemaskini_pada->format('Y-m-d\TH:i') }}">
+                                {{ $tempahan->dikemaskini_pada->format('d/m/Y H:i') }}
+                            </time>
+                        </div>
+                        @endif
+                    </div>
+                </li>
+                @elseif($tempahan->dikemaskini_oleh)
+                {{-- Kemaskini oleh diri sendiri --}}
+                <li class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                        <i class="fa-solid fa-pen text-blue-400 text-xs" aria-hidden="true"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-semibold text-gray-700">Dikemaskini</div>
+                        @if($tempahan->dikemaskini_pada)
+                        <div class="text-xs text-gray-400">
+                            <time datetime="{{ $tempahan->dikemaskini_pada->format('Y-m-d\TH:i') }}">
+                                {{ $tempahan->dikemaskini_pada->format('d/m/Y H:i') }}
+                            </time>
+                        </div>
+                        @endif
+                    </div>
+                </li>
+                @endif
+
                 <li class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full {{ $tempahan->status !== 'menunggu' ? 'bg-green-100' : 'bg-gray-100' }} flex items-center justify-center flex-shrink-0" aria-hidden="true">
                         <i class="fa-solid fa-{{ $tempahan->status !== 'menunggu' ? 'check text-green-600' : 'clock text-gray-400' }} text-xs" aria-hidden="true"></i>
@@ -118,6 +174,9 @@
                             @else Menunggu Kelulusan
                             @endif
                         </div>
+                        @if($tempahan->pelulus)
+                        <div class="text-xs text-gray-400">oleh <strong>{{ $tempahan->pelulus->name }}</strong></div>
+                        @endif
                         @if($tempahan->diluluskan_pada)
                         <div class="text-xs text-gray-400">
                             <time datetime="{{ $tempahan->diluluskan_pada->format('Y-m-d\TH:i') }}">

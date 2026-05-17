@@ -12,70 +12,255 @@ use App\Exports\TempahanExport;
 
 class TempahanController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Bina query asas yang ditapis mengikut hak akses pengguna:
+     * - Staf: rekod sendiri + rekod rakan seunit (jabatan sama)
+     * - Pentadbir / Urus Setia: semua rekod
+     */
+    private function unitQuery()
     {
-        $user = Auth::user();
-        $query = Tempahan::with(['bilik', 'pengguna']);
+        $user  = Auth::user();
+        $query = Tempahan::query();
 
         if ($user->isStaf()) {
-            $query->where('user_id', $user->id);
+            $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+                if ($user->jabatan) {
+                    $q->orWhereHas('pengguna', fn ($q2) => $q2->where('jabatan', $user->jabatan));
+                }
+            });
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+        return $query;
+    }
 
+    public function index(Request $request)
+    {
+        $user  = Auth::user();
+        $query = $this->unitQuery()->with(['bilik', 'pengguna', 'pengubah']);
+
+        // ── Tapis bilik ───────────────────────────────────────────────
         if ($request->filled('bilik_id')) {
             $query->where('bilik_id', $request->bilik_id);
         }
 
+        // ── Tapis carian nama ────────────────────────────────────────
         if ($request->filled('carian')) {
-            $carian = $request->carian;
-            $query->where('nama_mesyuarat', 'like', "%$carian%");
+            $query->where('nama_mesyuarat', 'like', '%' . $request->carian . '%');
         }
 
-        $tempahan = $query->orderByDesc('tarikh')->orderBy('masa_mula')->paginate(15);
-        $bilik = BilikMesyuarat::where('status', 'aktif')->get();
+        // ── Tapis status ─────────────────────────────────────────────
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
 
-        return view('tempahan.index', compact('tempahan', 'bilik'));
+        // ── Tapis kategori mesyuarat ─────────────────────────────────
+        if ($request->filled('kategori')) {
+            $query->where('kategori', $request->kategori);
+        }
+
+        // ── Tapis julat tarikh (lanjutan) ─────────────────────────────
+        if ($request->filled('tarikh_dari')) {
+            $query->whereDate('tarikh', '>=', $request->tarikh_dari);
+        }
+        if ($request->filled('tarikh_hingga')) {
+            $query->whereDate('tarikh', '<=', $request->tarikh_hingga);
+        }
+
+        // ── Tapis unit/jabatan (pentadbir sahaja) ────────────────────
+        if ($request->filled('jabatan') && !$user->isStaf()) {
+            $query->whereHas('pengguna', fn ($q) => $q->where('jabatan', 'like', '%' . $request->jabatan . '%'));
+        }
+
+        // ── Tapis tarikh pantas ──────────────────────────────────────
+        switch ($request->get('tarikh_filter')) {
+            case 'hari_ini':
+                $query->whereDate('tarikh', today());
+                break;
+            case 'esok':
+                $query->whereDate('tarikh', today()->addDay());
+                break;
+            case 'baharu':
+                $query->where('created_at', '>=', now()->subHours(24));
+                break;
+            case '7_hari':
+                $query->whereBetween('tarikh', [today(), today()->addDays(7)]);
+                break;
+            case 'bulan_ini':
+                $query->whereMonth('tarikh', now()->month)->whereYear('tarikh', now()->year);
+                break;
+            case 'akan_datang':
+                $query->where('tarikh', '>=', today());
+                break;
+        }
+
+        $tempahan  = $query->orderByDesc('tarikh')->orderBy('masa_mula')->paginate(20)->withQueryString();
+        $bilik     = BilikMesyuarat::where('status', 'aktif')->get();
+        $kategori  = Tempahan::KATEGORI;
+
+        // ── Worklist ringkasan ────────────────────────────────────────
+        // Dikira berdasarkan skop unit (unit untuk staf, semua untuk admin/urus setia)
+        $unitScope = function () { return $this->unitQuery(); };
+        $ringkasan = [
+            'hari_ini'  => $unitScope()->whereDate('tarikh', today())->where('status', Tempahan::STATUS_DILULUSKAN)->count(),
+            'baharu'    => $unitScope()->where('created_at', '>=', now()->subHours(24))->count(),
+            'esok'      => $unitScope()->whereDate('tarikh', today()->addDay())->where('status', Tempahan::STATUS_DILULUSKAN)->count(),
+            'bulan_ini' => $unitScope()->whereMonth('tarikh', now()->month)->whereYear('tarikh', now()->year)->count(),
+        ];
+
+        return view('tempahan.index', compact('tempahan', 'bilik', 'ringkasan', 'kategori'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        $bilik = BilikMesyuarat::where('status', 'aktif')->get();
+        $bilik    = BilikMesyuarat::where('status', 'aktif')->get();
         $kategori = Tempahan::KATEGORI;
-        $sesi = Tempahan::MASA_SESI;
-        return view('tempahan.create', compact('bilik', 'kategori', 'sesi'));
+        $sesi     = Tempahan::MASA_SESI;
+
+        $duplikat = null;
+        if ($request->filled('duplikat_id')) {
+            $asal = Tempahan::find($request->duplikat_id);
+            if ($asal) {
+                $duplikat = [
+                    'nama_mesyuarat'   => $asal->nama_mesyuarat,
+                    'bilik_id'         => $asal->bilik_id,
+                    'bilangan_peserta' => $asal->bilangan_peserta,
+                    'kategori'         => $asal->kategori,
+                    'nama_pengerusi'   => $asal->nama_pengerusi,
+                    'tujuan'           => $asal->tujuan,
+                ];
+            }
+        }
+
+        return view('tempahan.create', compact('bilik', 'kategori', 'sesi', 'duplikat'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nama_mesyuarat' => 'required|string|max:255',
-            'tarikh' => 'required|date|after_or_equal:today',
-            'bilik_id' => 'required|exists:bilik_mesyuarat,id',
-            'sesi' => 'required|in:pagi,petang',
+            'nama_mesyuarat'   => 'required|string|max:255',
+            'tarikh'           => 'required|date|after_or_equal:today',
+            'bilik_id'         => 'required|exists:bilik_mesyuarat,id',
+            'sesi'             => 'required|array|min:1',
+            'sesi.*'           => 'in:pagi,petang',
             'bilangan_peserta' => 'required|integer|min:1',
-            'kategori' => 'required|string',
-            'nama_pengerusi' => 'required|string|max:255',
-            'tujuan' => 'nullable|string|max:1000',
+            'kategori'         => 'required|string',
+            'nama_pengerusi'   => 'required|string|max:255',
+            'tujuan'           => 'nullable|string|max:1000',
         ], [
-            'nama_mesyuarat.required' => 'Sila masukkan nama mesyuarat.',
-            'tarikh.required' => 'Sila pilih tarikh.',
-            'tarikh.after_or_equal' => 'Tarikh mesti hari ini atau selepasnya.',
-            'bilik_id.required' => 'Sila pilih bilik mesyuarat.',
-            'sesi.required' => 'Sila pilih sesi mesyuarat.',
+            'nama_mesyuarat.required'   => 'Sila masukkan nama mesyuarat.',
+            'tarikh.required'           => 'Sila pilih tarikh.',
+            'tarikh.after_or_equal'     => 'Tarikh mesti hari ini atau selepasnya.',
+            'bilik_id.required'         => 'Sila pilih bilik mesyuarat.',
+            'sesi.required'             => 'Sila pilih sekurang-kurangnya satu sesi mesyuarat.',
+            'sesi.min'                  => 'Sila pilih sekurang-kurangnya satu sesi mesyuarat.',
             'bilangan_peserta.required' => 'Sila masukkan bilangan peserta.',
-            'kategori.required' => 'Sila pilih kategori mesyuarat.',
-            'nama_pengerusi.required' => 'Sila masukkan nama pengerusi.',
+            'kategori.required'         => 'Sila pilih kategori mesyuarat.',
+            'nama_pengerusi.required'   => 'Sila masukkan nama pengerusi.',
         ]);
 
-        // Semak pertindihan tempahan
-        $masaSesi = Tempahan::MASA_SESI[$validated['sesi']];
+        $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
+        if ($validated['bilangan_peserta'] > $bilik->kapasiti) {
+            return back()->withInput()->withErrors([
+                'bilangan_peserta' => "Bilangan peserta melebihi kapasiti bilik ({$bilik->kapasiti} orang)."
+            ]);
+        }
+
+        $konflikSesi = [];
+        foreach ($validated['sesi'] as $sesi) {
+            $konflik = Tempahan::where('bilik_id', $validated['bilik_id'])
+                ->where('tarikh', $validated['tarikh'])
+                ->where('sesi', $sesi)
+                ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+                ->exists();
+            if ($konflik) {
+                $konflikSesi[] = Tempahan::MASA_SESI[$sesi]['label'];
+            }
+        }
+
+        if (!empty($konflikSesi)) {
+            return back()->withInput()->withErrors([
+                'sesi' => 'Bilik telah ditempah untuk sesi: ' . implode(', ', $konflikSesi)
+            ]);
+        }
+
+        foreach ($validated['sesi'] as $sesi) {
+            $masaSesi = Tempahan::MASA_SESI[$sesi];
+            Tempahan::create([
+                'nama_mesyuarat'   => $validated['nama_mesyuarat'],
+                'tarikh'           => $validated['tarikh'],
+                'bilik_id'         => $validated['bilik_id'],
+                'sesi'             => $sesi,
+                'masa_mula'        => $masaSesi['mula'],
+                'masa_tamat'       => $masaSesi['tamat'],
+                'bilangan_peserta' => $validated['bilangan_peserta'],
+                'kategori'         => $validated['kategori'],
+                'nama_pengerusi'   => $validated['nama_pengerusi'],
+                'tujuan'           => $validated['tujuan'] ?? null,
+                'user_id'          => Auth::id(),
+                'status'           => Tempahan::STATUS_DILULUSKAN,
+            ]);
+        }
+
+        $jumlahSesi = count($validated['sesi']);
+        return redirect()->route('tempahan.index')
+            ->with('success', $jumlahSesi > 1
+                ? "Tempahan ({$jumlahSesi} sesi) berjaya dibuat."
+                : 'Tempahan berjaya dibuat.');
+    }
+
+    public function show(Tempahan $tempahan)
+    {
+        $user = Auth::user();
+        // Staf hanya boleh lihat tempahan unit sendiri
+        if ($user->isStaf() && !$tempahan->bolehDiEditOleh($user)) abort(403);
+
+        $tempahan->load(['bilik', 'pengguna', 'pelulus', 'pengubah']);
+        return view('tempahan.show', compact('tempahan'));
+    }
+
+    public function edit(Tempahan $tempahan)
+    {
+        $user = Auth::user();
+        // Staf boleh edit tempahan sendiri + rakan seunit
+        if ($user->isStaf() && !$tempahan->bolehDiEditOleh($user)) abort(403);
+
+        $bilik    = BilikMesyuarat::where('status', 'aktif')->get();
+        $kategori = Tempahan::KATEGORI;
+        $sesi     = Tempahan::MASA_SESI;
+
+        return view('tempahan.edit', compact('tempahan', 'bilik', 'kategori', 'sesi'));
+    }
+
+    public function update(Request $request, Tempahan $tempahan)
+    {
+        $user = Auth::user();
+        // Staf boleh kemaskini tempahan sendiri + rakan seunit
+        if ($user->isStaf() && !$tempahan->bolehDiEditOleh($user)) abort(403);
+
+        $validated = $request->validate([
+            'nama_mesyuarat'   => 'required|string|max:255',
+            'tarikh'           => 'required|date',
+            'bilik_id'         => 'required|exists:bilik_mesyuarat,id',
+            'sesi'             => 'required|in:pagi,petang',
+            'bilangan_peserta' => 'required|integer|min:1',
+            'kategori'         => 'required|string',
+            'nama_pengerusi'   => 'required|string|max:255',
+            'tujuan'           => 'nullable|string|max:1000',
+        ]);
+
+        $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
+        if ($validated['bilangan_peserta'] > $bilik->kapasiti) {
+            return back()->withInput()->withErrors([
+                'bilangan_peserta' => "Bilangan peserta melebihi kapasiti bilik ({$bilik->kapasiti} orang)."
+            ]);
+        }
+
         $konflik = Tempahan::where('bilik_id', $validated['bilik_id'])
             ->where('tarikh', $validated['tarikh'])
             ->where('sesi', $validated['sesi'])
             ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+            ->where('id', '!=', $tempahan->id)
             ->exists();
 
         if ($konflik) {
@@ -84,51 +269,61 @@ class TempahanController extends Controller
             ]);
         }
 
-        // Semak kapasiti
-        $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
-        if ($validated['bilangan_peserta'] > $bilik->kapasiti) {
-            return back()->withInput()->withErrors([
-                'bilangan_peserta' => "Bilangan peserta melebihi kapasiti bilik ({$bilik->kapasiti} orang)."
-            ]);
-        }
+        // Rekod sama ada ini adalah pindaan oleh orang lain (audit)
+        $adalahPindaanUnit = $tempahan->user_id !== $user->id;
 
-        Tempahan::create([
-            ...$validated,
-            'masa_mula' => $masaSesi['mula'],
-            'masa_tamat' => $masaSesi['tamat'],
-            'user_id' => Auth::id(),
-            'status' => Tempahan::STATUS_MENUNGGU,
+        $masaSesi = Tempahan::MASA_SESI[$validated['sesi']];
+        $tempahan->update([
+            'nama_mesyuarat'   => $validated['nama_mesyuarat'],
+            'tarikh'           => $validated['tarikh'],
+            'bilik_id'         => $validated['bilik_id'],
+            'sesi'             => $validated['sesi'],
+            'masa_mula'        => $masaSesi['mula'],
+            'masa_tamat'       => $masaSesi['tamat'],
+            'bilangan_peserta' => $validated['bilangan_peserta'],
+            'kategori'         => $validated['kategori'],
+            'nama_pengerusi'   => $validated['nama_pengerusi'],
+            'tujuan'           => $validated['tujuan'] ?? null,
+            'dikemaskini_oleh' => $user->id,
+            'dikemaskini_pada' => now(),
         ]);
 
-        return redirect()->route('tempahan.index')
-            ->with('success', 'Permohonan tempahan telah dihantar dan menunggu kelulusan.');
+        $mesej = $adalahPindaanUnit
+            ? "Tempahan '{$tempahan->nama_mesyuarat}' berjaya dikemaskini. (Pindaan atas nama {$tempahan->pengguna->name})"
+            : 'Tempahan berjaya dikemaskini.';
+
+        return redirect()->route('tempahan.index')->with('success', $mesej);
     }
 
-    public function show(Tempahan $tempahan)
+    public function cekKonflik(Request $request)
     {
-        $user = Auth::user();
-        if ($user->isStaf() && $tempahan->user_id !== $user->id) {
-            abort(403);
+        $bilikId = $request->bilik_id;
+        $tarikh  = $request->tarikh;
+
+        if (!$bilikId || !$tarikh) {
+            return response()->json(['pagi' => false, 'petang' => false]);
         }
-        $tempahan->load(['bilik', 'pengguna', 'pelulus']);
-        return view('tempahan.show', compact('tempahan'));
+
+        $hasil = [];
+        foreach (['pagi', 'petang'] as $sesi) {
+            $hasil[$sesi] = Tempahan::where('bilik_id', $bilikId)
+                ->where('tarikh', $tarikh)
+                ->where('sesi', $sesi)
+                ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+                ->exists();
+        }
+
+        $bilik = BilikMesyuarat::find($bilikId);
+        $hasil['kapasiti'] = $bilik?->kapasiti ?? 0;
+
+        return response()->json($hasil);
     }
 
     public function exportPdf(Request $request)
     {
-        $user = Auth::user();
-        $query = Tempahan::with(['bilik', 'pengguna']);
-
-        if ($user->isStaf()) {
-            $query->where('user_id', $user->id);
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
+        $query    = $this->unitQuery()->with(['bilik', 'pengguna']);
         $tempahan = $query->orderByDesc('tarikh')->get();
-        $pdf = Pdf::loadView('tempahan.pdf', compact('tempahan'));
+        $pdf      = Pdf::loadView('tempahan.pdf', compact('tempahan'));
         return $pdf->download('senarai-tempahan.pdf');
     }
 
