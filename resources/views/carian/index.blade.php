@@ -79,8 +79,6 @@
                     <td>
                         @if($t->status === 'diluluskan')
                             <span class="badge-lulus">Diluluskan</span>
-                        @elseif($t->status === 'menunggu')
-                            <span class="badge-menunggu">Menunggu</span>
                         @else
                             <span class="badge-tolak">Ditolak</span>
                         @endif

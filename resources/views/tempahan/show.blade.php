@@ -28,10 +28,6 @@
                 <span class="badge-lulus text-sm" role="status">
                     <span aria-hidden="true">✓</span> Diluluskan
                 </span>
-            @elseif($tempahan->status === 'menunggu')
-                <span class="badge-menunggu text-sm" role="status">
-                    <span aria-hidden="true">⏳</span> Menunggu
-                </span>
             @else
                 <span class="badge-tolak text-sm" role="status">
                     <span aria-hidden="true">✗</span> Ditolak
@@ -170,8 +166,7 @@
                     <div>
                         <div class="text-sm font-semibold text-gray-700">
                             @if($tempahan->status === 'diluluskan') Diluluskan
-                            @elseif($tempahan->status === 'ditolak') Ditolak
-                            @else Menunggu
+                            @else Ditolak
                             @endif
                         </div>
                         @if($tempahan->pelulus)

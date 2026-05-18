@@ -70,7 +70,6 @@
         }
 
         /* ── Komponen Umum ─────────────────────────────────────── */
-        .badge-menunggu { background:#fef3c7; color:#78350f; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
         .badge-lulus    { background:#d1fae5; color:#064e3b; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
         .badge-tolak    { background:#fee2e2; color:#7f1d1d; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
 
@@ -247,7 +246,6 @@
 
             /* ── Badge ───────────────────────────────────────────── */
             .badge-lulus    { background: #14532d !important; color: #86efac !important; }
-            .badge-menunggu { background: #451a03 !important; color: #fcd34d !important; }
             .badge-tolak    { background: #7f1d1d !important; color: #fca5a5 !important; }
 
             /* ── Alert ───────────────────────────────────────────── */

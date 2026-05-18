@@ -110,7 +110,7 @@ class DatabaseSeeder extends Seeder
             'kategori' => 'teknikal',
             'nama_pengerusi' => 'Mohd Rizal bin Abdullah',
             'tujuan' => 'Perbincangan pembangunan sistem baharu',
-            'status' => 'menunggu',
+            'status' => 'diluluskan',
         ]);
 
         Tempahan::create([

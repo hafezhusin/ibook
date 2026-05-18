@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('kategori');
             $table->string('nama_pengerusi');
             $table->text('tujuan')->nullable();
-            $table->enum('status', ['menunggu', 'diluluskan', 'ditolak'])->default('menunggu');
+            $table->enum('status', ['diluluskan', 'ditolak'])->default('diluluskan');
             $table->text('catatan_penolakan')->nullable();
             $table->foreignId('diluluskan_oleh')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamp('diluluskan_pada')->nullable();

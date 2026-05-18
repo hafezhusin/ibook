@@ -11,7 +11,6 @@ class Tempahan extends Model
 
     protected $table = 'tempahan';
 
-    const STATUS_MENUNGGU = 'menunggu';
     const STATUS_DILULUSKAN = 'diluluskan';
     const STATUS_DITOLAK = 'ditolak';
 
@@ -114,7 +113,6 @@ class Tempahan extends Model
     public function getStatusBadgeAttribute(): string
     {
         return match ($this->status) {
-            self::STATUS_MENUNGGU => '<span class="badge-menunggu">Menunggu Kelulusan</span>',
             self::STATUS_DILULUSKAN => '<span class="badge-lulus">Diluluskan</span>',
             self::STATUS_DITOLAK => '<span class="badge-tolak">Ditolak</span>',
             default => '-',
@@ -124,11 +122,6 @@ class Tempahan extends Model
     public function getKategoriLabelAttribute(): string
     {
         return self::KATEGORI[$this->kategori] ?? $this->kategori;
-    }
-
-    public function isMenunggu(): bool
-    {
-        return $this->status === self::STATUS_MENUNGGU;
     }
 
     public function isDiluluskan(): bool

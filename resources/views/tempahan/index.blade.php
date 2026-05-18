@@ -53,7 +53,6 @@
 }
 .st-sah     { background:#dcfce7; color:#15803d; }
 .st-ditolak { background:#fee2e2; color:#b91c1c; }
-.st-tunggu  { background:#fef3c7; color:#92400e; }
 
 /* ── Action dropdown ─────────────────────────────────────── */
 .action-wrap { position:relative; display:inline-block; }
@@ -93,7 +92,6 @@
     .tapis-chip.aktif { background:#0f172a !important; border-color:#f59e0b !important; color:#f59e0b !important; }
     .st-sah     { background:#14532d !important; color:#86efac !important; }
     .st-ditolak { background:#7f1d1d !important; color:#fca5a5 !important; }
-    .st-tunggu  { background:#451a03 !important; color:#fcd34d !important; }
     .action-trigger { background:#334155 !important; border-color:#475569 !important; color:#e2e8f0 !important; }
     .action-trigger:hover { background:#475569 !important; }
     .action-dd { background:#1e293b !important; border-color:#334155 !important; }
@@ -267,7 +265,6 @@
                 <select id="filter-status" name="status" class="form-input w-auto text-sm">
                     <option value="">Semua Status</option>
                     <option value="diluluskan" {{ $sf === 'diluluskan' ? 'selected' : '' }}>✓ Sah</option>
-                    <option value="menunggu"   {{ $sf === 'menunggu'   ? 'selected' : '' }}>⏳ Menunggu</option>
                     <option value="ditolak"    {{ $sf === 'ditolak'    ? 'selected' : '' }}>✕ Ditolak</option>
                 </select>
             </div>
@@ -383,7 +380,7 @@
 @if($hasFilter)
 @php
     $bilikNama    = request('bilik_id') ? ($bilik->firstWhere('id', request('bilik_id'))?->nama ?? '—') : null;
-    $statusLabel  = ['diluluskan'=>'Sah ✓','menunggu'=>'Menunggu ⏳','ditolak'=>'Ditolak ✕'][request('status')] ?? null;
+    $statusLabel  = ['diluluskan'=>'Sah ✓','ditolak'=>'Ditolak ✕'][request('status')] ?? null;
     $tarikhLabel  = $chipLabel[$tf] ?? null;
     $kategoriLbl  = $kategori[request('kategori')] ?? null;
     $dariLabel    = request('tarikh_dari') ? \Carbon\Carbon::parse(request('tarikh_dari'))->format('d/m/Y') : null;
@@ -495,13 +492,9 @@
                             <span class="st-badge st-sah" role="status">
                                 <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" aria-hidden="true"></span>Sah
                             </span>
-                        @elseif($t->status === 'ditolak')
+                        @else
                             <span class="st-badge st-ditolak" role="status">
                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" aria-hidden="true"></span>Ditolak
-                            </span>
-                        @else
-                            <span class="st-badge st-tunggu" role="status">
-                                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" aria-hidden="true"></span>Menunggu
                             </span>
                         @endif
                     </td>
