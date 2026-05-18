@@ -335,9 +335,9 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function fetchEvents(info, success, failure) {
-    let url = `/awam/events?start=${info.startStr}&end=${info.endStr}`;
-    if (selectedBilik) url += `&bilik_id=${selectedBilik}`;
-    fetch(url)
+    const params = new URLSearchParams({ start: info.startStr, end: info.endStr });
+    if (selectedBilik) params.append('bilik_id', selectedBilik);
+    fetch(`/awam/events?${params}`)
         .then(r => r.json())
         .then(success)
         .catch(failure);

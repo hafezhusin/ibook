@@ -321,9 +321,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // ---- Fetch events dengan filter bilik ----
 function fetchEvents(info, successCallback, failureCallback) {
-    let url = '{{ route("kalendar.events") }}?start=' + info.startStr + '&end=' + info.endStr;
-    if (selectedBilikId) url += '&bilik_id=' + selectedBilikId;
-    fetch(url)
+    const params = new URLSearchParams({ start: info.startStr, end: info.endStr });
+    if (selectedBilikId) params.append('bilik_id', selectedBilikId);
+    fetch('{{ route("kalendar.events") }}?' + params)
         .then(r => r.json())
         .then(successCallback)
         .catch(failureCallback);
