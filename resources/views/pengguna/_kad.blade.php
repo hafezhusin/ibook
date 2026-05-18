@@ -61,6 +61,7 @@
     {{-- Butang tindakan --}}
     <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
         <div class="flex gap-2">
+            @if(auth()->user()->isPentadbir())
             <button type="button"
                 onclick="openEdit({{ $p->id }}, '{{ addslashes($p->name) }}', '{{ addslashes($p->jabatan ?? '') }}', '{{ $p->peranan }}', {{ $p->aktif ? 'true' : 'false' }})"
                 class="text-amber-500 text-xs hover:underline"
@@ -68,16 +69,17 @@
                 aria-haspopup="dialog" aria-controls="modal-edit">
                 <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
             </button>
+            @endif
             <button type="button"
                 onclick="openReset({{ $p->id }}, '{{ addslashes($p->name) }}')"
                 class="text-gray-400 text-xs hover:text-gray-600"
-                aria-label="Tukar kata laluan — {{ $p->name }}"
+                aria-label="Reset kata laluan — {{ $p->name }}"
                 aria-haspopup="dialog" aria-controls="modal-reset">
-                <i class="fa-solid fa-key" aria-hidden="true"></i> Kata Laluan
+                <i class="fa-solid fa-key" aria-hidden="true"></i> Reset Kata Laluan
             </button>
         </div>
 
-        @if($p->id !== auth()->id())
+        @if($p->id !== auth()->id() && auth()->user()->isPentadbir())
         <form method="POST" action="{{ route('pengguna.toggle-aktif', $p) }}">
             @csrf
             @if($isAktif)

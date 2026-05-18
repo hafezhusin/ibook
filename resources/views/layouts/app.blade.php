@@ -421,10 +421,11 @@
                     </a>
                 </li>
 
-                @if(auth()->user()->isPentadbir())
+                @if(auth()->user()->isPentadbir() || auth()->user()->isUrusSetia())
                 <li role="separator" aria-hidden="true">
                     <p class="px-8 py-2 text-xs text-slate-500 uppercase tracking-wider mt-2">Pentadbiran</p>
                 </li>
+                @if(auth()->user()->isPentadbir())
                 <li>
                     <a href="{{ route('bilik.index') }}"
                        class="sidebar-link"
@@ -433,6 +434,7 @@
                         <span>Bilik Mesyuarat</span>
                     </a>
                 </li>
+                @endif
                 <li>
                     <a href="{{ route('pengguna.index') }}"
                        class="sidebar-link"
@@ -441,6 +443,7 @@
                         <span>Pengguna</span>
                     </a>
                 </li>
+                @if(auth()->user()->isPentadbir())
                 <li>
                     <a href="{{ route('tetapan.index') }}"
                        class="sidebar-link"
@@ -449,6 +452,7 @@
                         <span>Tetapan</span>
                     </a>
                 </li>
+                @endif
                 @endif
             </ul>
         </nav>
@@ -485,28 +489,43 @@
             <div class="flex items-center gap-4">
 
 
-                {{-- Maklumat pengguna --}}
-                <div class="flex items-center gap-3">
+                {{-- Maklumat pengguna + dropdown --}}
+                <div class="relative flex items-center gap-3" id="profil-dropdown-wrap">
                     <div class="text-right" aria-hidden="true">
                         <div class="font-semibold text-sm text-gray-800">{{ auth()->user()->name }}</div>
                         <div class="text-xs text-gray-500">{{ auth()->user()->label_peranan }}</div>
                     </div>
-                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold"
-                         style="background:var(--accent)"
-                         aria-hidden="true"
-                         title="{{ auth()->user()->name }}">
-                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                    </div>
 
-                    {{-- Log keluar --}}
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit"
-                                class="text-gray-400 hover:text-red-500 ml-2 p-1 rounded"
-                                aria-label="Log keluar daripada akaun {{ auth()->user()->name }}">
-                            <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
-                        </button>
-                    </form>
+                    {{-- Avatar — klik untuk dropdown --}}
+                    <button type="button" id="profil-btn"
+                            onclick="toggleProfilMenu()"
+                            class="w-9 h-9 rounded-full flex items-center justify-center font-bold focus:outline-none focus:ring-2 focus:ring-amber-400"
+                            style="background:var(--accent); color:#1a1a2e;"
+                            aria-haspopup="true" aria-expanded="false"
+                            aria-label="Menu profil {{ auth()->user()->name }}">
+                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
+                    </button>
+
+                    {{-- Dropdown menu --}}
+                    <div id="profil-menu"
+                         class="hidden absolute right-0 top-12 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50"
+                         role="menu" aria-labelledby="profil-btn">
+                        <a href="{{ route('profil') }}"
+                           class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors"
+                           role="menuitem">
+                            <i class="fa-solid fa-user-pen w-4" aria-hidden="true"></i> Profil Saya
+                        </a>
+                        <div class="border-t border-gray-100 my-1"></div>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit"
+                                    class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                    role="menuitem"
+                                    aria-label="Log keluar daripada akaun {{ auth()->user()->name }}">
+                                <i class="fa-solid fa-right-from-bracket w-4" aria-hidden="true"></i> Log Keluar
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </header>
@@ -591,6 +610,22 @@
         }
     });
 })();
+
+// ── Dropdown profil ──────────────────────────────────────
+function toggleProfilMenu() {
+    const menu = document.getElementById('profil-menu');
+    const btn  = document.getElementById('profil-btn');
+    const open = menu.classList.toggle('hidden');
+    btn.setAttribute('aria-expanded', !open);
+}
+// Tutup bila klik luar
+document.addEventListener('click', function(e) {
+    const wrap = document.getElementById('profil-dropdown-wrap');
+    if (wrap && !wrap.contains(e.target)) {
+        document.getElementById('profil-menu')?.classList.add('hidden');
+        document.getElementById('profil-btn')?.setAttribute('aria-expanded', 'false');
+    }
+});
 </script>
 </body>
 </html>

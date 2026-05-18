@@ -59,17 +59,19 @@
 
     {{-- Tindakan --}}
     <div class="flex items-center gap-2 flex-wrap">
+        @if(auth()->user()->isPentadbir())
         <button type="button"
             onclick="openEdit({{ $p->id }}, '{{ addslashes($p->name) }}', '{{ addslashes($p->jabatan ?? '') }}', '{{ $p->peranan }}', {{ $p->aktif ? 'true' : 'false' }})"
             class="text-amber-500 text-xs hover:underline" aria-label="Edit {{ $p->name }}">
             <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
         </button>
+        @endif
         <button type="button"
             onclick="openReset({{ $p->id }}, '{{ addslashes($p->name) }}')"
-            class="text-gray-400 text-xs hover:text-gray-600" aria-label="Tukar kata laluan {{ $p->name }}">
-            <i class="fa-solid fa-key" aria-hidden="true"></i>
+            class="text-gray-400 text-xs hover:text-gray-600" aria-label="Reset kata laluan {{ $p->name }}">
+            <i class="fa-solid fa-key" aria-hidden="true"></i> Reset
         </button>
-        @if($p->id !== auth()->id())
+        @if($p->id !== auth()->id() && auth()->user()->isPentadbir())
         <form method="POST" action="{{ route('pengguna.toggle-aktif', $p) }}" class="inline">
             @csrf
             @if($isAktif)

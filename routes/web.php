@@ -8,6 +8,7 @@ use App\Http\Controllers\KalendarController;
 use App\Http\Controllers\KetersediaanController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PenggunaController;
+use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\TempahanController;
 use App\Http\Controllers\TetapanController;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +27,11 @@ Route::middleware('auth.custom')->group(function () {
 
     // Dashboard
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Profil pengguna (semua peranan)
+    Route::get('/profil', [ProfilController::class, 'show'])->name('profil');
+    Route::post('/profil/kemaskini', [ProfilController::class, 'update'])->name('profil.update');
+    Route::post('/profil/kata-laluan', [ProfilController::class, 'updatePassword'])->name('profil.password');
 
     // Kalendar
     Route::get('/kalendar', [KalendarController::class, 'index'])->name('kalendar');
@@ -52,6 +58,12 @@ Route::middleware('auth.custom')->group(function () {
     // Laporan
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
 
+    // Pentadbir Sistem & Urus Setia — lihat pengguna & reset password
+    Route::middleware('role:pentadbir_sistem,urus_setia')->group(function () {
+        Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
+        Route::post('/pengguna/{pengguna}/reset-password', [PenggunaController::class, 'resetPassword'])->name('pengguna.reset-password');
+    });
+
     // Hanya Pentadbir Sistem
     Route::middleware('role:pentadbir_sistem')->group(function () {
         // Bilik Mesyuarat
@@ -62,12 +74,10 @@ Route::middleware('auth.custom')->group(function () {
         Route::put('/bilik-mesyuarat/{bilik}', [BilikController::class, 'update'])->name('bilik.update');
         Route::delete('/bilik-mesyuarat/{bilik}', [BilikController::class, 'destroy'])->name('bilik.destroy');
 
-        // Pengguna
-        Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
+        // Pengguna — pengurusan penuh (tambah, edit, aktif/nyahaktif)
         Route::post('/pengguna', [PenggunaController::class, 'store'])->name('pengguna.store');
         Route::post('/pengguna/bulk-aktif', [PenggunaController::class, 'bulkAktif'])->name('pengguna.bulk-aktif');
         Route::put('/pengguna/{pengguna}', [PenggunaController::class, 'update'])->name('pengguna.update');
-        Route::post('/pengguna/{pengguna}/reset-password', [PenggunaController::class, 'resetPassword'])->name('pengguna.reset-password');
         Route::post('/pengguna/{pengguna}/toggle-aktif', [PenggunaController::class, 'toggleAktif'])->name('pengguna.toggle-aktif');
 
         // Tetapan

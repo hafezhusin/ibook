@@ -99,7 +99,8 @@
     {{-- View toggle + Toolbar pukal --}}
     <div class="flex items-center gap-3">
 
-        {{-- Toolbar Pukal --}}
+        {{-- Toolbar Pukal (pentadbir sahaja) --}}
+        @if(auth()->user()->isPentadbir())
         <div id="toolbar-pukal" class="hidden items-center gap-2">
             <span class="text-sm font-semibold text-gray-600">
                 <span id="kiraan-pilihan">0</span> dipilih
@@ -122,6 +123,7 @@
                 </button>
             </form>
         </div>
+        @endif
 
         {{-- View Toggle --}}
         <div class="flex gap-1" role="group" aria-label="Pilih paparan">
