@@ -234,6 +234,7 @@
 <script>
 let calendar;
 let selectedBilikId = null;
+const totalBilik = {{ $bilik->count() }};
 
 // ---- Init FullCalendar ----
 document.addEventListener('DOMContentLoaded', function () {
@@ -249,6 +250,9 @@ document.addEventListener('DOMContentLoaded', function () {
         height: 'auto',
         dayMaxEvents: 4,
         events: fetchEvents,
+        eventsSet: function (events) {
+            updateStatusHariIniFromCurrentEvents(events);
+        },
 
         eventClick: function (info) {
             const p     = info.event.extendedProps;
@@ -313,7 +317,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
     calendar.render();
-    muatStatusHariIni();
 });
 
 // ---- Fetch events dengan filter bilik ----
@@ -336,53 +339,51 @@ function filterBilik(bilikId, el) {
     el.classList.add('aktif');
     el.setAttribute('aria-pressed', 'true');
     if (calendar) calendar.refetchEvents();
-    muatStatusHariIni(bilikId);
 }
 
-// ---- Status hari ini ----
-function muatStatusHariIni(bilikId) {
-    const today = new Date().toISOString().split('T')[0];
-    let url = '{{ route("kalendar.events") }}?start=' + today + '&end=' + today;
-    if (bilikId) url += '&bilik_id=' + bilikId;
+// ---- Status hari ini (guna event semasa, tanpa fetch tambahan) ----
+function updateStatusHariIniFromCurrentEvents(events) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
 
-    fetch(url)
-        .then(r => r.json())
-        .then(events => {
-            const ditempah = events.filter(e => {
-                const props = e.extendedProps || {};
-                return props.status === 'diluluskan';
-            });
+    const eventHariIni = events.filter(e => {
+        const tarikh = (e.extendedProps && e.extendedProps.tarikh) ? e.extendedProps.tarikh : null;
+        return tarikh === todayStr;
+    });
 
-            const bilikDitempah = [...new Set(ditempah.map(e => e.extendedProps?.bilik))].filter(Boolean);
-            const totalBilik    = {{ $bilik->count() }};
-            const jmlDitempah   = bilikId ? (ditempah.length > 0 ? 1 : 0) : bilikDitempah.length;
-            const jmlTersedia   = bilikId ? (ditempah.length > 0 ? 0 : 1) : Math.max(0, totalBilik - jmlDitempah);
+    const ditempah = eventHariIni.filter(e => {
+        const props = e.extendedProps || {};
+        return props.status === 'diluluskan';
+    });
 
-            document.getElementById('status-hari-ini').innerHTML = `
-                <div class="flex justify-between text-gray-600">
-                    <span>${bilikId ? 'Bilik Ini' : 'Jumlah Bilik'}</span>
-                    <span class="font-bold">${bilikId ? 1 : totalBilik}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="flex items-center gap-1">
-                        <span class="w-2 h-2 rounded-full inline-block" style="background:#dc2626"></span>
-                        Ditempah
-                    </span>
-                    <span class="font-bold text-red-500">${jmlDitempah}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="flex items-center gap-1">
-                        <span class="w-2 h-2 rounded-full inline-block" style="background:#16a34a"></span>
-                        Tersedia
-                    </span>
-                    <span class="font-bold text-green-600">${jmlTersedia}</span>
-                </div>
-            `;
-        })
-        .catch(() => {
-            document.getElementById('status-hari-ini').innerHTML =
-                '<span class="text-gray-400">Gagal memuatkan</span>';
-        });
+    const bilikDitempah = [...new Set(ditempah.map(e => e.extendedProps?.bilik))].filter(Boolean);
+    const gunaBilikSpesifik = !!selectedBilikId;
+    const jmlDitempah = gunaBilikSpesifik ? (ditempah.length > 0 ? 1 : 0) : bilikDitempah.length;
+    const jmlTersedia = gunaBilikSpesifik ? (ditempah.length > 0 ? 0 : 1) : Math.max(0, totalBilik - jmlDitempah);
+
+    document.getElementById('status-hari-ini').innerHTML = `
+        <div class="flex justify-between text-gray-600">
+            <span>${gunaBilikSpesifik ? 'Bilik Ini' : 'Jumlah Bilik'}</span>
+            <span class="font-bold">${gunaBilikSpesifik ? 1 : totalBilik}</span>
+        </div>
+        <div class="flex justify-between items-center">
+            <span class="flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full inline-block" style="background:#dc2626"></span>
+                Ditempah
+            </span>
+            <span class="font-bold text-red-500">${jmlDitempah}</span>
+        </div>
+        <div class="flex justify-between items-center">
+            <span class="flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full inline-block" style="background:#16a34a"></span>
+                Tersedia
+            </span>
+            <span class="font-bold text-green-600">${jmlTersedia}</span>
+        </div>
+    `;
 }
 
 // ---- Tutup modal dengan Esc ----

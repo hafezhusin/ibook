@@ -30,7 +30,7 @@
                 </span>
             @elseif($tempahan->status === 'menunggu')
                 <span class="badge-menunggu text-sm" role="status">
-                    <span aria-hidden="true">⏳</span> Menunggu Kelulusan
+                    <span aria-hidden="true">⏳</span> Menunggu
                 </span>
             @else
                 <span class="badge-tolak text-sm" role="status">
@@ -164,14 +164,14 @@
                 @endif
 
                 <li class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full {{ $tempahan->status !== 'menunggu' ? 'bg-green-100' : 'bg-gray-100' }} flex items-center justify-center flex-shrink-0" aria-hidden="true">
-                        <i class="fa-solid fa-{{ $tempahan->status !== 'menunggu' ? 'check text-green-600' : 'clock text-gray-400' }} text-xs" aria-hidden="true"></i>
+                    <div class="w-8 h-8 rounded-full {{ $tempahan->status === 'ditolak' ? 'bg-red-100' : 'bg-green-100' }} flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                        <i class="fa-solid fa-{{ $tempahan->status === 'ditolak' ? 'xmark text-red-600' : 'check text-green-600' }} text-xs" aria-hidden="true"></i>
                     </div>
                     <div>
                         <div class="text-sm font-semibold text-gray-700">
                             @if($tempahan->status === 'diluluskan') Diluluskan
                             @elseif($tempahan->status === 'ditolak') Ditolak
-                            @else Menunggu Kelulusan
+                            @else Menunggu
                             @endif
                         </div>
                         @if($tempahan->pelulus)
@@ -189,56 +189,9 @@
             </ol>
         </section>
 
-        {{-- Tindakan (Urus Setia / Pentadbir sahaja) --}}
-        @if(auth()->user()->bolehLuluskan() && $tempahan->isMenunggu())
-        <section class="bg-white rounded-xl shadow-sm p-6" aria-labelledby="heading-tindakan">
-            <h2 id="heading-tindakan" class="font-bold text-gray-800 mb-4">Tindakan</h2>
-            <form method="POST" action="{{ route('kelulusan.lulus', $tempahan) }}" class="mb-3">
-                @csrf
-                <button type="submit" class="w-full btn-success py-2 rounded-lg">
-                    <i class="fa-solid fa-circle-check mr-2" aria-hidden="true"></i> Lulus Permohonan
-                </button>
-            </form>
-            <button type="button"
-                onclick="document.getElementById('tolak-modal').classList.remove('hidden');document.getElementById('tolak-modal').querySelector('textarea').focus();"
-                class="w-full btn-danger py-2 rounded-lg"
-                aria-controls="tolak-modal"
-                aria-haspopup="dialog">
-                <i class="fa-solid fa-circle-xmark mr-2" aria-hidden="true"></i> Tolak Permohonan
-            </button>
-        </section>
-        @endif
-
         <a href="{{ route('tempahan.index') }}" class="btn-secondary w-full justify-center">
             <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Kembali
         </a>
-    </div>
-</div>
-
-{{-- Modal Tolak --}}
-<div id="tolak-modal"
-    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="tolak-modal-heading">
-    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-        <h3 id="tolak-modal-heading" class="font-bold text-gray-800 text-lg mb-4">Tolak Permohonan</h3>
-        <form method="POST" action="{{ route('kelulusan.tolak', $tempahan) }}">
-            @csrf
-            <div class="mb-4">
-                <label for="catatan-tolak" class="form-label">Catatan Penolakan (Pilihan)</label>
-                <textarea id="catatan-tolak" name="catatan_penolakan" rows="3" class="form-input"
-                    placeholder="Nyatakan sebab penolakan..."></textarea>
-            </div>
-            <div class="flex gap-3">
-                <button type="submit" class="btn-danger flex-1 py-2 rounded-lg">Tolak</button>
-                <button type="button"
-                    onclick="document.getElementById('tolak-modal').classList.add('hidden')"
-                    class="btn-secondary flex-1 py-2 rounded-lg justify-center">
-                    Batal
-                </button>
-            </div>
-        </form>
     </div>
 </div>
 @endsection

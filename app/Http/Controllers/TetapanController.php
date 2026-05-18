@@ -28,7 +28,6 @@ class TetapanController extends Controller
         Tetapan::set('nama_jabatan',   $request->nama_jabatan);
         Tetapan::set('emel_pentadbir', $request->emel_pentadbir ?? '');
         Tetapan::set('notif_tempahan_baru',   $request->boolean('notif_tempahan_baru') ? '1' : '0');
-        Tetapan::set('notif_kelulusan',        $request->boolean('notif_kelulusan') ? '1' : '0');
         Tetapan::set('peringatan_mesyuarat',   $request->boolean('peringatan_mesyuarat') ? '1' : '0');
 
         return redirect()->route('tetapan.index')

@@ -153,8 +153,7 @@ class LaporanController extends Controller
                 'users.jabatan',
                 DB::raw('COUNT(*) as jumlah'),
                 DB::raw('SUM(CASE WHEN tempahan.status = "diluluskan" THEN 1 ELSE 0 END) as jumlah_diluluskan'),
-                DB::raw('SUM(CASE WHEN tempahan.status = "ditolak" THEN 1 ELSE 0 END) as jumlah_ditolak'),
-                DB::raw('SUM(CASE WHEN tempahan.status = "menunggu" THEN 1 ELSE 0 END) as jumlah_menunggu')
+                DB::raw('SUM(CASE WHEN tempahan.status = "ditolak" THEN 1 ELSE 0 END) as jumlah_ditolak')
             )
             ->groupBy('users.id', 'users.name', 'users.jabatan')
             ->orderByDesc('jumlah')

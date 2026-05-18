@@ -15,7 +15,6 @@ class AuditLog
         'POST:/login',
         'POST:/logout',
         'POST:/tempahan',
-        'POST:/kelulusan',
         'POST:/pengguna',
         'PUT:/pengguna',
         'DELETE:/bilik-mesyuarat',

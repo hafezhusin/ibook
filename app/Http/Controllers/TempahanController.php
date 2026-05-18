@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TempahanExport;
+use Illuminate\Support\Facades\Cache;
 
 class TempahanController extends Controller
 {
@@ -100,12 +101,27 @@ class TempahanController extends Controller
 
         // ── Worklist ringkasan ────────────────────────────────────────
         // Dikira berdasarkan skop unit (unit untuk staf, semua untuk admin/urus setia)
-        $unitScope = function () { return $this->unitQuery(); };
+        $today = today()->toDateString();
+        $esok = today()->addDay()->toDateString();
+        $sub24Jam = now()->subHours(24);
+        $bulan = now()->month;
+        $tahun = now()->year;
+
+        $ringkasanAgg = $this->unitQuery()
+            ->selectRaw(
+                "SUM(CASE WHEN tarikh = ? AND status = ? THEN 1 ELSE 0 END) AS hari_ini,
+                 SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS baharu,
+                 SUM(CASE WHEN tarikh = ? AND status = ? THEN 1 ELSE 0 END) AS esok,
+                 SUM(CASE WHEN MONTH(tarikh) = ? AND YEAR(tarikh) = ? THEN 1 ELSE 0 END) AS bulan_ini",
+                [$today, Tempahan::STATUS_DILULUSKAN, $sub24Jam, $esok, Tempahan::STATUS_DILULUSKAN, $bulan, $tahun]
+            )
+            ->first();
+
         $ringkasan = [
-            'hari_ini'  => $unitScope()->whereDate('tarikh', today())->where('status', Tempahan::STATUS_DILULUSKAN)->count(),
-            'baharu'    => $unitScope()->where('created_at', '>=', now()->subHours(24))->count(),
-            'esok'      => $unitScope()->whereDate('tarikh', today()->addDay())->where('status', Tempahan::STATUS_DILULUSKAN)->count(),
-            'bulan_ini' => $unitScope()->whereMonth('tarikh', now()->month)->whereYear('tarikh', now()->year)->count(),
+            'hari_ini'  => (int) ($ringkasanAgg->hari_ini ?? 0),
+            'baharu'    => (int) ($ringkasanAgg->baharu ?? 0),
+            'esok'      => (int) ($ringkasanAgg->esok ?? 0),
+            'bulan_ini' => (int) ($ringkasanAgg->bulan_ini ?? 0),
         ];
 
         return view('tempahan.index', compact('tempahan', 'bilik', 'ringkasan', 'kategori'));
@@ -201,6 +217,7 @@ class TempahanController extends Controller
                 'status'           => Tempahan::STATUS_DILULUSKAN,
             ]);
         }
+        $this->bumpKalendarCacheVersion();
 
         $jumlahSesi = count($validated['sesi']);
         return redirect()->route('tempahan.index')
@@ -287,6 +304,7 @@ class TempahanController extends Controller
             'dikemaskini_oleh' => $user->id,
             'dikemaskini_pada' => now(),
         ]);
+        $this->bumpKalendarCacheVersion();
 
         $mesej = $adalahPindaanUnit
             ? "Tempahan '{$tempahan->nama_mesyuarat}' berjaya dikemaskini. (Pindaan atas nama {$tempahan->pengguna->name})"
@@ -330,5 +348,13 @@ class TempahanController extends Controller
     public function exportExcel(Request $request)
     {
         return Excel::download(new TempahanExport($request->all()), 'senarai-tempahan.xlsx');
+    }
+
+    private function bumpKalendarCacheVersion(): void
+    {
+        Cache::add('kalendar:events:version', 1, now()->addDays(30));
+        Cache::increment('kalendar:events:version');
+        Cache::add('kalendar:public-events:version', 1, now()->addDays(30));
+        Cache::increment('kalendar:public-events:version');
     }
 }

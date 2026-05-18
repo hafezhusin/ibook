@@ -5,7 +5,6 @@ use App\Http\Controllers\BilikController;
 use App\Http\Controllers\CarianController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KalendarController;
-use App\Http\Controllers\KelulusanController;
 use App\Http\Controllers\KetersediaanController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PenggunaController;
@@ -52,13 +51,6 @@ Route::middleware('auth.custom')->group(function () {
 
     // Laporan
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
-
-    // Hanya Pentadbir & Urus Setia
-    Route::middleware('role:pentadbir_sistem,urus_setia')->group(function () {
-        Route::get('/kelulusan', [KelulusanController::class, 'index'])->name('kelulusan');
-        Route::post('/kelulusan/{tempahan}/lulus', [KelulusanController::class, 'lulus'])->name('kelulusan.lulus');
-        Route::post('/kelulusan/{tempahan}/tolak', [KelulusanController::class, 'tolak'])->name('kelulusan.tolak');
-    });
 
     // Hanya Pentadbir Sistem
     Route::middleware('role:pentadbir_sistem')->group(function () {

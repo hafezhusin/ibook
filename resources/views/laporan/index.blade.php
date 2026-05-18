@@ -241,12 +241,6 @@
                     <div class="text-xs text-gray-400">Diluluskan</div>
                     <div class="text-sm font-semibold text-green-600">{{ $p->jumlah_diluluskan }}</div>
                 </div>
-                @if($p->jumlah_menunggu > 0)
-                <div>
-                    <div class="text-xs text-gray-400">Menunggu</div>
-                    <div class="text-sm font-semibold text-amber-500">{{ $p->jumlah_menunggu }}</div>
-                </div>
-                @endif
                 @if($p->jumlah_ditolak > 0)
                 <div>
                     <div class="text-xs text-gray-400">Ditolak</div>
@@ -284,7 +278,7 @@
     <div class="px-6 py-3 bg-gray-50 border-t border-gray-100">
         <p class="text-xs text-gray-400">
             <i class="fa-solid fa-circle-info mr-1" aria-hidden="true"></i>
-            Kiraan berdasarkan semua tempahan (diluluskan + menunggu + ditolak) bagi tahun {{ $tahun }}.
+            Kiraan berdasarkan semua tempahan (diluluskan + ditolak) bagi tahun {{ $tahun }}.
         </p>
     </div>
 </section>

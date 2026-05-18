@@ -82,17 +82,6 @@
                     </label>
                 </div>
                 <div>
-                    <label class="flex items-center gap-3 cursor-pointer" for="notif-kelulusan">
-                        <input type="checkbox" id="notif-kelulusan" name="notif_kelulusan" value="1"
-                            class="w-4 h-4 rounded flex-shrink-0" style="accent-color:#f59e0b"
-                            {{ ($tetapan['notif_kelulusan'] ?? '1') === '1' ? 'checked' : '' }}>
-                        <div>
-                            <div class="font-semibold text-sm text-gray-700">E-mel notifikasi untuk kelulusan/penolakan</div>
-                            <div class="text-xs text-gray-400">Hantar emel kepada pemohon selepas keputusan</div>
-                        </div>
-                    </label>
-                </div>
-                <div>
                     <label class="flex items-center gap-3 cursor-pointer" for="peringatan-mesyuarat">
                         <input type="checkbox" id="peringatan-mesyuarat" name="peringatan_mesyuarat" value="1"
                             class="w-4 h-4 rounded flex-shrink-0" style="accent-color:#f59e0b"
