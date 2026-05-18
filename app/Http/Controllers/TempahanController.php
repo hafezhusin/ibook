@@ -38,7 +38,28 @@ class TempahanController extends Controller
     public function index(Request $request)
     {
         $user  = Auth::user();
-        $query = $this->unitQuery()->with(['bilik', 'pengguna', 'pengubah']);
+        $query = $this->unitQuery()
+            ->select([
+                'id',
+                'nama_mesyuarat',
+                'tarikh',
+                'masa_mula',
+                'masa_tamat',
+                'bilik_id',
+                'user_id',
+                'bilangan_peserta',
+                'kategori',
+                'status',
+                'dikemaskini_oleh',
+                'dikemaskini_pada',
+                'created_at',
+                'updated_at',
+            ])
+            ->with([
+                'bilik:id,nama',
+                'pengguna:id,name',
+                'pengubah:id,name',
+            ]);
 
         // ── Tapis bilik ───────────────────────────────────────────────
         if ($request->filled('bilik_id')) {
