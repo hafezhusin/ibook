@@ -15,7 +15,7 @@
 </head>
 <body>
 <div class="header">
-    <h1>iBook 2.0 - Senarai Tempahan Bilik Mesyuarat</h1>
+    <h1>{{ $tetapan['nama_sistem'] ?? 'iBook 2.0' }} - Senarai Tempahan Bilik Mesyuarat</h1>
     <p>Tarikh Cetak: {{ now()->format('d/m/Y H:i') }}</p>
 </div>
 
@@ -51,7 +51,7 @@
 </table>
 
 <p style="margin-top:20px; text-align:center; color:#999; font-size:10px;">
-    iBook 2.0 &copy; {{ date('Y') }}
+    {{ $tetapan['nama_sistem'] ?? 'iBook 2.0' }} &copy; {{ date('Y') }}
 </p>
 </body>
 </html>

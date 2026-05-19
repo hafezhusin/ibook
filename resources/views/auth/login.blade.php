@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Log Masuk - iBook 2.0</title>
+    <title>Log Masuk - {{ $tetapan['nama_sistem'] ?? 'iBook 2.0' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
@@ -66,8 +66,8 @@
                 <i class="fa-solid fa-book-open text-white text-lg" aria-hidden="true"></i>
             </div>
             <div>
-                <span class="text-white font-bold text-2xl">iBook</span>
-                <span style="color:#f59e0b" class="font-bold text-2xl"> 2.0</span>
+                @php $namaSistemLogin = $tetapan['nama_sistem'] ?? 'iBook 2.0'; @endphp
+                <span class="text-white font-bold text-xl leading-tight">{{ $namaSistemLogin }}</span>
             </div>
         </div>
 
@@ -178,14 +178,14 @@
             </span>
             <span>
                 <span class="block text-sm font-semibold text-green-400">Manual Pengguna</span>
-                <span class="block text-xs text-slate-400 mt-0.5">Panduan lengkap cara menggunakan sistem iBook 2.0</span>
+                <span class="block text-xs text-slate-400 mt-0.5">Panduan lengkap cara menggunakan sistem {{ $tetapan['nama_sistem'] ?? 'iBook 2.0' }}</span>
             </span>
             <i class="fa-solid fa-arrow-up-right-from-square text-slate-500 group-hover:text-green-400 ml-auto text-xs transition-colors" aria-hidden="true"></i>
         </a>
     </div>
 
     <p class="text-center text-xs text-slate-600 mt-6">
-        <small>iBook 2.0 &copy; {{ date('Y') }} &mdash; Hak Cipta Terpelihara</small>
+        <small>{{ $tetapan['nama_sistem'] ?? 'iBook 2.0' }} &copy; {{ date('Y') }} &mdash; Hak Cipta Terpelihara</small>
     </p>
 </main>
 
