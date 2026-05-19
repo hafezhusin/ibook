@@ -18,18 +18,27 @@ class Tempahan extends Model
     const SESI_PETANG = 'petang';
 
     const MASA_SESI = [
-        'pagi' => ['mula' => '09:00', 'tamat' => '13:00', 'label' => 'SESI PAGI 1 (9:00 AM - 1:00 PM)'],
-        'petang' => ['mula' => '14:00', 'tamat' => '18:00', 'label' => 'SESI PETANG 2 (2:00 PM - 6:00 PM)'],
+        'pagi'   => ['mula' => '09:00', 'tamat' => '13:00', 'label' => 'SESI PAGI (9:00 AM - 1:00 PM)'],
+        'petang' => ['mula' => '14:00', 'tamat' => '18:00', 'label' => 'SESI PETANG (2:00 PM - 6:00 PM)'],
     ];
 
     const KATEGORI = [
         'pengurusan' => 'Mesyuarat Pengurusan',
-        'teknikal' => 'Mesyuarat Teknikal',
-        'taklimat' => 'Taklimat',
-        'bengkel' => 'Bengkel / Workshop',
-        'latihan' => 'Latihan',
-        'lain' => 'Lain-lain',
+        'teknikal'   => 'Mesyuarat Teknikal',
+        'taklimat'   => 'Taklimat',
+        'bengkel'    => 'Bengkel / Workshop',
+        'latihan'    => 'Latihan',
+        'lain'       => 'Lain-lain',
     ];
+
+    /**
+     * Dapatkan konfigurasi sesi dari config/ibook.php.
+     * Fallback ke const MASA_SESI supaya backward compatible.
+     */
+    public static function masaSesi(string $sesi): array
+    {
+        return config("ibook.sesi.{$sesi}", self::MASA_SESI[$sesi] ?? []);
+    }
 
     protected $fillable = [
         'nama_mesyuarat',

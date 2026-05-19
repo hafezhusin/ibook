@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreTempahanRequest;
+use App\Http\Requests\UpdateTempahanRequest;
 use App\Models\BilikMesyuarat;
 use App\Models\Tempahan;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -172,29 +175,9 @@ class TempahanController extends Controller
         return view('tempahan.create', compact('bilik', 'kategori', 'sesi', 'duplikat'));
     }
 
-    public function store(Request $request)
+    public function store(StoreTempahanRequest $request)
     {
-        $validated = $request->validate([
-            'nama_mesyuarat'   => 'required|string|max:255',
-            'tarikh'           => 'required|date|after_or_equal:today',
-            'bilik_id'         => 'required|exists:bilik_mesyuarat,id',
-            'sesi'             => 'required|array|min:1',
-            'sesi.*'           => 'in:pagi,petang',
-            'bilangan_peserta' => 'required|integer|min:1',
-            'kategori'         => 'required|string',
-            'nama_pengerusi'   => 'required|string|max:255',
-            'tujuan'           => 'nullable|string|max:1000',
-        ], [
-            'nama_mesyuarat.required'   => 'Sila masukkan nama mesyuarat.',
-            'tarikh.required'           => 'Sila pilih tarikh.',
-            'tarikh.after_or_equal'     => 'Tarikh mesti hari ini atau selepasnya.',
-            'bilik_id.required'         => 'Sila pilih bilik mesyuarat.',
-            'sesi.required'             => 'Sila pilih sekurang-kurangnya satu sesi mesyuarat.',
-            'sesi.min'                  => 'Sila pilih sekurang-kurangnya satu sesi mesyuarat.',
-            'bilangan_peserta.required' => 'Sila masukkan bilangan peserta.',
-            'kategori.required'         => 'Sila pilih kategori mesyuarat.',
-            'nama_pengerusi.required'   => 'Sila masukkan nama pengerusi.',
-        ]);
+        $validated = $request->validated();
 
         $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
         if ($validated['bilangan_peserta'] > $bilik->kapasiti) {
@@ -240,6 +223,13 @@ class TempahanController extends Controller
         }
         $this->bumpKalendarCacheVersion();
 
+        AuditLogger::catat('buat_tempahan', null, [
+            'nama_mesyuarat' => $validated['nama_mesyuarat'],
+            'tarikh'         => $validated['tarikh'],
+            'bilik_id'       => $validated['bilik_id'],
+            'sesi'           => $validated['sesi'],
+        ]);
+
         $jumlahSesi = count($validated['sesi']);
         return redirect()->route('tempahan.index')
             ->with('success', $jumlahSesi > 1
@@ -249,9 +239,7 @@ class TempahanController extends Controller
 
     public function show(Tempahan $tempahan)
     {
-        $user = Auth::user();
-        // Staf hanya boleh lihat tempahan unit sendiri
-        if ($user->isStaf() && !$tempahan->bolehDiEditOleh($user)) abort(403);
+        $this->authorize('view', $tempahan);
 
         $tempahan->load(['bilik', 'pengguna', 'pelulus', 'pengubah']);
         return view('tempahan.show', compact('tempahan'));
@@ -259,9 +247,7 @@ class TempahanController extends Controller
 
     public function edit(Tempahan $tempahan)
     {
-        $user = Auth::user();
-        // Staf boleh edit tempahan sendiri + rakan seunit
-        if ($user->isStaf() && !$tempahan->bolehDiEditOleh($user)) abort(403);
+        $this->authorize('update', $tempahan);
 
         $bilik    = BilikMesyuarat::where('status', 'aktif')->get();
         $kategori = Tempahan::KATEGORI;
@@ -270,22 +256,11 @@ class TempahanController extends Controller
         return view('tempahan.edit', compact('tempahan', 'bilik', 'kategori', 'sesi'));
     }
 
-    public function update(Request $request, Tempahan $tempahan)
+    public function update(UpdateTempahanRequest $request, Tempahan $tempahan)
     {
-        $user = Auth::user();
-        // Staf boleh kemaskini tempahan sendiri + rakan seunit
-        if ($user->isStaf() && !$tempahan->bolehDiEditOleh($user)) abort(403);
-
-        $validated = $request->validate([
-            'nama_mesyuarat'   => 'required|string|max:255',
-            'tarikh'           => 'required|date',
-            'bilik_id'         => 'required|exists:bilik_mesyuarat,id',
-            'sesi'             => 'required|in:pagi,petang',
-            'bilangan_peserta' => 'required|integer|min:1',
-            'kategori'         => 'required|string',
-            'nama_pengerusi'   => 'required|string|max:255',
-            'tujuan'           => 'nullable|string|max:1000',
-        ]);
+        // Autoriti dikendalikan oleh UpdateTempahanRequest::authorize()
+        $user      = Auth::user();
+        $validated = $request->validated();
 
         $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
         if ($validated['bilangan_peserta'] > $bilik->kapasiti) {
@@ -327,6 +302,11 @@ class TempahanController extends Controller
         ]);
         $this->bumpKalendarCacheVersion();
 
+        AuditLogger::catat('kemaskini_tempahan', $tempahan, [
+            'pindaan_unit' => $adalahPindaanUnit,
+            'user_id_asal' => $tempahan->user_id,
+        ]);
+
         $mesej = $adalahPindaanUnit
             ? "Tempahan '{$tempahan->nama_mesyuarat}' berjaya dikemaskini. (Pindaan atas nama {$tempahan->pengguna->name})"
             : 'Tempahan berjaya dikemaskini.';
@@ -362,12 +342,14 @@ class TempahanController extends Controller
     {
         $query    = $this->unitQuery()->with(['bilik', 'pengguna']);
         $tempahan = $query->orderByDesc('tarikh')->get();
-        $pdf      = Pdf::loadView('tempahan.pdf', compact('tempahan'));
+        AuditLogger::catat('eksport_pdf', null, ['jumlah_rekod' => $tempahan->count()]);
+        $pdf = Pdf::loadView('tempahan.pdf', compact('tempahan'));
         return $pdf->download('senarai-tempahan.pdf');
     }
 
     public function exportExcel(Request $request)
     {
+        AuditLogger::catat('eksport_excel', null, ['parameter' => $request->only(['bilik_id', 'status', 'tarikh_dari', 'tarikh_hingga'])]);
         return Excel::download(new TempahanExport($request->all()), 'senarai-tempahan.xlsx');
     }
 

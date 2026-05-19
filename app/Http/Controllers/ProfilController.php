@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -27,6 +28,7 @@ class ProfilController extends Controller
         ]);
 
         $user->update($validated);
+        AuditLogger::catat('kemaskini_profil', $user);
 
         return back()->with('success', 'Maklumat profil berjaya dikemaskini.');
     }
@@ -63,6 +65,8 @@ class ProfilController extends Controller
         $user->update([
             'password' => Hash::make($request->password),
         ]);
+
+        AuditLogger::catat('tukar_kata_laluan', $user);
 
         return back()->with('success_password', 'Kata laluan berjaya ditukar.');
     }

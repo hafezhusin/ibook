@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreBilikRequest;
+use App\Http\Requests\UpdateBilikRequest;
 use App\Models\BilikMesyuarat;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 
 class BilikController extends Controller
@@ -26,21 +29,10 @@ class BilikController extends Controller
         return view('bilik.form', ['bilik' => null]);
     }
 
-    public function store(Request $request)
+    public function store(StoreBilikRequest $request)
     {
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-            'kapasiti' => 'required|integer|min:1',
-            'lokasi' => 'nullable|string|max:255',
-            'kemudahan' => 'nullable|array',
-            'kemudahan.*' => 'string',
-            'status' => 'required|in:aktif,tidak_aktif',
-        ], [
-            'nama.required' => 'Sila masukkan nama bilik.',
-            'kapasiti.required' => 'Sila masukkan kapasiti bilik.',
-        ]);
-
-        BilikMesyuarat::create($validated);
+        $bilik = BilikMesyuarat::create($request->validated());
+        AuditLogger::catat('tambah_bilik', $bilik, ['nama' => $bilik->nama]);
 
         return redirect()->route('bilik.index')
             ->with('success', 'Bilik mesyuarat berjaya ditambah.');
@@ -51,18 +43,10 @@ class BilikController extends Controller
         return view('bilik.form', compact('bilik'));
     }
 
-    public function update(Request $request, BilikMesyuarat $bilik)
+    public function update(UpdateBilikRequest $request, BilikMesyuarat $bilik)
     {
-        $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-            'kapasiti' => 'required|integer|min:1',
-            'lokasi' => 'nullable|string|max:255',
-            'kemudahan' => 'nullable|array',
-            'kemudahan.*' => 'string',
-            'status' => 'required|in:aktif,tidak_aktif',
-        ]);
-
-        $bilik->update($validated);
+        $bilik->update($request->validated());
+        AuditLogger::catat('kemaskini_bilik', $bilik, ['nama' => $bilik->nama]);
 
         return redirect()->route('bilik.index')
             ->with('success', 'Maklumat bilik mesyuarat berjaya dikemaskini.');
@@ -74,6 +58,7 @@ class BilikController extends Controller
             return back()->with('error', 'Bilik tidak boleh dipadam kerana mempunyai tempahan aktif.');
         }
 
+        AuditLogger::catat('padam_bilik', null, ['nama' => $bilik->nama, 'id' => $bilik->id]);
         $bilik->delete();
         return redirect()->route('bilik.index')
             ->with('success', 'Bilik mesyuarat berjaya dipadam.');

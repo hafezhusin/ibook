@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePenggunaRequest;
+use App\Http\Requests\UpdatePenggunaRequest;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
@@ -17,34 +20,11 @@ class PenggunaController extends Controller
         return view('pengguna.index', compact('penggunaAktif', 'penggunaNyahaktif'));
     }
 
-    public function store(Request $request)
+    public function store(StorePenggunaRequest $request)
     {
-        $validated = $request->validate([
-            'name'    => 'required|string|max:255',
-            'email'   => 'required|email|unique:users,email|max:255',
-            'jabatan' => 'nullable|string|max:255',
-            'peranan' => 'required|in:pentadbir_sistem,urus_setia,staf',
-            'password' => [
-                'required',
-                'confirmed',
-                Password::min(8)
-                    ->letters()
-                    ->mixedCase()
-                    ->numbers()
-                    ->symbols()
-                    ->uncompromised(),
-            ],
-        ], [
-            'name.required'     => 'Sila masukkan nama pengguna.',
-            'email.required'    => 'Sila masukkan emel.',
-            'email.unique'      => 'Emel ini telah digunakan.',
-            'peranan.required'  => 'Sila pilih peranan.',
-            'password.required' => 'Sila masukkan kata laluan.',
-            'password.confirmed'=> 'Pengesahan kata laluan tidak sepadan.',
-            'password.min'      => 'Kata laluan mestilah sekurang-kurangnya 8 aksara.',
-        ]);
+        $validated = $request->validated();
 
-        User::create([
+        $pengguna = User::create([
             'name'     => $validated['name'],
             'email'    => $validated['email'],
             'jabatan'  => $validated['jabatan'] ?? null,
@@ -53,18 +33,18 @@ class PenggunaController extends Controller
             'aktif'    => true,
         ]);
 
+        AuditLogger::catat('tambah_pengguna', $pengguna, [
+            'email'   => $pengguna->email,
+            'peranan' => $pengguna->peranan,
+        ]);
+
         return redirect()->route('pengguna.index')
             ->with('success', 'Pengguna baru berjaya ditambah.');
     }
 
-    public function update(Request $request, User $pengguna)
+    public function update(UpdatePenggunaRequest $request, User $pengguna)
     {
-        $validated = $request->validate([
-            'name'    => 'required|string|max:255',
-            'jabatan' => 'nullable|string|max:255',
-            'peranan' => 'required|in:pentadbir_sistem,urus_setia,staf',
-            'aktif'   => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         // Lindungi — pentadbir tidak boleh nyahaktifkan akaun sendiri
         if ($pengguna->id === auth()->id() && isset($validated['aktif']) && !$validated['aktif']) {
@@ -72,6 +52,11 @@ class PenggunaController extends Controller
         }
 
         $pengguna->update($validated);
+
+        AuditLogger::catat('kemaskini_pengguna', $pengguna, [
+            'peranan' => $pengguna->peranan,
+            'aktif'   => $pengguna->aktif,
+        ]);
 
         return redirect()->route('pengguna.index')
             ->with('success', 'Maklumat pengguna berjaya dikemaskini.');
@@ -99,9 +84,7 @@ class PenggunaController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        \Illuminate\Support\Facades\Log::info(
-            "Kata laluan ditukar semula untuk pengguna ID:{$pengguna->id} oleh pentadbir ID:" . auth()->id()
-        );
+        AuditLogger::catat('reset_kata_laluan', $pengguna);
 
         return back()->with('success', 'Kata laluan pengguna berjaya ditukar semula.');
     }
@@ -115,9 +98,11 @@ class PenggunaController extends Controller
 
         $pengguna->update(['aktif' => !$pengguna->aktif]);
 
-        $tindakan = $pengguna->aktif ? 'diaktifkan' : 'dinyahaktifkan';
+        $kodTindakan = $pengguna->aktif ? 'aktifkan_pengguna' : 'nyahaktifkan_pengguna';
+        $labelTindakan = $pengguna->aktif ? 'diaktifkan' : 'dinyahaktifkan';
+        AuditLogger::catat($kodTindakan, $pengguna);
 
-        return back()->with('success', "Akaun {$pengguna->name} berjaya {$tindakan}.");
+        return back()->with('success', "Akaun {$pengguna->name} berjaya {$labelTindakan}.");
     }
 
     // ── Tindakan pukal: aktif/nyahaktif senarai pengguna ──
@@ -141,10 +126,13 @@ class PenggunaController extends Controller
             return back()->with('error', 'Tiada pengguna yang boleh diproses — anda tidak boleh menyahaktifkan akaun sendiri.');
         }
 
-        $nilaiAktif = ($tindakan === 'aktifkan') ? true : false;
-        $jumlah     = User::whereIn('id', $ids)->count();
+        $nilaiAktif    = ($tindakan === 'aktifkan') ? true : false;
+        $jumlah        = User::whereIn('id', $ids)->count();
+        $kodTindakan   = $nilaiAktif ? 'bulk_aktifkan' : 'bulk_nyahaktifkan';
 
         User::whereIn('id', $ids)->update(['aktif' => $nilaiAktif]);
+
+        AuditLogger::catat($kodTindakan, null, ['jumlah' => $jumlah, 'ids' => array_values($ids)]);
 
         $label = $nilaiAktif ? 'diaktifkan' : 'dinyahaktifkan';
 
