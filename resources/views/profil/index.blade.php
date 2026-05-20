@@ -134,7 +134,7 @@
                                 required aria-required="true"
                                 autocomplete="current-password"
                                 @error('kata_laluan_semasa') aria-invalid="true" aria-describedby="ralat-kls" @enderror>
-                            <button type="button" onclick="togglePwd('kata_laluan_semasa', this)"
+                            <button type="button" id="btn-toggle-kata_laluan_semasa"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                 aria-label="Tunjuk/sembunyi kata laluan semasa">
                                 <i class="fa-solid fa-eye" aria-hidden="true"></i>
@@ -156,7 +156,7 @@
                                 required aria-required="true"
                                 autocomplete="new-password"
                                 @error('password') aria-invalid="true" aria-describedby="ralat-pw" @enderror>
-                            <button type="button" onclick="togglePwd('password', this)"
+                            <button type="button" id="btn-toggle-password"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                 aria-label="Tunjuk/sembunyi kata laluan baharu">
                                 <i class="fa-solid fa-eye" aria-hidden="true"></i>
@@ -205,7 +205,7 @@
                                 class="form-input pr-10"
                                 required aria-required="true"
                                 autocomplete="new-password">
-                            <button type="button" onclick="togglePwd('password_confirmation', this)"
+                            <button type="button" id="btn-toggle-password_confirmation"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                 aria-label="Tunjuk/sembunyi pengesahan kata laluan">
                                 <i class="fa-solid fa-eye" aria-hidden="true"></i>
@@ -228,6 +228,11 @@
 
 <script nonce="{{ $cspNonce }}">
 // ── Tunjuk/sembunyi kata laluan ────────────────────────────────────
+['kata_laluan_semasa', 'password', 'password_confirmation'].forEach(function(fieldId) {
+    const btn = document.getElementById('btn-toggle-' + fieldId);
+    if (btn) btn.addEventListener('click', function() { togglePwd(fieldId, this); });
+});
+
 function togglePwd(fieldId, btn) {
     const input = document.getElementById(fieldId);
     const icon  = btn.querySelector('i');

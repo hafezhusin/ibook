@@ -291,7 +291,6 @@
         @if(!auth()->user()->isStaf())
         <div class="mb-3">
             <button type="button" id="btn-lanjutan"
-                onclick="toggleLanjutan()"
                 class="flex items-center gap-2 text-xs font-semibold text-gray-500 hover:text-amber-600 transition-colors"
                 aria-expanded="{{ $hasAdvanced ? 'true' : 'false' }}"
                 aria-controls="panel-lanjutan">
@@ -540,8 +539,8 @@
                     <td class="text-center">
                         <div class="action-wrap" id="wrap-{{ $t->id }}">
                             <button type="button"
-                                onclick="toggleDd({{ $t->id }})"
                                 class="action-trigger"
+                                data-toggle-dd="{{ $t->id }}"
                                 aria-haspopup="menu"
                                 aria-expanded="false"
                                 aria-controls="dd-{{ $t->id }}"
@@ -557,7 +556,9 @@
                                     <i class="fa-solid fa-pen w-4 text-blue-500" aria-hidden="true"></i> Edit
                                 </a>
                                 <button type="button"
-                                    onclick="bukaPindahBilik({{ $t->id }}, '{{ addslashes($t->nama_mesyuarat) }}', {{ $t->bilik_id ?? 'null' }}); closeDd({{ $t->id }})"
+                                    data-pindah-id="{{ $t->id }}"
+                                    data-pindah-nama="{{ addslashes($t->nama_mesyuarat) }}"
+                                    data-pindah-bilik="{{ $t->bilik_id ?? '' }}"
                                     role="menuitem">
                                     <i class="fa-solid fa-right-left w-4 text-violet-500" aria-hidden="true"></i> Pindah Bilik
                                 </button>
@@ -648,7 +649,7 @@
                     <i class="fa-solid fa-check" aria-hidden="true"></i> Pindah
                 </button>
                 <button type="button"
-                    onclick="document.getElementById('modal-pindah').classList.add('hidden')"
+                    id="btn-tutup-modal-pindah"
                     class="btn-secondary flex-1 justify-center">
                     Batal
                 </button>
@@ -660,6 +661,30 @@
 
 @push('scripts')
 <script nonce="{{ $cspNonce }}">
+// ── Listeners ─────────────────────────────────────────────────────
+document.getElementById('btn-lanjutan').addEventListener('click', toggleLanjutan);
+
+document.getElementById('btn-tutup-modal-pindah').addEventListener('click', function() {
+    document.getElementById('modal-pindah').classList.add('hidden');
+});
+
+// Event delegation for toggleDd buttons
+document.addEventListener('click', function(e) {
+    const toggleBtn = e.target.closest('[data-toggle-dd]');
+    if (toggleBtn) {
+        toggleDd(parseInt(toggleBtn.dataset.toggleDd, 10));
+        return;
+    }
+    const pindahBtn = e.target.closest('[data-pindah-id]');
+    if (pindahBtn) {
+        const id      = parseInt(pindahBtn.dataset.pindahId, 10);
+        const nama    = pindahBtn.dataset.pindahNama;
+        const bilikId = pindahBtn.dataset.pindahBilik ? parseInt(pindahBtn.dataset.pindahBilik, 10) : null;
+        bukaPindahBilik(id, nama, bilikId);
+        closeDd(id);
+    }
+});
+
 // ── Tapis Lanjutan toggle ─────────────────────────────────────────
 function toggleLanjutan() {
     const panel = document.getElementById('panel-lanjutan');

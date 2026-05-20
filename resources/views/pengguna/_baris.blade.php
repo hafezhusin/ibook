@@ -12,7 +12,6 @@
             style="accent-color:#f59e0b"
             value="{{ $p->id }}"
             {{ $p->id === auth()->id() ? 'disabled' : '' }}
-            onchange="kemaskiniToolbar()"
             aria-label="Pilih {{ $p->name }}">
         <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
             style="background: {{ !$isAktif ? '#9ca3af' : '#f59e0b' }}" aria-hidden="true">
@@ -63,13 +62,18 @@
     <div class="flex items-center gap-2 flex-wrap">
         @if(auth()->user()->isPentadbir())
         <button type="button"
-            onclick="openEdit({{ $p->id }}, '{{ addslashes($p->name) }}', '{{ addslashes($p->jabatan ?? '') }}', '{{ $p->peranan }}', {{ $p->aktif ? 'true' : 'false' }})"
+            data-open-edit="{{ $p->id }}"
+            data-name="{{ addslashes($p->name) }}"
+            data-jabatan="{{ addslashes($p->jabatan ?? '') }}"
+            data-peranan="{{ $p->peranan }}"
+            data-aktif="{{ $p->aktif ? 'true' : 'false' }}"
             class="text-amber-500 text-xs hover:underline" aria-label="Edit {{ $p->name }}">
             <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
         </button>
         {{-- Reset: ikon sahaja, subordinat --}}
         <button type="button"
-            onclick="openReset({{ $p->id }}, '{{ addslashes($p->name) }}')"
+            data-open-reset="{{ $p->id }}"
+            data-name="{{ addslashes($p->name) }}"
             class="text-gray-300 text-xs hover:text-gray-500 transition" title="Reset Kata Laluan"
             aria-label="Reset kata laluan {{ $p->name }}" aria-haspopup="dialog" aria-controls="modal-reset">
             <i class="fa-solid fa-key" aria-hidden="true"></i>
@@ -80,12 +84,12 @@
             @csrf
             @if($isAktif)
             <button type="submit" class="text-red-500 text-xs hover:underline"
-                onclick="return confirm('Nyahaktifkan akaun {{ addslashes($p->name) }}?')">
+                data-confirm-toggle="Nyahaktifkan akaun {{ addslashes($p->name) }}?">
                 <i class="fa-solid fa-ban" aria-hidden="true"></i> Nyahaktifkan
             </button>
             @else
             <button type="submit" class="text-green-600 text-xs hover:underline"
-                onclick="return confirm('Aktifkan semula akaun {{ addslashes($p->name) }}?')">
+                data-confirm-toggle="Aktifkan semula akaun {{ addslashes($p->name) }}?">
                 <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Aktifkan
             </button>
             @endif

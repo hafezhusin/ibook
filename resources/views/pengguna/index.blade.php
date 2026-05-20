@@ -37,8 +37,7 @@
         <h1 class="text-2xl font-bold text-gray-800">Pengguna</h1>
         <p class="text-gray-500 text-sm mt-1">Pengurusan pengguna dan peranan</p>
     </div>
-    <button type="button"
-        onclick="document.getElementById('modal-tambah').classList.remove('hidden'); document.getElementById('tambah-name').focus();"
+    <button type="button" id="btn-buka-tambah"
         class="btn-primary" aria-haspopup="dialog" aria-controls="modal-tambah">
         <i class="fa-solid fa-plus" aria-hidden="true"></i> Tambah Pengguna
     </button>
@@ -62,7 +61,6 @@
         <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" aria-hidden="true"></i>
         <input type="search" id="carian-pengguna"
             placeholder="Cari nama, emel atau unit..."
-            oninput="caripenggunaFilter(this.value)"
             class="form-input pl-9 text-sm w-full md:w-80"
             aria-label="Cari pengguna">
     </div>
@@ -76,7 +74,7 @@
         <button type="button" id="tab-aktif" role="tab"
             class="tab-btn aktif-tab"
             aria-selected="true" aria-controls="panel-aktif"
-            onclick="tukarTab('aktif')">
+            data-tab="aktif">
             <i class="fa-solid fa-circle-check mr-1" aria-hidden="true"></i>
             Aktif
             <span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full"
@@ -85,7 +83,7 @@
         <button type="button" id="tab-nyahaktif" role="tab"
             class="tab-btn"
             aria-selected="false" aria-controls="panel-nyahaktif"
-            onclick="tukarTab('nyahaktif')">
+            data-tab="nyahaktif">
             <i class="fa-solid fa-ban mr-1" aria-hidden="true"></i>
             Dinyahaktifkan
             @if($penggunaNyahaktif->total() > 0)
@@ -105,19 +103,19 @@
             <span class="text-sm font-semibold text-gray-600">
                 <span id="kiraan-pilihan">0</span> dipilih
             </span>
-            <button type="button" onclick="pilihSemua(true)"
+            <button type="button" id="btn-pilih-semua"
                 class="text-xs text-amber-600 underline hover:no-underline">Semua</button>
-            <button type="button" onclick="pilihSemua(false)"
+            <button type="button" id="btn-nyahpilih-semua"
                 class="text-xs text-gray-400 underline hover:no-underline">Nyahpilih</button>
             <form id="form-bulk-aktif" method="POST" action="{{ route('pengguna.bulk-aktif') }}" class="flex gap-1">
                 @csrf
                 <div id="hidden-ids"></div>
                 <input type="hidden" name="tindakan" id="bulk-tindakan" value="">
-                <button type="button" onclick="submitBulk('aktifkan')"
+                <button type="button" id="btn-bulk-aktifkan"
                     class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-green-100 text-green-700 hover:bg-green-200">
                     <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Aktifkan
                 </button>
-                <button type="button" onclick="submitBulk('nyahaktifkan')"
+                <button type="button" id="btn-bulk-nyahaktifkan"
                     class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-red-100 text-red-700 hover:bg-red-200">
                     <i class="fa-solid fa-ban" aria-hidden="true"></i> Nyahaktifkan
                 </button>
@@ -128,11 +126,11 @@
         {{-- View Toggle --}}
         <div class="flex gap-1" role="group" aria-label="Pilih paparan">
             <button type="button" id="btn-kad" class="view-btn aktif-view"
-                onclick="tukarView('kad')" aria-pressed="true" aria-label="Paparan kad">
+                data-view="kad" aria-pressed="true" aria-label="Paparan kad">
                 <i class="fa-solid fa-grip" aria-hidden="true"></i>
             </button>
             <button type="button" id="btn-senarai" class="view-btn"
-                onclick="tukarView('senarai')" aria-pressed="false" aria-label="Paparan senarai">
+                data-view="senarai" aria-pressed="false" aria-label="Paparan senarai">
                 <i class="fa-solid fa-list" aria-hidden="true"></i>
             </button>
         </div>
@@ -167,22 +165,22 @@
     <div id="list-aktif" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-8">
         <div class="list-row list-header rounded-t-xl">
             <div class="flex items-center gap-2">
-                <input type="checkbox" id="cb-semua-list" onchange="pilihSemuaList(this)"
+                <input type="checkbox" id="cb-semua-list"
                     style="accent-color:#f59e0b" aria-label="Pilih semua">
-                <button class="sort-btn" data-col="name" data-panel="aktif" onclick="sortList('aktif','name',this)" aria-label="Isih mengikut nama">
+                <button class="sort-btn" data-col="name" data-panel="aktif" aria-label="Isih mengikut nama">
                     Pengguna <span class="sort-icon">⇅</span>
                 </button>
             </div>
-            <button class="sort-btn" data-col="unit" data-panel="aktif" onclick="sortList('aktif','unit',this)" aria-label="Isih mengikut unit">
+            <button class="sort-btn" data-col="unit" data-panel="aktif" aria-label="Isih mengikut unit">
                 Unit <span class="sort-icon">⇅</span>
             </button>
-            <button class="sort-btn" data-col="peranan" data-panel="aktif" onclick="sortList('aktif','peranan',this)" aria-label="Isih mengikut peranan">
+            <button class="sort-btn" data-col="peranan" data-panel="aktif" aria-label="Isih mengikut peranan">
                 Peranan <span class="sort-icon">⇅</span>
             </button>
-            <button class="sort-btn" data-col="tarikh" data-panel="aktif" onclick="sortList('aktif','tarikh',this)" aria-label="Isih mengikut tarikh diwujudkan">
+            <button class="sort-btn" data-col="tarikh" data-panel="aktif" aria-label="Isih mengikut tarikh diwujudkan">
                 Tarikh Diwujudkan <span class="sort-icon">⇅</span>
             </button>
-            <button class="sort-btn" data-col="status" data-panel="aktif" onclick="sortList('aktif','status',this)" aria-label="Isih mengikut status">
+            <button class="sort-btn" data-col="status" data-panel="aktif" aria-label="Isih mengikut status">
                 Status <span class="sort-icon">⇅</span>
             </button>
             <div>Tindakan</div>
@@ -231,22 +229,22 @@
     <div id="list-nyahaktif" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-8">
         <div class="list-row list-header rounded-t-xl">
             <div class="flex items-center gap-2">
-                <input type="checkbox" onchange="pilihSemuaList(this)"
+                <input type="checkbox" id="cb-semua-list-nyahaktif"
                     style="accent-color:#f59e0b" aria-label="Pilih semua">
-                <button class="sort-btn" data-col="name" data-panel="nyahaktif" onclick="sortList('nyahaktif','name',this)" aria-label="Isih mengikut nama">
+                <button class="sort-btn" data-col="name" data-panel="nyahaktif" aria-label="Isih mengikut nama">
                     Pengguna <span class="sort-icon">⇅</span>
                 </button>
             </div>
-            <button class="sort-btn" data-col="unit" data-panel="nyahaktif" onclick="sortList('nyahaktif','unit',this)" aria-label="Isih mengikut unit">
+            <button class="sort-btn" data-col="unit" data-panel="nyahaktif" aria-label="Isih mengikut unit">
                 Unit <span class="sort-icon">⇅</span>
             </button>
-            <button class="sort-btn" data-col="peranan" data-panel="nyahaktif" onclick="sortList('nyahaktif','peranan',this)" aria-label="Isih mengikut peranan">
+            <button class="sort-btn" data-col="peranan" data-panel="nyahaktif" aria-label="Isih mengikut peranan">
                 Peranan <span class="sort-icon">⇅</span>
             </button>
-            <button class="sort-btn" data-col="tarikh" data-panel="nyahaktif" onclick="sortList('nyahaktif','tarikh',this)" aria-label="Isih mengikut tarikh diwujudkan">
+            <button class="sort-btn" data-col="tarikh" data-panel="nyahaktif" aria-label="Isih mengikut tarikh diwujudkan">
                 Tarikh Diwujudkan <span class="sort-icon">⇅</span>
             </button>
-            <button class="sort-btn" data-col="status" data-panel="nyahaktif" onclick="sortList('nyahaktif','status',this)" aria-label="Isih mengikut status">
+            <button class="sort-btn" data-col="status" data-panel="nyahaktif" aria-label="Isih mengikut status">
                 Status <span class="sort-icon">⇅</span>
             </button>
             <div>Tindakan</div>
@@ -332,7 +330,7 @@
                 <button type="submit" class="btn-primary flex-1 justify-center py-2.5">
                     <i class="fa-solid fa-user-plus" aria-hidden="true"></i> Tambah
                 </button>
-                <button type="button" onclick="document.getElementById('modal-tambah').classList.add('hidden')"
+                <button type="button" id="btn-tutup-tambah"
                     class="btn-secondary flex-1 justify-center py-2.5">Batal</button>
             </div>
         </form>
@@ -372,7 +370,7 @@
             </div>
             <div class="flex gap-3 mt-6">
                 <button type="submit" class="btn-primary flex-1 justify-center py-2.5">Kemaskini</button>
-                <button type="button" onclick="document.getElementById('modal-edit').classList.add('hidden')"
+                <button type="button" id="btn-tutup-edit"
                     class="btn-secondary flex-1 justify-center py-2.5">Batal</button>
             </div>
         </form>
@@ -401,7 +399,7 @@
             </div>
             <div class="flex gap-3 mt-6">
                 <button type="submit" class="btn-primary flex-1 justify-center py-2.5">Tukar</button>
-                <button type="button" onclick="document.getElementById('modal-reset').classList.add('hidden')"
+                <button type="button" id="btn-tutup-reset"
                     class="btn-secondary flex-1 justify-center py-2.5">Batal</button>
             </div>
         </form>
@@ -413,6 +411,99 @@
 const LS_VIEW_KEY = 'ibook_pengguna_view';
 let tabSemasa  = 'aktif';
 let viewSemasa = localStorage.getItem(LS_VIEW_KEY) || 'kad';
+
+// ── Listeners (formerly inline handlers) ──────────────────────────
+
+// Buka modal tambah
+document.getElementById('btn-buka-tambah').addEventListener('click', function() {
+    document.getElementById('modal-tambah').classList.remove('hidden');
+    document.getElementById('tambah-name').focus();
+});
+
+// Tutup modal
+document.getElementById('btn-tutup-tambah').addEventListener('click', function() {
+    document.getElementById('modal-tambah').classList.add('hidden');
+});
+document.getElementById('btn-tutup-edit').addEventListener('click', function() {
+    document.getElementById('modal-edit').classList.add('hidden');
+});
+document.getElementById('btn-tutup-reset').addEventListener('click', function() {
+    document.getElementById('modal-reset').classList.add('hidden');
+});
+
+// Carian pengguna
+document.getElementById('carian-pengguna').addEventListener('input', function() {
+    caripenggunaFilter(this.value);
+});
+
+// Tab buttons
+document.querySelectorAll('[data-tab]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        tukarTab(this.dataset.tab);
+    });
+});
+
+// View toggle buttons
+document.querySelectorAll('[data-view]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        tukarView(this.dataset.view);
+    });
+});
+
+// Pilih semua / nyahpilih
+const btnPilihSemua = document.getElementById('btn-pilih-semua');
+if (btnPilihSemua) btnPilihSemua.addEventListener('click', function() { pilihSemua(true); });
+const btnNyahpilih = document.getElementById('btn-nyahpilih-semua');
+if (btnNyahpilih) btnNyahpilih.addEventListener('click', function() { pilihSemua(false); });
+
+// Bulk actions
+const btnBulkAktif = document.getElementById('btn-bulk-aktifkan');
+if (btnBulkAktif) btnBulkAktif.addEventListener('click', function() { submitBulk('aktifkan'); });
+const btnBulkNyah = document.getElementById('btn-bulk-nyahaktifkan');
+if (btnBulkNyah) btnBulkNyah.addEventListener('click', function() { submitBulk('nyahaktifkan'); });
+
+// Checkbox pilih semua (list view aktif)
+const cbSemuaList = document.getElementById('cb-semua-list');
+if (cbSemuaList) cbSemuaList.addEventListener('change', function() { pilihSemuaList(this); });
+
+// Checkbox pilih semua (list view nyahaktif)
+const cbSemuaListNyah = document.getElementById('cb-semua-list-nyahaktif');
+if (cbSemuaListNyah) cbSemuaListNyah.addEventListener('change', function() { pilihSemuaList(this); });
+
+// Sort buttons (event delegation)
+document.addEventListener('click', function(e) {
+    const sortBtn = e.target.closest('.sort-btn');
+    if (sortBtn) {
+        const col   = sortBtn.dataset.col;
+        const panel = sortBtn.dataset.panel;
+        if (col && panel) sortList(panel, col, sortBtn);
+    }
+});
+
+// Event delegation for openEdit and openReset (from partial views)
+document.addEventListener('click', function(e) {
+    const editBtn = e.target.closest('[data-open-edit]');
+    if (editBtn) {
+        const d = editBtn.dataset;
+        openEdit(parseInt(d.openEdit, 10), d.name, d.jabatan, d.peranan, d.aktif === 'true');
+        return;
+    }
+    const resetBtn = e.target.closest('[data-open-reset]');
+    if (resetBtn) {
+        openReset(parseInt(resetBtn.dataset.openReset, 10), resetBtn.dataset.name);
+        return;
+    }
+    const toggleAktifBtn = e.target.closest('[data-confirm-toggle]');
+    if (toggleAktifBtn) {
+        const msg = toggleAktifBtn.dataset.confirmToggle;
+        if (!confirm(msg)) e.preventDefault();
+        return;
+    }
+    const cbPengguna = e.target.closest('.checkbox-pengguna');
+    if (cbPengguna) {
+        kemaskiniToolbar();
+    }
+});
 
 // ── Tab ──
 function tukarTab(tab) {

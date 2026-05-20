@@ -123,7 +123,6 @@
                 value="{{ old('gambar', $bilik?->gambar) }}"
                 class="form-input"
                 placeholder="https://example.com/gambar-bilik.jpg"
-                oninput="praLihatGambar(this.value)"
                 @error('gambar') aria-invalid="true" aria-describedby="ralat-gambar" @enderror>
             <p class="form-hint">
                 Masukkan URL gambar bilik (JPG/PNG). Kosongkan untuk guna gambar automatik mengikut jenis bilik.
@@ -156,6 +155,10 @@
 </div>
 @push('scripts')
 <script nonce="{{ $cspNonce }}">
+document.getElementById('gambar-bilik').addEventListener('input', function() {
+    praLihatGambar(this.value);
+});
+
 function praLihatGambar(url) {
     const wrap = document.getElementById('gambar-preview-wrap');
     const img  = document.getElementById('gambar-preview-img');

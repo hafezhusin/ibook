@@ -10,7 +10,6 @@
                 style="accent-color:#f59e0b"
                 value="{{ $p->id }}"
                 {{ $p->id === auth()->id() ? 'disabled title=Akaun anda sendiri' : '' }}
-                onchange="kemaskiniToolbar()"
                 aria-label="Pilih {{ $p->name }}">
         </div>
 
@@ -65,7 +64,11 @@
         <div class="flex gap-2 items-center">
             @if(auth()->user()->isPentadbir())
             <button type="button"
-                onclick="openEdit({{ $p->id }}, '{{ addslashes($p->name) }}', '{{ addslashes($p->jabatan ?? '') }}', '{{ $p->peranan }}', {{ $p->aktif ? 'true' : 'false' }})"
+                data-open-edit="{{ $p->id }}"
+                data-name="{{ addslashes($p->name) }}"
+                data-jabatan="{{ addslashes($p->jabatan ?? '') }}"
+                data-peranan="{{ $p->peranan }}"
+                data-aktif="{{ $p->aktif ? 'true' : 'false' }}"
                 class="text-amber-500 text-xs hover:underline"
                 aria-label="Edit pengguna — {{ $p->name }}"
                 aria-haspopup="dialog" aria-controls="modal-edit">
@@ -73,7 +76,8 @@
             </button>
             {{-- Reset Kata Laluan — subordinat: ikon sahaja dengan tooltip --}}
             <button type="button"
-                onclick="openReset({{ $p->id }}, '{{ addslashes($p->name) }}')"
+                data-open-reset="{{ $p->id }}"
+                data-name="{{ addslashes($p->name) }}"
                 class="text-gray-300 text-xs hover:text-gray-500 transition"
                 title="Reset Kata Laluan"
                 aria-label="Reset kata laluan — {{ $p->name }}"
@@ -84,7 +88,8 @@
             {{-- Urus Setia boleh reset kata laluan sendiri sahaja --}}
             @if($p->id === auth()->id())
             <button type="button"
-                onclick="openReset({{ $p->id }}, '{{ addslashes($p->name) }}')"
+                data-open-reset="{{ $p->id }}"
+                data-name="{{ addslashes($p->name) }}"
                 class="text-gray-300 text-xs hover:text-gray-500 transition"
                 title="Reset Kata Laluan"
                 aria-label="Reset kata laluan — {{ $p->name }}"
@@ -101,13 +106,13 @@
             @if($isAktif)
             <button type="submit"
                 class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition"
-                onclick="return confirm('Nyahaktifkan akaun {{ addslashes($p->name) }}?')">
+                data-confirm-toggle="Nyahaktifkan akaun {{ addslashes($p->name) }}?">
                 <i class="fa-solid fa-ban" aria-hidden="true"></i> Nyahaktifkan
             </button>
             @else
             <button type="submit"
                 class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-green-50 text-green-600 hover:bg-green-100 transition"
-                onclick="return confirm('Aktifkan semula akaun {{ addslashes($p->name) }}?')">
+                data-confirm-toggle="Aktifkan semula akaun {{ addslashes($p->name) }}?">
                 <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Aktifkan
             </button>
             @endif

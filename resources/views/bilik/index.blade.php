@@ -18,7 +18,6 @@
         <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" aria-hidden="true"></i>
         <input type="search" id="carian-bilik"
             placeholder="Cari nama bilik..."
-            oninput="cariBilik(this.value)"
             class="form-input pl-9 text-sm w-full md:w-72"
             aria-label="Cari bilik mesyuarat">
     </div>
@@ -143,8 +142,8 @@
                         aria-label="Edit bilik — {{ $b->nama }}">
                         <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
                     </a>
-                    <form method="POST" action="{{ route('bilik.destroy', $b) }}" class="ml-auto"
-                        onsubmit="return confirm('Padam bilik {{ addslashes($b->nama) }}?')">
+                    <form method="POST" action="{{ route('bilik.destroy', $b) }}" class="ml-auto padam-bilik-form"
+                        data-nama="{{ addslashes($b->nama) }}">
                         @csrf @method('DELETE')
                         <button type="submit"
                             class="text-red-400 text-sm hover:text-red-600"
@@ -176,6 +175,20 @@ function cariBilik(kata) {
         kad.style.display = match ? '' : 'none';
     });
 }
+
+document.getElementById('carian-bilik').addEventListener('input', function() {
+    cariBilik(this.value);
+});
+
+document.getElementById('grid-bilik').addEventListener('submit', function(e) {
+    const form = e.target.closest('.padam-bilik-form');
+    if (form) {
+        const nama = form.dataset.nama || '';
+        if (!confirm('Padam bilik ' + nama + '?')) {
+            e.preventDefault();
+        }
+    }
+});
 </script>
 @endpush
 @endsection
