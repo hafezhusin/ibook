@@ -508,7 +508,6 @@
 
                     {{-- Avatar — klik untuk dropdown --}}
                     <button type="button" id="profil-btn"
-                            onclick="toggleProfilMenu()"
                             class="w-9 h-9 rounded-full flex items-center justify-center font-bold focus:outline-none focus:ring-2 focus:ring-amber-400"
                             style="background:var(--accent); color:#1a1a2e;"
                             aria-haspopup="menu" aria-expanded="false"
@@ -628,6 +627,18 @@ function toggleProfilMenu() {
     const open = menu.classList.toggle('hidden');
     btn.setAttribute('aria-expanded', !open);
 }
+// Alert dismiss (event delegation — handles all .js-dismiss-alert buttons)
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.js-dismiss-alert')) {
+        e.target.closest('[role=alert]')?.remove();
+    }
+});
+
+// Wire profil button (CSP-safe — tiada onclick di HTML)
+document.getElementById('profil-btn')?.addEventListener('click', function(e) {
+    e.stopPropagation();
+    toggleProfilMenu();
+});
 // Tutup bila klik luar
 document.addEventListener('click', function(e) {
     const wrap = document.getElementById('profil-dropdown-wrap');

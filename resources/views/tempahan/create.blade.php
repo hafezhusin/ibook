@@ -188,8 +188,7 @@
                     @php $checked = is_array(old('sesi')) ? in_array($key, old('sesi')) : false; @endphp
                     <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all
                         {{ $checked ? 'border-amber-400 bg-amber-50' : 'border-gray-200 hover:border-amber-300' }}"
-                        id="label-sesi-{{ $key }}"
-                        onclick="toggleSesi('{{ $key }}')">
+                        id="label-sesi-{{ $key }}">
                         <input type="checkbox" name="sesi[]" value="{{ $key }}"
                             id="sesi-{{ $key }}"
                             class="text-amber-500 w-4 h-4 rounded flex-shrink-0"
@@ -211,7 +210,6 @@
                 <div class="mt-3 flex items-center gap-2">
                     <button type="button"
                         id="btn-sehari-penuh"
-                        onclick="pilihSehariPenuh()"
                         class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-full px-3 py-1.5 transition-colors"
                         aria-label="Pilih kedua-dua sesi pagi dan petang sekaligus">
                         <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
@@ -473,23 +471,15 @@ pesertaInput.addEventListener('input', semakKapasiti);
 function toggleSesi(key) {
     const cb    = document.getElementById('sesi-' + key);
     const label = document.getElementById('label-sesi-' + key);
-
-    if (cb.disabled) {
-        // Sesi telah ditempah — jangan beri interaksi
-        return;
+    if (!cb || cb.disabled) return;
+    if (cb.checked) {
+        label.classList.add('border-amber-400', 'bg-amber-50');
+        label.classList.remove('border-gray-200');
+    } else {
+        label.classList.remove('border-amber-400', 'bg-amber-50');
+        label.classList.add('border-gray-200');
     }
-
-    // checkbox state belum berubah semasa onclick pada label, so baca selepas tick
-    setTimeout(() => {
-        if (cb.checked) {
-            label.classList.add('border-amber-400', 'bg-amber-50');
-            label.classList.remove('border-gray-200');
-        } else {
-            label.classList.remove('border-amber-400', 'bg-amber-50');
-            label.classList.add('border-gray-200');
-        }
-        kemaskiniRingkasan();
-    }, 0);
+    kemaskiniRingkasan();
 }
 
 // ── Pintasan Sehari Penuh ──────────────────────────────────────────
@@ -567,8 +557,19 @@ document.querySelector('form').addEventListener('submit', function(e) {
     }
 });
 
-// ── Init: semak kapasiti & ringkasan jika ada nilai old() ─────────
+// ── Init: event listeners + semak kapasiti & ringkasan ───────────
 document.addEventListener('DOMContentLoaded', function() {
+    // Sesi checkbox — guna 'change' event (CSP-safe, tiada onclick di HTML)
+    ['pagi', 'petang'].forEach(function(key) {
+        const cb = document.getElementById('sesi-' + key);
+        if (cb) cb.addEventListener('change', function() { toggleSesi(key); });
+    });
+
+    // Butang Sehari Penuh
+    const btnSehariPenuh = document.getElementById('btn-sehari-penuh');
+    if (btnSehariPenuh) btnSehariPenuh.addEventListener('click', pilihSehariPenuh);
+
+    // Init kapasiti & ringkasan jika ada nilai old()
     const opt = bilikSelect.options[bilikSelect.selectedIndex];
     if (opt && opt.dataset.kapasiti) {
         kapasitiSemasa = parseInt(opt.dataset.kapasiti, 10) || 0;
@@ -577,7 +578,7 @@ document.addEventListener('DOMContentLoaded', function() {
         semakKonflik();
     }
     semakKapasiti();
-    kemaskiniRingkasan(); // Papar ringkasan jika old() sudah isi medan
+    kemaskiniRingkasan();
 });
 </script>
 @endpush

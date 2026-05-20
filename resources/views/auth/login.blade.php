@@ -124,7 +124,6 @@
                         class="form-input pr-10"
                         placeholder="••••••••">
                     <button type="button"
-                        onclick="togglePwd()"
                         aria-label="Tunjuk atau sembunyikan kata laluan"
                         aria-pressed="false"
                         id="btn-toggle-pwd"
@@ -222,8 +221,8 @@
                 <ul role="list" id="bilik-list" class="space-y-2" aria-labelledby="label-tapis-bilik">
                     <li>
                         <button type="button"
+                            id="btn-semua-awam"
                             class="bilik-card selected rounded-lg p-3 w-full text-left"
-                            onclick="filterBilik(null, this)"
                             aria-pressed="true">
                             <div class="font-semibold text-sm text-gray-800">Semua Bilik</div>
                             <div class="text-xs text-gray-400">Papar semua tempahan</div>
@@ -391,6 +390,12 @@ function showPopup(mouseEvent, bilik, sesi) {
     popup.classList.remove('hidden');
     setTimeout(() => popup.classList.add('hidden'), 3000);
 }
+
+// Wire event listeners (CSP-safe)
+document.getElementById('btn-semua-awam')?.addEventListener('click', function() {
+    filterBilik(null, this);
+});
+document.getElementById('btn-toggle-pwd')?.addEventListener('click', togglePwd);
 
 function togglePwd() {
     const pwd = document.getElementById('kata-laluan');

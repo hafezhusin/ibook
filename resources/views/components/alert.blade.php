@@ -21,8 +21,8 @@
     <i class="fa-solid {{ $config['ikon'] }} mt-0.5 flex-shrink-0" aria-hidden="true"></i>
     <span class="flex-1">{{ $teks }}</span>
     @if($dismissible)
-    <button type="button" onclick="this.closest('[role=alert]').remove()"
-            class="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+    <button type="button"
+            class="js-dismiss-alert flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
             aria-label="Tutup notifikasi">
         <i class="fa-solid fa-xmark" aria-hidden="true"></i>
     </button>
