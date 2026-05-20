@@ -28,9 +28,15 @@ class ForgotPasswordController extends Controller
             ]
         );
 
-        // Always return the same message to prevent user enumeration
-        Password::sendResetLink($request->only('email'));
+        // Hantar pautan reset — tangkap kegagalan SMTP supaya tidak 500
+        try {
+            Password::sendResetLink($request->only('email'));
+        } catch (\Exception $e) {
+            // Log ralat tapi jangan dedahkan kepada pengguna
+            logger()->error('Reset password mail failed: ' . $e->getMessage());
+        }
 
+        // Mesej generik — tidak mendedahkan sama ada emel wujud atau tidak
         return back()->with('status', 'Jika emel anda berdaftar dalam sistem, anda akan menerima pautan set semula kata laluan tidak lama lagi. Sila semak folder Spam jika tidak menerima e-mel.');
     }
 
