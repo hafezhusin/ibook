@@ -50,6 +50,7 @@ class User extends Authenticatable
         'jabatan',
         'peranan',
         'aktif',
+        'last_login_at',
     ];
 
     protected $hidden = [
@@ -61,9 +62,15 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'aktif' => 'boolean',
+            'password'          => 'hashed',
+            'aktif'             => 'boolean',
+            'last_login_at'     => 'datetime',
         ];
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\ResetKataLaluan($token));
     }
 
     public function tempahan()

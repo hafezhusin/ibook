@@ -47,6 +47,11 @@
             <p class="text-xs text-gray-400 mt-1">
                 <i class="fa-solid fa-calendar mr-1" aria-hidden="true"></i>Ahli sejak {{ $user->created_at->format('M Y') }}
             </p>
+            @if($user->last_login_at)
+            <p class="text-xs text-gray-400 mt-1">
+                <i class="fa-solid fa-clock mr-1" aria-hidden="true"></i>Log masuk terakhir: {{ $user->last_login_at->diffForHumans() }}
+            </p>
+            @endif
         </div>
     </div>
 

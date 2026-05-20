@@ -59,6 +59,14 @@
         Diwujudkan: {{ $p->created_at->format('d M Y') }}
     </div>
 
+    {{-- Log masuk terakhir --}}
+    @if($p->last_login_at)
+    <div class="mt-1 text-xs text-gray-400 flex items-center gap-1">
+        <i class="fa-solid fa-clock" aria-hidden="true"></i>
+        Log masuk: {{ $p->last_login_at->diffForHumans() }}
+    </div>
+    @endif
+
     {{-- Butang tindakan --}}
     <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
         <div class="flex gap-2 items-center">

@@ -61,6 +61,10 @@ class AuthController extends Controller
             // Log masuk berjaya — buang rekod rate limit
             RateLimiter::clear($throttleKey);
             $request->session()->regenerate();
+
+            // Rekod waktu log masuk terakhir
+            Auth::user()->update(['last_login_at' => now()]);
+
             return redirect()->intended(route('dashboard'));
         }
 

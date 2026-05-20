@@ -74,6 +74,15 @@
         <h1 class="text-white text-2xl font-bold mb-1">Selamat Datang</h1>
         <p class="text-slate-400 text-sm mb-8">Log masuk untuk membuat tempahan bilik mesyuarat</p>
 
+        {{-- Mesej berjaya set semula kata laluan --}}
+        @if(session('success_reset'))
+        <div role="alert" aria-live="polite"
+            class="bg-green-900/40 border border-green-500/40 text-green-300 rounded-lg p-3 mb-5 text-sm flex items-center gap-2">
+            <i class="fa-solid fa-circle-check text-green-400" aria-hidden="true"></i>
+            <span>{{ session('success_reset') }}</span>
+        </div>
+        @endif
+
         {{-- Mesej ralat --}}
         @if($errors->any())
         <div role="alert" aria-live="assertive"
@@ -133,12 +142,15 @@
                 </div>
             </div>
 
-            {{-- Ingat saya --}}
-            <div class="flex items-center mb-6">
+            {{-- Ingat saya + Lupa kata laluan --}}
+            <div class="flex items-center justify-between mb-6">
                 <label class="flex items-center gap-2 text-sm text-slate-400 cursor-pointer" for="ingat-saya">
                     <input type="checkbox" id="ingat-saya" name="remember" style="accent-color:#f59e0b">
                     Ingat saya
                 </label>
+                <a href="{{ route('password.request') }}" class="text-xs text-slate-400 hover:text-amber-400 transition-colors">
+                    Lupa kata laluan?
+                </a>
             </div>
 
             <button type="submit"

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\BilikController;
 use App\Http\Controllers\CarianController;
 use App\Http\Controllers\DashboardController;
@@ -17,6 +18,12 @@ use Illuminate\Support\Facades\Route;
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Lupa & set semula kata laluan
+Route::get('/lupa-kata-laluan', [ForgotPasswordController::class, 'showLinkForm'])->name('password.request');
+Route::post('/lupa-kata-laluan', [ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
+Route::get('/reset-kata-laluan/{token}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/reset-kata-laluan', [ForgotPasswordController::class, 'reset'])->name('password.update');
 
 // Route awam - boleh akses tanpa log masuk
 // throttle:60,1 = maksimum 60 request per minit per IP

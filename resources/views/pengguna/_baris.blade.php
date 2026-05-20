@@ -43,7 +43,14 @@
     </div>
 
     {{-- Tarikh Diwujudkan --}}
-    <div class="text-xs text-gray-500">{{ $p->created_at->format('d M Y') }}</div>
+    <div class="text-xs text-gray-500">
+        {{ $p->created_at->format('d M Y') }}
+        @if($p->last_login_at)
+        <div class="text-gray-400 mt-0.5">
+            <i class="fa-solid fa-clock mr-0.5" aria-hidden="true"></i>{{ $p->last_login_at->diffForHumans() }}
+        </div>
+        @endif
+    </div>
 
     {{-- Status --}}
     <div>
