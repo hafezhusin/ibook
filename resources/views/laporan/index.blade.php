@@ -297,7 +297,7 @@
         <button type="button" id="btn-lihat-unit"
             class="mt-4 text-xs font-semibold text-amber-600 hover:text-amber-700 flex items-center gap-1 transition"
             aria-expanded="false"
-            aria-controls="unit-selebihnya"
+            aria-controls="unit-selebihnya">
             <i class="fa-solid fa-chevron-down text-xs" id="icon-chevron-unit" aria-hidden="true"></i>
             <span id="teks-btn-unit">Lihat {{ $mengikutUnit->count() - 5 }} unit lagi</span>
         </button>
