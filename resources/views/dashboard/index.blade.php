@@ -163,8 +163,10 @@
 
         {{-- Kad 4 — Kadar Penggunaan Bilik --}}
         @php
-            $warnaGrad = $kadarPenggunaan >= 80 ? '#dc2626' : ($kadarPenggunaan >= 50 ? '#d97706' : '#16a34a');
-            $labelGrad = $kadarPenggunaan >= 80 ? 'Tinggi' : ($kadarPenggunaan >= 50 ? 'Sederhana' : 'Rendah');
+            $warnaGrad  = $kadarPenggunaan >= 80 ? '#dc2626' : ($kadarPenggunaan >= 50 ? '#d97706' : '#16a34a');
+            $julat      = $kadarPenggunaan >= 80 ? '≥ 80%' : ($kadarPenggunaan >= 50 ? '50–79%' : 'Bawah 50%');
+            $julatBg    = $kadarPenggunaan >= 80 ? '#fee2e2' : ($kadarPenggunaan >= 50 ? '#fef3c7' : '#dcfce7');
+            $julatClr   = $kadarPenggunaan >= 80 ? '#991b1b' : ($kadarPenggunaan >= 50 ? '#92400e' : '#166534');
         @endphp
         <a href="{{ route('laporan') }}" class="stat-card-v2" aria-label="Kadar Penggunaan Bilik: {{ $kadarPenggunaan }} peratus. Klik untuk lihat laporan.">
             <div class="stat-accent-bar" style="background:{{ $warnaGrad }}"></div>
@@ -173,10 +175,10 @@
                     <div class="stat-icon-wrap" style="background:#f0fdf4">
                         <i class="fa-solid fa-chart-bar" style="color:{{ $warnaGrad }}" aria-hidden="true"></i>
                     </div>
-                    <span class="text-xs font-semibold px-2 py-1 rounded-full"
-                          style="background:{{ $kadarPenggunaan >= 80 ? '#fee2e2' : ($kadarPenggunaan >= 50 ? '#fef3c7' : '#dcfce7') }};
-                                 color:{{ $kadarPenggunaan >= 80 ? '#991b1b' : ($kadarPenggunaan >= 50 ? '#92400e' : '#166534') }}">
-                        {{ $labelGrad }}
+                    <span class="text-xs font-mono font-semibold px-2 py-1 rounded-full"
+                          style="background:{{ $julatBg }};color:{{ $julatClr }}"
+                          title="Julat kadar penggunaan">
+                        {{ $julat }}
                     </span>
                 </div>
                 <div class="stat-number" style="color:{{ $warnaGrad }}">{{ $kadarPenggunaan }}%</div>

@@ -28,10 +28,41 @@
     </a>
 </div>
 
-<div class="flex gap-4" style="min-height:75vh">
+{{-- ===== PANEL MUDAH ALIH (hanya mobile / tablet) ===== --}}
+<div class="lg:hidden mb-3 space-y-2">
+    {{-- Dropdown tapis bilik --}}
+    <div class="bg-white rounded-xl shadow-sm p-3 flex items-center gap-3">
+        <label for="mob-filter-bilik"
+               class="text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap flex-shrink-0">
+            <i class="fa-solid fa-door-open text-amber-400 mr-1" aria-hidden="true"></i>Bilik:
+        </label>
+        <select id="mob-filter-bilik"
+                onchange="filterBilikMobile(this.value)"
+                class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white">
+            <option value="">Semua Bilik</option>
+            @foreach($bilik as $b)
+            <option value="{{ $b->id }}">{{ $b->nama }}</option>
+            @endforeach
+        </select>
+    </div>
+    {{-- Status hari ini (compact) --}}
+    <div class="bg-white rounded-xl shadow-sm px-4 py-3">
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+            <i class="fa-solid fa-circle-dot text-amber-400 mr-1" aria-hidden="true"></i>Status Hari Ini
+        </p>
+        <div id="mob-status-hari-ini" class="flex items-center gap-2 flex-wrap" aria-live="polite">
+            <span class="flex items-center gap-1.5 text-xs text-gray-400">
+                <i class="fa-solid fa-spinner fa-spin text-amber-400" aria-hidden="true"></i>
+                Memuatkan...
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="flex flex-col lg:flex-row gap-4" style="min-height:75vh">
 
     {{-- ===== SIDEBAR BILIK ===== --}}
-    <aside class="w-52 flex-shrink-0 flex flex-col gap-3" aria-label="Tapis bilik mesyuarat">
+    <aside class="hidden lg:flex w-52 flex-shrink-0 flex-col gap-3" aria-label="Tapis bilik mesyuarat">
 
         {{-- Senarai bilik --}}
         <div class="bg-white rounded-xl shadow-sm overflow-hidden flex flex-col flex-1">
@@ -55,24 +86,34 @@
                     </button>
                 </div>
 
-                {{-- Senarai bilik dari DB --}}
-                @foreach($bilik as $b)
-                <div role="listitem">
-                    <button type="button"
-                        class="bilik-btn"
-                        onclick="filterBilik({{ $b->id }}, this)"
-                        aria-pressed="false"
-                        data-bilik-id="{{ $b->id }}">
-                        <div class="font-semibold text-gray-800 text-sm leading-snug">{{ $b->nama }}</div>
-                        <div class="text-xs text-gray-400 mt-0.5">
-                            <i class="fa-solid fa-users text-amber-400 mr-1" aria-hidden="true"></i>
-                            {{ $b->kapasiti }} orang
-                            @if($b->lokasi)
-                            &middot; {{ $b->lokasi }}
-                            @endif
-                        </div>
-                    </button>
-                </div>
+                {{-- Senarai bilik dari DB — dikumpulkan mengikut lokasi/aras --}}
+                @php
+                    $bilikByLokasi = $bilik->groupBy(fn($b) => $b->lokasi ?: 'Lain-lain');
+                    $adaPelbagaiLokasi = $bilikByLokasi->count() > 1;
+                @endphp
+                @foreach($bilikByLokasi as $lokasi => $kumpulan)
+                    @if($adaPelbagaiLokasi)
+                    <div class="px-3 pt-3 pb-0.5" role="presentation">
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                            <i class="fa-solid fa-layer-group text-amber-300 mr-1" aria-hidden="true"></i>{{ $lokasi }}
+                        </p>
+                    </div>
+                    @endif
+                    @foreach($kumpulan as $b)
+                    <div role="listitem">
+                        <button type="button"
+                            class="bilik-btn"
+                            onclick="filterBilik({{ $b->id }}, this)"
+                            aria-pressed="false"
+                            data-bilik-id="{{ $b->id }}">
+                            <div class="font-semibold text-gray-800 text-sm leading-snug">{{ $b->nama }}</div>
+                            <div class="text-xs text-gray-400 mt-0.5">
+                                <i class="fa-solid fa-users text-amber-400 mr-1" aria-hidden="true"></i>
+                                {{ $b->kapasiti }} orang
+                            </div>
+                        </button>
+                    </div>
+                    @endforeach
                 @endforeach
             </div>
         </div>
@@ -236,6 +277,15 @@ let calendar;
 let selectedBilikId = null;
 const totalBilik = {{ $bilik->count() }};
 
+// ── Privasi: pentadbir nampak nama penuh, lain-lain nama disamarkan ──
+const bolehLihatNamaPenuh = {{ auth()->user()->isPentadbir() ? 'true' : 'false' }};
+function maskNama(nama) {
+    if (!nama || nama === '-') return nama;
+    return nama.split(' ').map(function(w) {
+        return w.length ? (w.charAt(0) + '***') : w;
+    }).join(' ');
+}
+
 // ---- Init FullCalendar ----
 document.addEventListener('DOMContentLoaded', function () {
     calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
@@ -276,7 +326,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             document.getElementById('ev-pengerusi').textContent = p.nama_pengerusi || '-';
             document.getElementById('ev-peserta').textContent   = p.peserta || '0';
-            document.getElementById('ev-pemohon').textContent   = p.pemohon || '-';
+            // Mask nama pemohon untuk urus setia — pentadbir sahaja nampak nama penuh
+            const pemohonRaw = p.pemohon || '-';
+            document.getElementById('ev-pemohon').textContent   = bolehLihatNamaPenuh ? pemohonRaw : maskNama(pemohonRaw);
 
             const statusEl = document.getElementById('ev-status');
             if (p.status === 'diluluskan') {
@@ -329,7 +381,7 @@ function fetchEvents(info, successCallback, failureCallback) {
         .catch(failureCallback);
 }
 
-// ---- Filter bilik ----
+// ---- Filter bilik (desktop sidebar) ----
 function filterBilik(bilikId, el) {
     selectedBilikId = bilikId;
     document.querySelectorAll('.bilik-btn').forEach(b => {
@@ -338,33 +390,65 @@ function filterBilik(bilikId, el) {
     });
     el.classList.add('aktif');
     el.setAttribute('aria-pressed', 'true');
+    // Segerak dropdown mudah alih
+    const mobSel = document.getElementById('mob-filter-bilik');
+    if (mobSel) mobSel.value = bilikId || '';
+    if (calendar) calendar.refetchEvents();
+}
+
+// ---- Filter bilik (mobile dropdown) ----
+function filterBilikMobile(val) {
+    const bilikId = val ? parseInt(val) : null;
+    selectedBilikId = bilikId;
+    // Segerak butang sidebar desktop
+    document.querySelectorAll('.bilik-btn').forEach(b => {
+        b.classList.remove('aktif');
+        b.setAttribute('aria-pressed', 'false');
+    });
+    if (bilikId) {
+        const btn = document.querySelector('.bilik-btn[data-bilik-id="' + bilikId + '"]');
+        if (btn) { btn.classList.add('aktif'); btn.setAttribute('aria-pressed', 'true'); }
+    } else {
+        const btnSemua = document.getElementById('btn-semua');
+        if (btnSemua) { btnSemua.classList.add('aktif'); btnSemua.setAttribute('aria-pressed', 'true'); }
+    }
     if (calendar) calendar.refetchEvents();
 }
 
 // ---- Status hari ini (guna event semasa, tanpa fetch tambahan) ----
 function updateStatusHariIniFromCurrentEvents(events) {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    const todayStr = `${yyyy}-${mm}-${dd}`;
+    const today    = new Date();
+    const todayStr = today.getFullYear() + '-'
+        + String(today.getMonth() + 1).padStart(2, '0') + '-'
+        + String(today.getDate()).padStart(2, '0');
 
-    const eventHariIni = events.filter(e => {
-        const tarikh = (e.extendedProps && e.extendedProps.tarikh) ? e.extendedProps.tarikh : null;
-        return tarikh === todayStr;
-    });
+    const eventHariIni = events.filter(e => e.extendedProps?.tarikh === todayStr);
+    const ditempah     = eventHariIni.filter(e => e.extendedProps?.status === 'diluluskan');
 
-    const ditempah = eventHariIni.filter(e => {
-        const props = e.extendedProps || {};
-        return props.status === 'diluluskan';
-    });
-
-    const bilikDitempah = [...new Set(ditempah.map(e => e.extendedProps?.bilik))].filter(Boolean);
+    const bilikDitempah    = [...new Set(ditempah.map(e => e.extendedProps?.bilik_id))].filter(Boolean);
     const gunaBilikSpesifik = !!selectedBilikId;
     const jmlDitempah = gunaBilikSpesifik ? (ditempah.length > 0 ? 1 : 0) : bilikDitempah.length;
     const jmlTersedia = gunaBilikSpesifik ? (ditempah.length > 0 ? 0 : 1) : Math.max(0, totalBilik - jmlDitempah);
 
-    document.getElementById('status-hari-ini').innerHTML = `
+    // ── Bilik paling sibuk hari ini ──────────────────────────────
+    const bilikCount = {};
+    ditempah.forEach(e => {
+        const nm = e.extendedProps?.bilik || '';
+        if (nm) bilikCount[nm] = (bilikCount[nm] || 0) + 1;
+    });
+    const bilikSibuk = Object.entries(bilikCount).sort((a, b) => b[1] - a[1])[0];
+
+    // ── Sesi seterusnya hari ini ─────────────────────────────────
+    const now  = new Date();
+    const akan = ditempah
+        .filter(e => e.start && new Date(e.start) > now)
+        .sort((a, b) => new Date(a.start) - new Date(b.start))[0];
+    const fmtMasa = t => t
+        ? new Date(t).toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' })
+        : '';
+
+    // ── Bina HTML ────────────────────────────────────────────────
+    let html = `
         <div class="flex justify-between text-gray-600">
             <span>${gunaBilikSpesifik ? 'Bilik Ini' : 'Jumlah Bilik'}</span>
             <span class="font-bold">${gunaBilikSpesifik ? 1 : totalBilik}</span>
@@ -382,8 +466,53 @@ function updateStatusHariIniFromCurrentEvents(events) {
                 Tersedia
             </span>
             <span class="font-bold text-green-600">${jmlTersedia}</span>
-        </div>
-    `;
+        </div>`;
+
+    // Maklumat tambahan — hanya jika bukan tapis bilik spesifik
+    if (!gunaBilikSpesifik) {
+        if (bilikSibuk) {
+            const nm = bilikSibuk[0].length > 22
+                ? bilikSibuk[0].substring(0, 20) + '…'
+                : bilikSibuk[0];
+            html += `<div class="border-t border-gray-100 pt-2 mt-1">
+                <div class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Paling Sibuk</div>
+                <div class="text-xs text-gray-600 font-medium" title="${bilikSibuk[0]}">${nm}</div>
+            </div>`;
+        }
+        if (akan) {
+            const bilikAkan = akan.extendedProps?.bilik || '';
+            html += `<div class="border-t border-gray-100 pt-2 mt-1">
+                <div class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Seterusnya</div>
+                <div class="text-xs text-gray-600 font-medium">${fmtMasa(akan.start)}${bilikAkan ? ' · ' + bilikAkan : ''}</div>
+            </div>`;
+        }
+        if (ditempah.length === 0) {
+            html += `<div class="border-t border-gray-100 pt-2 mt-1 text-xs text-gray-400 italic">Tiada tempahan hari ini</div>`;
+        }
+    }
+
+    document.getElementById('status-hari-ini').innerHTML = html;
+
+    // ── Kemas kini panel status mudah alih ──────────────────────
+    const mobStatus = document.getElementById('mob-status-hari-ini');
+    if (mobStatus) {
+        mobStatus.innerHTML = `
+            <span class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold"
+                  style="background:#f3f4f6;color:#374151">
+                <i class="fa-solid fa-building text-gray-400 text-[10px]" aria-hidden="true"></i>
+                ${gunaBilikSpesifik ? 1 : totalBilik} Bilik
+            </span>
+            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                  style="background:#fee2e2;color:#991b1b">
+                <span class="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0" style="background:#dc2626"></span>
+                ${jmlDitempah} Ditempah
+            </span>
+            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                  style="background:#dcfce7;color:#166534">
+                <span class="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0" style="background:#16a34a"></span>
+                ${jmlTersedia} Tersedia
+            </span>`;
+    }
 }
 
 // ---- Tutup modal dengan Esc ----

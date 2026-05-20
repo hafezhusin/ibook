@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateBilikRequest;
 use App\Models\BilikMesyuarat;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BilikController extends Controller
 {
@@ -20,7 +21,26 @@ class BilikController extends Controller
 
     public function index()
     {
-        $bilik = BilikMesyuarat::all();
+        // Pra-kira kiraan tempahan bulan ini dalam satu query (elak N+1)
+        $bulan = now()->month;
+        $tahun = now()->year;
+        $maxSesi = now()->daysInMonth * 2;
+
+        $bilik = BilikMesyuarat::withCount([
+            'tempahan as tempahan_bulan_ini' => function ($q) use ($bulan, $tahun) {
+                $q->whereMonth('tarikh', $bulan)
+                  ->whereYear('tarikh', $tahun)
+                  ->where('status', 'diluluskan');
+            },
+        ])->get();
+
+        // Tetapkan peratus penggunaan sebagai atribut dinamik
+        $bilik->each(function ($b) use ($maxSesi) {
+            $b->peratus_penggunaan = $maxSesi > 0
+                ? (int) round(($b->tempahan_bulan_ini / $maxSesi) * 100)
+                : 0;
+        });
+
         return view('bilik.index', compact('bilik'));
     }
 
@@ -45,7 +65,11 @@ class BilikController extends Controller
 
     public function update(UpdateBilikRequest $request, BilikMesyuarat $bilik)
     {
-        $bilik->update($request->validated());
+        $data = $request->validated();
+        $data['dikemaskini_oleh'] = auth()->user()->name;
+        $data['dikemaskini_pada'] = now();
+
+        $bilik->update($data);
         AuditLogger::catat('kemaskini_bilik', $bilik, ['nama' => $bilik->nama]);
 
         return redirect()->route('bilik.index')
@@ -54,12 +78,16 @@ class BilikController extends Controller
 
     public function destroy(BilikMesyuarat $bilik)
     {
-        if ($bilik->tempahan()->where('status', '!=', 'ditolak')->exists()) {
-            return back()->with('error', 'Bilik tidak boleh dipadam kerana mempunyai tempahan aktif.');
+        // Blok padam jika ada SEBARANG rekod tempahan (aktif ATAU sejarah)
+        if ($bilik->tempahan()->exists()) {
+            return back()->with('error',
+                'Bilik tidak boleh dipadam kerana mempunyai rekod tempahan. ' .
+                'Sila nyahaktifkan bilik ini sebagai gantinya.'
+            );
         }
 
         AuditLogger::catat('padam_bilik', null, ['nama' => $bilik->nama, 'id' => $bilik->id]);
-        $bilik->delete();
+        $bilik->delete(); // SoftDelete — rekod kekal dalam DB
         return redirect()->route('bilik.index')
             ->with('success', 'Bilik mesyuarat berjaya dipadam.');
     }

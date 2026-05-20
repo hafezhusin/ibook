@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Str;
 
 class Tempahan extends Model
 {
@@ -40,7 +41,20 @@ class Tempahan extends Model
         return config("ibook.sesi.{$sesi}", self::MASA_SESI[$sesi] ?? []);
     }
 
+    /**
+     * Jana ULID secara automatik apabila rekod baharu dibuat.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Tempahan $tempahan) {
+            if (empty($tempahan->ulid)) {
+                $tempahan->ulid = (string) Str::ulid();
+            }
+        });
+    }
+
     protected $fillable = [
+        'ulid',
         'nama_mesyuarat',
         'tarikh',
         'sesi',
@@ -103,13 +117,18 @@ class Tempahan extends Model
     }
 
     /**
-     * Nombor rujukan unik: TMP-{tahun}-{id 4 digit}
-     * Contoh: TMP-2026-0042
+     * Nombor rujukan unik: TMP-{tahun}-{8 aksara dari ULID}
+     * Contoh: TMP-2026-A3F9B2C1
+     * ULID tidak sequential — selamat daripada enumeration attack.
+     * Fallback ke hash MD5 ID jika ULID belum ada (rekod lama).
      */
     public function getNoRujukanAttribute(): string
     {
-        $year = $this->tarikh?->year ?? $this->created_at?->year ?? now()->year;
-        return 'TMP-' . $year . '-' . str_pad($this->id, 4, '0', STR_PAD_LEFT);
+        $year   = $this->tarikh?->year ?? $this->created_at?->year ?? now()->year;
+        $suffix = $this->ulid
+            ? strtoupper(substr($this->ulid, -8))
+            : strtoupper(substr(md5($this->id . 'ibook_ref'), 0, 8));
+        return 'TMP-' . $year . '-' . $suffix;
     }
 
     public function getMasaLabelAttribute(): string

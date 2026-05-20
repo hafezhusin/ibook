@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class BilikMesyuarat extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'bilik_mesyuarat';
 
@@ -18,12 +20,30 @@ class BilikMesyuarat extends Model
         'status',
         'gambar',
         'lokasi',
+        'ulid',
+        'dikemaskini_oleh',
+        'dikemaskini_pada',
     ];
 
     protected $casts = [
         'kemudahan' => 'array',
         'kapasiti' => 'integer',
+        'dikemaskini_pada' => 'datetime',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (BilikMesyuarat $bilik) {
+            if (empty($bilik->ulid)) {
+                $bilik->ulid = (string) Str::ulid();
+            }
+        });
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
 
     public function tempahan()
     {

@@ -71,6 +71,7 @@ class AuditLogger
             'kemaskini_profil'      => "{$namaPengguna} mengemaskini profil sendiri",
             'bulk_aktifkan'         => "{$namaPengguna} mengaktifkan pelbagai pengguna",
             'bulk_nyahaktifkan'     => "{$namaPengguna} menyahaktifkan pelbagai pengguna",
+            'akses_laporan'         => "{$namaPengguna} mengakses laporan sistem",
             default                 => "{$namaPengguna} melaksanakan tindakan: {$tindakan}",
         };
     }

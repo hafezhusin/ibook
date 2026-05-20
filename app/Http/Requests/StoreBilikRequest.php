@@ -20,6 +20,7 @@ class StoreBilikRequest extends FormRequest
             'kemudahan'   => ['nullable', 'array'],
             'kemudahan.*' => ['string', 'max:100'],
             'status'      => ['required', 'in:aktif,tidak_aktif'],
+            'gambar'      => ['nullable', 'url', 'max:2048'],
         ];
     }
 
@@ -32,6 +33,7 @@ class StoreBilikRequest extends FormRequest
             'kapasiti.max'      => 'Kapasiti tidak boleh melebihi 500 orang.',
             'status.required'   => 'Sila pilih status bilik.',
             'status.in'         => 'Status tidak sah.',
+            'gambar.url'        => 'URL gambar tidak sah. Sila masukkan URL yang betul (bermula dengan https://).',
         ];
     }
 }

@@ -25,7 +25,9 @@
                 <span class="text-xs text-amber-500 font-normal">(anda)</span>
                 @endif
             </div>
-            <div class="text-xs text-gray-400 truncate">{{ $p->email }}</div>
+            <div class="text-xs text-gray-400 truncate">
+                {{ auth()->user()->isPentadbir() ? $p->email : $p->masked_email }}
+            </div>
         </div>
     </div>
 
@@ -65,12 +67,14 @@
             class="text-amber-500 text-xs hover:underline" aria-label="Edit {{ $p->name }}">
             <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
         </button>
-        @endif
+        {{-- Reset: ikon sahaja, subordinat --}}
         <button type="button"
             onclick="openReset({{ $p->id }}, '{{ addslashes($p->name) }}')"
-            class="text-gray-400 text-xs hover:text-gray-600" aria-label="Reset kata laluan {{ $p->name }}">
-            <i class="fa-solid fa-key" aria-hidden="true"></i> Reset
+            class="text-gray-300 text-xs hover:text-gray-500 transition" title="Reset Kata Laluan"
+            aria-label="Reset kata laluan {{ $p->name }}" aria-haspopup="dialog" aria-controls="modal-reset">
+            <i class="fa-solid fa-key" aria-hidden="true"></i>
         </button>
+        @endif
         @if($p->id !== auth()->id() && auth()->user()->isPentadbir())
         <form method="POST" action="{{ route('pengguna.toggle-aktif', $p) }}" class="inline">
             @csrf

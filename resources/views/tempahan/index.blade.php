@@ -137,17 +137,23 @@
     </div>
     <div class="flex items-center gap-3">
         {{-- Eksport: subtle, tidak bersaing dengan CTA utama --}}
+        {{-- Tooltip menunjukkan skop eksport (ditapis atau semua) --}}
+        @php
+            $eksportLabel = $hasFilter
+                ? 'Eksport ' . $tempahan->total() . ' rekod ditapis'
+                : 'Eksport semua ' . $tempahan->total() . ' rekod';
+        @endphp
         <div class="flex items-center gap-0.5 border border-gray-200 rounded-lg px-1 py-1" aria-label="Eksport data">
             <a href="{{ route('tempahan.pdf', request()->query()) }}"
                class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
-               title="Muat turun senarai dalam format PDF">
+               title="{{ $eksportLabel }} (PDF)">
                 <i class="fa-solid fa-file-pdf" aria-hidden="true"></i>
                 <span class="hidden sm:inline">PDF</span>
             </a>
             <div class="w-px h-4 bg-gray-200" aria-hidden="true"></div>
             <a href="{{ route('tempahan.excel', request()->query()) }}"
                class="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
-               title="Muat turun senarai dalam format Excel">
+               title="{{ $eksportLabel }} (Excel)">
                 <i class="fa-solid fa-file-excel" aria-hidden="true"></i>
                 <span class="hidden sm:inline">Excel</span>
             </a>
@@ -486,7 +492,20 @@
                         <div class="text-sm font-medium text-gray-700 leading-snug">{{ $t->bilik->nama ?? '—' }}</div>
                         <div class="text-xs text-gray-400">{{ $t->bilangan_peserta }} peserta</div>
                     </td>
-                    <td class="text-sm text-gray-600">{{ $t->pengguna->name ?? '—' }}</td>
+                    <td class="text-sm text-gray-600">
+                        @php
+                            $pemohonNama    = $t->pengguna->name ?? '—';
+                            // Pentadbir & staf (skop unit terhad) nampak nama penuh.
+                            // Urus Setia nampak nama disamarkan — privasi melintasi rekod semua pengguna.
+                            $namaKelihatan  = auth()->user()->isPentadbir() || auth()->user()->isStaf();
+                        @endphp
+                        @if($namaKelihatan)
+                            {{ $pemohonNama }}
+                        @else
+                            {{ collect(explode(' ', $pemohonNama))->map(fn($w) => mb_substr($w,0,1).'***')->implode(' ') }}
+                            <span class="block text-[10px] text-gray-300 italic leading-tight">nama disamarkan</span>
+                        @endif
+                    </td>
                     <td>
                         @if($t->status === 'diluluskan')
                             <span class="st-badge st-sah" role="status">
@@ -523,7 +542,7 @@
                             <button type="button"
                                 onclick="toggleDd({{ $t->id }})"
                                 class="action-trigger"
-                                aria-haspopup="true"
+                                aria-haspopup="menu"
                                 aria-expanded="false"
                                 aria-controls="dd-{{ $t->id }}"
                                 aria-label="Tindakan untuk {{ $t->nama_mesyuarat }}">

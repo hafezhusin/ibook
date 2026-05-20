@@ -52,6 +52,7 @@
                             class="form-input @error('nama_mesyuarat') !border-red-400 @enderror"
                             required maxlength="255"
                             aria-required="true"
+                            @error('nama_mesyuarat') aria-invalid="true" @enderror
                             aria-describedby="@error('nama_mesyuarat') err-nama @enderror">
                         @error('nama_mesyuarat')
                         <p id="err-nama" class="form-error" role="alert">
@@ -68,7 +69,8 @@
                             <input type="text" id="nama_pengerusi" name="nama_pengerusi"
                                 value="{{ old('nama_pengerusi', $tempahan->nama_pengerusi) }}"
                                 class="form-input @error('nama_pengerusi') !border-red-400 @enderror"
-                                required maxlength="255" aria-required="true">
+                                required maxlength="255" aria-required="true"
+                                @error('nama_pengerusi') aria-invalid="true" @enderror>
                             @error('nama_pengerusi')
                             <p class="form-error" role="alert">
                                 <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ $message }}
@@ -83,7 +85,8 @@
                             <input type="number" id="bilangan_peserta" name="bilangan_peserta"
                                 value="{{ old('bilangan_peserta', $tempahan->bilangan_peserta) }}"
                                 class="form-input @error('bilangan_peserta') !border-red-400 @enderror"
-                                min="1" required aria-required="true">
+                                min="1" required aria-required="true"
+                                @error('bilangan_peserta') aria-invalid="true" @enderror>
                             @error('bilangan_peserta')
                             <p class="form-error" role="alert">
                                 <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ $message }}
@@ -98,7 +101,8 @@
                         </label>
                         <select id="kategori" name="kategori"
                             class="form-input @error('kategori') !border-red-400 @enderror"
-                            required aria-required="true">
+                            required aria-required="true"
+                            @error('kategori') aria-invalid="true" @enderror>
                             <option value="">-- Pilih Kategori --</option>
                             @foreach($kategori as $key => $label)
                             <option value="{{ $key }}" {{ old('kategori', $tempahan->kategori) === $key ? 'selected' : '' }}>
@@ -145,7 +149,8 @@
                         <input type="text" id="tarikh" name="tarikh"
                             value="{{ old('tarikh', $tempahan->tarikh->format('Y-m-d')) }}"
                             class="form-input pr-10 @error('tarikh') !border-red-400 @enderror"
-                            readonly required aria-required="true">
+                            readonly required aria-required="true"
+                            @error('tarikh') aria-invalid="true" @enderror>
                         <i class="fa-solid fa-calendar-days absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden="true"></i>
                     </div>
                     @error('tarikh')
@@ -161,7 +166,8 @@
                     </label>
                     <select id="sesi" name="sesi"
                         class="form-input @error('sesi') !border-red-400 @enderror"
-                        required aria-required="true">
+                        required aria-required="true"
+                        @error('sesi') aria-invalid="true" @enderror>
                         @foreach($sesi as $key => $info)
                         <option value="{{ $key }}" {{ old('sesi', $tempahan->sesi) === $key ? 'selected' : '' }}>
                             {{ $info['label'] }}
@@ -181,7 +187,8 @@
                     </label>
                     <select id="bilik_id" name="bilik_id"
                         class="form-input @error('bilik_id') !border-red-400 @enderror"
-                        required aria-required="true">
+                        required aria-required="true"
+                        @error('bilik_id') aria-invalid="true" @enderror>
                         <option value="">-- Pilih Bilik --</option>
                         @foreach($bilik as $b)
                         <option value="{{ $b->id }}"

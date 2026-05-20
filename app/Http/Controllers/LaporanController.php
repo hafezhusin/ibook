@@ -4,101 +4,198 @@ namespace App\Http\Controllers;
 
 use App\Models\BilikMesyuarat;
 use App\Models\Tempahan;
+use App\Services\AuditLogger;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class LaporanController extends Controller
 {
+    /** Cache TTL: 24 jam untuk tahun lalu (data frozen), 15 minit untuk tahun semasa */
+    const CACHE_LALU_TTL = 86400;
+    const CACHE_INI_TTL  = 900;
+
     public function index(Request $request)
     {
-        $tahun = $request->get('tahun', now()->year);
-        $user  = Auth::user();
-        $isStaf = $user->isStaf();
-
+        $tahun       = (int) $request->get('tahun', now()->year);
+        $user        = Auth::user();
+        $isStaf      = $user->isStaf();
+        $isPentadbir = $user->isPentadbir();
         $senaraiTahun = range(now()->year, now()->year - 4);
+
+        // ── Item 5: Log audit akses laporan ──
+        AuditLogger::catat('akses_laporan', null, [
+            'tahun'   => $tahun,
+            'peranan' => $user->peranan,
+        ]);
 
         // =============================================
         // PAPARAN STAF — statistik unit sendiri sahaja
         // =============================================
         if ($isStaf) {
-            $jabatan = $user->jabatan;
+            $jabatan    = $user->jabatan;
+            $userIdUnit = DB::table('users')->where('jabatan', $jabatan)->pluck('id')->toArray();
 
-            // ID semua pengguna dalam jabatan yang sama
-            $userIdUnit = DB::table('users')
-                ->where('jabatan', $jabatan)
-                ->pluck('id');
-
-            // Tempahan unit mengikut bulan
-            $mengikutBulan = Tempahan::selectRaw('MONTH(tarikh) as bulan, COUNT(*) as jumlah')
-                ->whereYear('tarikh', $tahun)
-                ->where('status', Tempahan::STATUS_DILULUSKAN)
-                ->whereIn('user_id', $userIdUnit)
-                ->groupBy('bulan')
-                ->orderBy('bulan')
-                ->get()
-                ->keyBy('bulan');
-
-            $dataBulan = [];
-            for ($i = 1; $i <= 12; $i++) {
-                $dataBulan[] = $mengikutBulan->get($i)?->jumlah ?? 0;
-            }
-
-            // Tempahan unit mengikut kategori
+            $dataBulan        = $this->kiraBulan($tahun, $userIdUnit);
             $mengikutKategori = Tempahan::selectRaw('kategori, COUNT(*) as jumlah')
                 ->whereYear('tarikh', $tahun)
                 ->whereIn('user_id', $userIdUnit)
-                ->groupBy('kategori')
-                ->get();
+                ->groupBy('kategori')->get();
 
-            // Kad ringkasan unit
             $totalDiluluskan = Tempahan::whereYear('tarikh', $tahun)
-                ->whereIn('user_id', $userIdUnit)
-                ->count();
+                ->where('status', Tempahan::STATUS_DILULUSKAN)
+                ->whereIn('user_id', $userIdUnit)->count();
 
             $totalDitolak = Tempahan::whereYear('tarikh', $tahun)
                 ->where('status', Tempahan::STATUS_DITOLAK)
-                ->whereIn('user_id', $userIdUnit)
-                ->count();
+                ->whereIn('user_id', $userIdUnit)->count();
 
             return view('laporan.index', compact(
-                'dataBulan',
-                'mengikutKategori',
-                'tahun',
-                'senaraiTahun',
-                'jabatan',
-                'totalDiluluskan',
-                'totalDitolak',
-                'isStaf'
+                'dataBulan', 'mengikutKategori', 'tahun', 'senaraiTahun',
+                'jabatan', 'totalDiluluskan', 'totalDitolak', 'isStaf'
             ));
         }
 
         // =============================================
-        // PAPARAN PENTADBIR / URUS SETIA — semua data
+        // PAPARAN ADMIN / URUS SETIA — dengan cache (Item 6)
         // =============================================
+        $isTahunSemasa = ($tahun === now()->year);
+        $ttl      = $isTahunSemasa ? self::CACHE_INI_TTL : self::CACHE_LALU_TTL;
+        $cacheKey = "laporan_admin_{$tahun}";
 
-        // Tempahan mengikut bulan
-        $mengikutBulan = Tempahan::selectRaw('MONTH(tarikh) as bulan, COUNT(*) as jumlah')
-            ->whereYear('tarikh', $tahun)
-            ->where('status', Tempahan::STATUS_DILULUSKAN)
-            ->groupBy('bulan')
-            ->orderBy('bulan')
-            ->get()
-            ->keyBy('bulan');
+        // Data dikira sekali dan dicache (tidak bergantung kepada pengguna)
+        $data = Cache::remember($cacheKey, $ttl, fn () => $this->kiraLaporanAdmin($tahun));
 
-        $dataBulan = [];
-        for ($i = 1; $i <= 12; $i++) {
-            $dataBulan[] = $mengikutBulan->get($i)?->jumlah ?? 0;
-        }
+        // Tambah nilai yang bergantung kepada pengguna (tidak boleh dicache)
+        $data['isPentadbir']  = $isPentadbir;
+        $data['isStaf']       = false;
+        $data['tahun']        = $tahun;
+        $data['senaraiTahun'] = $senaraiTahun;
 
-        // Tempahan mengikut kategori
+        return view('laporan.index', $data);
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Kira semua data laporan admin — boleh dicache selamat
+    // ─────────────────────────────────────────────────────────
+    private function kiraLaporanAdmin(int $tahun): array
+    {
+        // ── 1. Tempahan mengikut bulan ──
+        $dataBulan       = $this->kiraBulan($tahun);
+        $totalDiluluskan = array_sum($dataBulan);
+
+        // ── 2. Tempahan mengikut kategori ──
         $mengikutKategori = Tempahan::selectRaw('kategori, COUNT(*) as jumlah')
             ->whereYear('tarikh', $tahun)
             ->groupBy('kategori')
             ->get();
 
-        // Senarai unit rasmi dalam direktori BPTM ANM
-        $unitRasmi = [
+        // ── 3. Tempahan mengikut unit rasmi ──
+        $mengikutUnit = DB::table('tempahan')
+            ->join('users', 'tempahan.user_id', '=', 'users.id')
+            ->whereYear('tempahan.tarikh', $tahun)
+            ->where('tempahan.status', Tempahan::STATUS_DILULUSKAN)
+            ->whereIn('users.jabatan', $this->unitRasmi())
+            ->select('users.jabatan as unit', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('users.jabatan')
+            ->orderByDesc('jumlah')
+            ->get();
+
+        // ── 4. Top 10 pemohon ──
+        $top10Pengguna = DB::table('tempahan')
+            ->join('users', 'tempahan.user_id', '=', 'users.id')
+            ->whereYear('tempahan.tarikh', $tahun)
+            ->select(
+                'users.id',
+                'users.name',
+                'users.jabatan',
+                DB::raw('COUNT(*) as jumlah'),
+                DB::raw('SUM(CASE WHEN tempahan.status = "diluluskan" THEN 1 ELSE 0 END) as jumlah_diluluskan'),
+                DB::raw('SUM(CASE WHEN tempahan.status = "ditolak" THEN 1 ELSE 0 END) as jumlah_ditolak')
+            )
+            ->groupBy('users.id', 'users.name', 'users.jabatan')
+            ->orderByDesc('jumlah')
+            ->limit(10)
+            ->get();
+
+        // ── 5. Ringkasan bilik — FIX N+1 + peratusan betul (Item 4) ──
+        // Sebelum ini: $b->penggunaan_bulan_ini memanggil accessor → N+1 query,
+        // dan nilai salah kerana berasaskan bulan semasa, bukan tahun yang dipilih.
+        // Sekarang: dikira terus dalam map() menggunakan eager-loaded collection.
+        $isKabisat     = Carbon::createFromDate($tahun, 1, 1)->isLeapYear();
+        $maxSesiTahun  = ($isKabisat ? 366 : 365) * 2;
+
+        $bilik = BilikMesyuarat::with(['tempahan' => function ($q) use ($tahun) {
+            $q->whereYear('tarikh', $tahun)
+              ->where('status', Tempahan::STATUS_DILULUSKAN);
+        }])->get()->map(function ($b) use ($maxSesiTahun) {
+            $jumlah    = $b->tempahan->count();
+            $peratusan = $maxSesiTahun > 0
+                ? (int) round(($jumlah / $maxSesiTahun) * 100)
+                : 0;
+            return [
+                'nama'            => $b->nama,
+                'kapasiti'        => $b->kapasiti,
+                'jumlah_tempahan' => $jumlah,
+                'peratusan'       => $peratusan,
+            ];
+        })->sortByDesc('jumlah_tempahan')->values();
+
+        // ── 6. KPI eksekutif + Insight sentences (Items 2 & 7) ──
+        $unitPalingAktif  = $mengikutUnit->first();
+        $bilikPalingGuna  = $bilik->first();
+        $purataPenggunaan = $bilik->isNotEmpty()
+            ? (int) round($bilik->avg('peratusan'))
+            : 0;
+
+        $insightUnit  = $unitPalingAktif
+            ? "{$unitPalingAktif->unit} mencatatkan {$unitPalingAktif->jumlah} tempahan — unit paling aktif tahun {$tahun}."
+            : null;
+        $insightBilik = $bilikPalingGuna && $bilikPalingGuna['jumlah_tempahan'] > 0
+            ? "{$bilikPalingGuna['nama']} adalah bilik paling banyak digunakan dengan {$bilikPalingGuna['jumlah_tempahan']} sesi ({$bilikPalingGuna['peratusan']}% kadar penggunaan tahun ini)."
+            : null;
+
+        return compact(
+            'dataBulan', 'totalDiluluskan',
+            'mengikutKategori', 'mengikutUnit',
+            'top10Pengguna', 'bilik',
+            'unitPalingAktif', 'bilikPalingGuna', 'purataPenggunaan',
+            'insightUnit', 'insightBilik'
+        );
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Kira data bulan — boleh tapis mengikut user IDs (unit staf)
+    // ─────────────────────────────────────────────────────────
+    private function kiraBulan(int $tahun, array $userIds = []): array
+    {
+        $query = Tempahan::selectRaw('MONTH(tarikh) as bulan, COUNT(*) as jumlah')
+            ->whereYear('tarikh', $tahun)
+            ->where('status', Tempahan::STATUS_DILULUSKAN)
+            ->groupBy('bulan')
+            ->orderBy('bulan');
+
+        if (!empty($userIds)) {
+            $query->whereIn('user_id', $userIds);
+        }
+
+        $mengikutBulan = $query->get()->keyBy('bulan');
+
+        $data = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $data[] = $mengikutBulan->get($i)?->jumlah ?? 0;
+        }
+        return $data;
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // Senarai unit rasmi BPTM ANM
+    // ─────────────────────────────────────────────────────────
+    private function unitRasmi(): array
+    {
+        return [
             'Pejabat Pengarah',
             'Seksyen Pengurusan Pelanggan',
             'Unit Pentadbiran dan Pengurusan Kewangan',
@@ -131,66 +228,5 @@ class LaporanController extends Controller
             'Unit Aplikasi Gunasama',
             'Seksyen Kualiti dan Perancangan',
         ];
-
-        // Statistik mengikut unit (hanya unit rasmi direktori BPTM)
-        $mengikutUnit = DB::table('tempahan')
-            ->join('users', 'tempahan.user_id', '=', 'users.id')
-            ->whereYear('tempahan.tarikh', $tahun)
-            ->where('tempahan.status', Tempahan::STATUS_DILULUSKAN)
-            ->whereIn('users.jabatan', $unitRasmi)
-            ->select('users.jabatan as unit', DB::raw('COUNT(*) as jumlah'))
-            ->groupBy('users.jabatan')
-            ->orderByDesc('jumlah')
-            ->get();
-
-        // Top 10 pemohon terbanyak
-        $top10Pengguna = DB::table('tempahan')
-            ->join('users', 'tempahan.user_id', '=', 'users.id')
-            ->whereYear('tempahan.tarikh', $tahun)
-            ->select(
-                'users.id',
-                'users.name',
-                'users.jabatan',
-                DB::raw('COUNT(*) as jumlah'),
-                DB::raw('SUM(CASE WHEN tempahan.status = "diluluskan" THEN 1 ELSE 0 END) as jumlah_diluluskan'),
-                DB::raw('SUM(CASE WHEN tempahan.status = "ditolak" THEN 1 ELSE 0 END) as jumlah_ditolak')
-            )
-            ->groupBy('users.id', 'users.name', 'users.jabatan')
-            ->orderByDesc('jumlah')
-            ->limit(10)
-            ->get();
-
-        // Ringkasan penggunaan bilik
-        $bilik = BilikMesyuarat::with(['tempahan' => function ($q) use ($tahun) {
-            $q->whereYear('tarikh', $tahun)->where('status', Tempahan::STATUS_DILULUSKAN);
-        }])->get()->map(function ($b) {
-            $jumlahTempahan = $b->tempahan->count();
-            $jamDigunakan = $b->tempahan->reduce(function ($carry, $t) {
-                $mula  = strtotime($t->masa_mula);
-                $tamat = strtotime($t->masa_tamat);
-                return $carry + (($tamat - $mula) / 3600);
-            }, 0);
-
-            return [
-                'nama'            => $b->nama,
-                'kapasiti'        => $b->kapasiti,
-                'jumlah_tempahan' => $jumlahTempahan,
-                'jam_digunakan'   => round($jamDigunakan),
-                'peratusan'       => $b->penggunaan_bulan_ini,
-            ];
-        });
-
-        $isStaf = false;
-
-        return view('laporan.index', compact(
-            'dataBulan',
-            'mengikutKategori',
-            'bilik',
-            'mengikutUnit',
-            'top10Pengguna',
-            'tahun',
-            'senaraiTahun',
-            'isStaf'
-        ));
     }
 }

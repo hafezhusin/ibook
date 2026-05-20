@@ -80,7 +80,7 @@
             <i class="fa-solid fa-circle-check mr-1" aria-hidden="true"></i>
             Aktif
             <span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full"
-                style="background:rgba(255,255,255,.25)">{{ $penggunaAktif->count() }}</span>
+                style="background:rgba(255,255,255,.25)">{{ $penggunaAktif->total() }}</span>
         </button>
         <button type="button" id="tab-nyahaktif" role="tab"
             class="tab-btn"
@@ -88,9 +88,9 @@
             onclick="tukarTab('nyahaktif')">
             <i class="fa-solid fa-ban mr-1" aria-hidden="true"></i>
             Dinyahaktifkan
-            @if($penggunaNyahaktif->count() > 0)
+            @if($penggunaNyahaktif->total() > 0)
             <span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full bg-red-500 text-white">
-                {{ $penggunaNyahaktif->count() }}
+                {{ $penggunaNyahaktif->total() }}
             </span>
             @endif
         </button>
@@ -156,6 +156,13 @@
         @endforelse
     </div>
 
+    {{-- Pagination Aktif (kad view) --}}
+    @if($penggunaAktif->hasPages())
+    <div id="pagination-kad-aktif" class="mb-4">
+        {{ $penggunaAktif->appends(request()->except('page_aktif'))->links() }}
+    </div>
+    @endif
+
     {{-- LIST VIEW --}}
     <div id="list-aktif" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-8">
         <div class="list-row list-header rounded-t-xl">
@@ -187,6 +194,13 @@
         @endforelse
     </div>
 
+    {{-- Pagination Aktif (list view) --}}
+    @if($penggunaAktif->hasPages())
+    <div id="pagination-list-aktif" class="hidden mb-4">
+        {{ $penggunaAktif->appends(request()->except('page_aktif'))->links() }}
+    </div>
+    @endif
+
 </div>
 
 {{-- ════════════════════════════════════════════ --}}
@@ -205,6 +219,13 @@
         </div>
         @endforelse
     </div>
+
+    {{-- Pagination Nyahaktif (kad view) --}}
+    @if($penggunaNyahaktif->hasPages())
+    <div id="pagination-kad-nyahaktif" class="mb-4">
+        {{ $penggunaNyahaktif->appends(request()->except('page_nyahaktif'))->links() }}
+    </div>
+    @endif
 
     {{-- LIST VIEW --}}
     <div id="list-nyahaktif" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-8">
@@ -236,6 +257,13 @@
         <div class="p-8 text-center text-gray-400">Tiada akaun yang dinyahaktifkan</div>
         @endforelse
     </div>
+
+    {{-- Pagination Nyahaktif (list view) --}}
+    @if($penggunaNyahaktif->hasPages())
+    <div id="pagination-list-nyahaktif" class="hidden mb-4">
+        {{ $penggunaNyahaktif->appends(request()->except('page_nyahaktif'))->links() }}
+    </div>
+    @endif
 
 </div>
 
@@ -414,6 +442,11 @@ function tukarView(view) {
     ['aktif','nyahaktif'].forEach(tab => {
         document.getElementById('kad-' + tab).classList.toggle('hidden', view !== 'kad');
         document.getElementById('list-' + tab).classList.toggle('hidden', view !== 'senarai');
+        // Toggle pagination divs jika wujud
+        const pgKad  = document.getElementById('pagination-kad-'  + tab);
+        const pgList = document.getElementById('pagination-list-' + tab);
+        if (pgKad)  pgKad.classList.toggle('hidden', view !== 'kad');
+        if (pgList) pgList.classList.toggle('hidden', view !== 'senarai');
     });
 
     // reset checkbox bila tukar view

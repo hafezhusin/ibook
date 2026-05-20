@@ -162,6 +162,33 @@
                                 <i class="fa-solid fa-eye" aria-hidden="true"></i>
                             </button>
                         </div>
+                        {{-- Meter kekuatan kata laluan --}}
+                        <div id="kekuatan-wrap" class="hidden mt-2 space-y-2">
+                            {{-- Bar kekuatan --}}
+                            <div class="flex gap-1" aria-hidden="true">
+                                <div class="h-1.5 flex-1 rounded-full bg-gray-200 overflow-hidden">
+                                    <div id="bar-1" class="h-full w-full rounded-full transition-colors duration-300 bg-gray-200"></div>
+                                </div>
+                                <div class="h-1.5 flex-1 rounded-full bg-gray-200 overflow-hidden">
+                                    <div id="bar-2" class="h-full w-full rounded-full transition-colors duration-300 bg-gray-200"></div>
+                                </div>
+                                <div class="h-1.5 flex-1 rounded-full bg-gray-200 overflow-hidden">
+                                    <div id="bar-3" class="h-full w-full rounded-full transition-colors duration-300 bg-gray-200"></div>
+                                </div>
+                                <div class="h-1.5 flex-1 rounded-full bg-gray-200 overflow-hidden">
+                                    <div id="bar-4" class="h-full w-full rounded-full transition-colors duration-300 bg-gray-200"></div>
+                                </div>
+                            </div>
+                            <p id="label-kekuatan" class="text-xs font-semibold" aria-live="polite"></p>
+                            {{-- Senarai syarat --}}
+                            <ul class="space-y-0.5 text-xs" aria-label="Syarat kata laluan">
+                                <li id="syarat-panjang"  class="flex items-center gap-1.5 text-gray-400"><i class="fa-solid fa-circle w-2.5 text-[8px]"></i> Sekurang-kurangnya 8 aksara</li>
+                                <li id="syarat-besar"    class="flex items-center gap-1.5 text-gray-400"><i class="fa-solid fa-circle w-2.5 text-[8px]"></i> Huruf besar (A–Z)</li>
+                                <li id="syarat-kecil"    class="flex items-center gap-1.5 text-gray-400"><i class="fa-solid fa-circle w-2.5 text-[8px]"></i> Huruf kecil (a–z)</li>
+                                <li id="syarat-nombor"   class="flex items-center gap-1.5 text-gray-400"><i class="fa-solid fa-circle w-2.5 text-[8px]"></i> Nombor (0–9)</li>
+                                <li id="syarat-simbol"   class="flex items-center gap-1.5 text-gray-400"><i class="fa-solid fa-circle w-2.5 text-[8px]"></i> Simbol (!@#$...)</li>
+                            </ul>
+                        </div>
                         <p class="form-hint">Minimum 8 aksara, huruf besar & kecil, nombor dan simbol.</p>
                         @error('password')
                         <p id="ralat-pw" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
@@ -200,6 +227,7 @@
 </div>
 
 <script>
+// ── Tunjuk/sembunyi kata laluan ────────────────────────────────────
 function togglePwd(fieldId, btn) {
     const input = document.getElementById(fieldId);
     const icon  = btn.querySelector('i');
@@ -211,5 +239,72 @@ function togglePwd(fieldId, btn) {
         icon.className = 'fa-solid fa-eye';
     }
 }
+
+// ── Meter Kekuatan Kata Laluan ─────────────────────────────────────
+(function () {
+    const pwInput   = document.getElementById('password');
+    const wrap      = document.getElementById('kekuatan-wrap');
+    const barIds    = ['bar-1', 'bar-2', 'bar-3', 'bar-4'];
+    const labelEl   = document.getElementById('label-kekuatan');
+
+    const syarat = {
+        panjang : { el: document.getElementById('syarat-panjang'), fn: v => v.length >= 8 },
+        besar   : { el: document.getElementById('syarat-besar'),   fn: v => /[A-Z]/.test(v) },
+        kecil   : { el: document.getElementById('syarat-kecil'),   fn: v => /[a-z]/.test(v) },
+        nombor  : { el: document.getElementById('syarat-nombor'),  fn: v => /[0-9]/.test(v) },
+        simbol  : { el: document.getElementById('syarat-simbol'),  fn: v => /[^A-Za-z0-9]/.test(v) },
+    };
+
+    const tahap = [
+        { label: '',              warna: '' },
+        { label: 'Lemah',         warna: '#dc2626' },  // merah
+        { label: 'Sederhana',     warna: '#d97706' },  // oren
+        { label: 'Kuat',          warna: '#16a34a' },  // hijau
+        { label: 'Sangat Kuat',   warna: '#15803d' },  // hijau gelap
+    ];
+
+    if (!pwInput) return;
+
+    pwInput.addEventListener('input', function () {
+        const val   = this.value;
+        let skor    = 0;
+
+        // Kemas kini setiap syarat
+        Object.values(syarat).forEach(s => {
+            const lulus = s.fn(val);
+            if (lulus) skor++;
+            if (s.el) {
+                s.el.className = lulus
+                    ? 'flex items-center gap-1.5 text-green-600'
+                    : 'flex items-center gap-1.5 text-gray-400';
+                s.el.querySelector('i').className = lulus
+                    ? 'fa-solid fa-circle-check w-2.5 text-[8px]'
+                    : 'fa-solid fa-circle w-2.5 text-[8px]';
+            }
+        });
+
+        // Tunjuk/sembunyi wrap
+        if (val.length > 0) {
+            wrap.classList.remove('hidden');
+        } else {
+            wrap.classList.add('hidden');
+            return;
+        }
+
+        // Warna bar mengikut skor
+        const warna = tahap[skor]?.warna || '';
+        barIds.forEach((id, i) => {
+            const bar = document.getElementById(id);
+            if (!bar) return;
+            bar.style.background = i < skor ? warna : '#e5e7eb';
+        });
+
+        // Label
+        if (labelEl) {
+            labelEl.textContent = tahap[skor]?.label || '';
+            labelEl.style.color = warna;
+        }
+    });
+})();
 </script>
 @endsection

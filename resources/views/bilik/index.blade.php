@@ -28,12 +28,49 @@
     <h2 id="heading-bilik-senarai" class="sr-only">Senarai Bilik Mesyuarat</h2>
     <div id="grid-bilik" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         @forelse($bilik as $b)
+        @php
+            // Auto-pilih gambar berdasarkan jenis bilik jika tiada URL dikonfigurasi
+            $nm = strtolower($b->nama);
+            $gambarUrl = $b->gambar ?: null;
+            if (!$gambarUrl) {
+                if (str_contains($nm, 'lab') || str_contains($nm, 'ict') || str_contains($nm, 'komputer')) {
+                    // Lab ICT / komputer
+                    $gambarUrl = asset('images/bilik/lab-ict.jpg');
+                } elseif ($b->kapasiti >= 50 || str_contains($nm, 'utama') || str_contains($nm, 'dewan') || str_contains($nm, 'auditorium')) {
+                    // Bilik besar / utama
+                    $gambarUrl = asset('images/bilik/meeting-besar.jpg');
+                } elseif ($b->kapasiti <= 20 || str_contains($nm, 'perbincangan') || str_contains($nm, 'diskusi') || str_contains($nm, 'kecil')) {
+                    // Bilik perbincangan / kecil
+                    $gambarUrl = asset('images/bilik/meeting-kecil.jpg');
+                } else {
+                    // Bilik mesyuarat standard — selang-seli 2 gambar berbeza
+                    $gambarUrl = ($b->id % 2 === 0)
+                        ? asset('images/bilik/meeting-standard-1.jpg')
+                        : asset('images/bilik/meeting-standard-2.jpg');
+                }
+            }
+        @endphp
         <article class="bg-white rounded-xl shadow-sm overflow-hidden kad-bilik"
             data-nama="{{ strtolower($b->nama) }}"
             data-lokasi="{{ strtolower($b->lokasi ?? '') }}"
             aria-labelledby="bilik-{{ $b->id }}">
-            <div class="h-40 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center" aria-hidden="true">
-                <i class="fa-solid fa-door-open text-slate-400 text-5xl" aria-hidden="true"></i>
+            {{-- Gambar bilik --}}
+            <div class="h-44 overflow-hidden relative group">
+                <img src="{{ $gambarUrl }}"
+                     alt="Gambar {{ $b->nama }}"
+                     class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                     loading="lazy"
+                     onerror="this.closest('.group').innerHTML='<div class=\'h-44 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center\'><i class=\'fa-solid fa-door-open text-slate-300 text-5xl\'></i></div>'">
+                {{-- Overlay lokasi di penjuru bawah --}}
+                @if($b->lokasi)
+                <div class="absolute bottom-0 left-0 right-0 px-3 py-2"
+                     style="background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)">
+                    <span class="text-white text-xs font-semibold flex items-center gap-1">
+                        <i class="fa-solid fa-location-dot text-amber-400 text-[10px]" aria-hidden="true"></i>
+                        {{ $b->lokasi }}
+                    </span>
+                </div>
+                @endif
             </div>
             <div class="p-5">
                 <div class="flex items-start justify-between mb-3">
@@ -47,11 +84,6 @@
                 <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
                     <i class="fa-solid fa-users text-amber-400" aria-hidden="true"></i>
                     <span>{{ $b->kapasiti }} orang</span>
-                    @if($b->lokasi)
-                    <span aria-hidden="true">&middot;</span>
-                    <i class="fa-solid fa-location-dot text-amber-400" aria-hidden="true"></i>
-                    <span>{{ $b->lokasi }}</span>
-                    @endif
                 </div>
 
                 @if($b->kemudahan && count($b->kemudahan) > 0)
@@ -64,20 +96,46 @@
                 </ul>
                 @endif
 
+                @php
+                    $pct = $b->peratus_penggunaan ?? $b->penggunaan_bulan_ini;
+                    if ($pct >= 80) {
+                        $barClr = 'bg-red-500';
+                        $badgeCls = 'bg-red-100 text-red-700';
+                        $labelGuna = 'Permintaan Tinggi';
+                    } elseif ($pct >= 50) {
+                        $barClr = 'bg-amber-400';
+                        $badgeCls = 'bg-amber-100 text-amber-700';
+                        $labelGuna = 'Sederhana';
+                    } else {
+                        $barClr = 'bg-green-500';
+                        $badgeCls = 'bg-green-100 text-green-700';
+                        $labelGuna = 'Kurang Guna';
+                    }
+                @endphp
                 <div class="mb-4">
-                    <div class="flex justify-between text-sm mb-1">
+                    <div class="flex justify-between items-center text-sm mb-1">
                         <span class="text-gray-500">Penggunaan bulan ini</span>
-                        <span class="font-semibold text-gray-700">{{ $b->penggunaan_bulan_ini }}%</span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="font-semibold text-gray-700">{{ $pct }}%</span>
+                            <span class="text-xs font-semibold px-1.5 py-0.5 rounded {{ $badgeCls }}">{{ $labelGuna }}</span>
+                        </span>
                     </div>
-                    <div class="progress-bar"
+                    <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden"
                         role="progressbar"
-                        aria-valuenow="{{ $b->penggunaan_bulan_ini }}"
+                        aria-valuenow="{{ $pct }}"
                         aria-valuemin="0"
                         aria-valuemax="100"
-                        aria-label="{{ $b->nama }}: {{ $b->penggunaan_bulan_ini }}% digunakan bulan ini">
-                        <div class="progress-fill" style="width:{{ $b->penggunaan_bulan_ini }}%"></div>
+                        aria-label="{{ $b->nama }}: {{ $pct }}% digunakan bulan ini">
+                        <div class="{{ $barClr }} h-2 rounded-full transition-all duration-500" style="width:{{ $pct }}%"></div>
                     </div>
                 </div>
+                @if($b->dikemaskini_oleh)
+                <div class="text-xs text-gray-400 mb-3">
+                    <i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>
+                    Dikemaskini oleh <span class="font-medium">{{ $b->dikemaskini_oleh }}</span>
+                    &middot; {{ $b->dikemaskini_pada?->diffForHumans() }}
+                </div>
+                @endif
 
                 <div class="flex gap-2 pt-3 border-t border-gray-100">
                     <a href="{{ route('bilik.edit', $b) }}"

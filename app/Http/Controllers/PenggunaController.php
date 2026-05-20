@@ -14,8 +14,11 @@ class PenggunaController extends Controller
 {
     public function index()
     {
-        $penggunaAktif       = User::where('aktif', true)->orderBy('name')->get();
-        $penggunaNyahaktif   = User::where('aktif', false)->orderBy('name')->get();
+        // Gunakan parameter halaman berbeza bagi setiap tab
+        $penggunaAktif     = User::where('aktif', true)->orderBy('name')
+                                 ->paginate(25, ['*'], 'page_aktif');
+        $penggunaNyahaktif = User::where('aktif', false)->orderBy('name')
+                                 ->paginate(25, ['*'], 'page_nyahaktif');
 
         return view('pengguna.index', compact('penggunaAktif', 'penggunaNyahaktif'));
     }

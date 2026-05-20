@@ -58,10 +58,10 @@
     </a>
 </div>
 
-<div class="bg-white rounded-xl shadow-sm p-8 max-w-3xl">
+<div class="max-w-3xl space-y-5">
     @if($errors->any())
     <div role="alert" aria-live="assertive" class="alert-error" id="ralat-borang">
-        <p class="font-semibold mb-1">Sila betulkan ralat berikut:</p>
+        <p class="font-semibold mb-1"><i class="fa-solid fa-circle-xmark mr-1" aria-hidden="true"></i>Sila betulkan ralat berikut:</p>
         <ul class="list-disc list-inside text-sm" aria-label="Senarai ralat borang">
             @foreach($errors->all() as $error)
             <li>{{ $error }}</li>
@@ -73,133 +73,28 @@
     <form method="POST" action="{{ route('tempahan.store') }}" novalidate aria-label="Borang tempahan bilik mesyuarat baru">
         @csrf
 
-        {{-- Nama Mesyuarat --}}
-        <div class="mb-5">
-            <label for="nama_mesyuarat" class="form-label">
-                Nama Mesyuarat <span class="text-red-500" aria-hidden="true">*</span>
-                <span class="sr-only">(wajib)</span>
-            </label>
-            <input type="text" id="nama_mesyuarat" name="nama_mesyuarat"
-                value="{{ $val('nama_mesyuarat') }}"
-                required
-                aria-required="true"
-                @error('nama_mesyuarat') aria-invalid="true" aria-describedby="ralat-nama_mesyuarat" @enderror
-                class="form-input @error('nama_mesyuarat') border-red-400 @enderror"
-                placeholder="cth: Mesyuarat Pengurusan Bil. 4/2026">
-            @error('nama_mesyuarat')
-            <p id="ralat-nama_mesyuarat" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
-            @enderror
-        </div>
+        {{-- ══ Bahagian 1: Maklumat Mesyuarat ══════════════════════ --}}
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold flex-shrink-0" style="background:#f59e0b" aria-hidden="true">1</span>
+                Maklumat Mesyuarat
+            </h2>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-
-            {{-- Tarikh --}}
-            <div>
-                <label for="tarikh" class="form-label">
-                    Tarikh <span class="text-red-500" aria-hidden="true">*</span>
-                    <span class="sr-only">(wajib, mesti hari ini atau selepasnya)</span>
-                </label>
-                <div class="relative">
-                    <i class="fa-solid fa-calendar-days absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden="true"></i>
-                    <input type="text" id="tarikh" name="tarikh"
-                        value="{{ old('tarikh') }}"
-                        required
-                        readonly
-                        aria-required="true"
-                        placeholder="Pilih tarikh..."
-                        @error('tarikh') aria-invalid="true" aria-describedby="ralat-tarikh" @enderror
-                        class="form-input pl-10 @error('tarikh') border-red-400 @enderror">
-                </div>
-                @error('tarikh')
-                <p id="ralat-tarikh" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
-                @enderror
-            </div>
-
-            {{-- Bilik --}}
-            <div>
-                <label for="bilik_id" class="form-label">
-                    Bilik Mesyuarat <span class="text-red-500" aria-hidden="true">*</span>
+            {{-- Nama Mesyuarat --}}
+            <div class="mb-4">
+                <label for="nama_mesyuarat" class="form-label">
+                    Nama Mesyuarat <span class="text-red-500" aria-hidden="true">*</span>
                     <span class="sr-only">(wajib)</span>
                 </label>
-                <select id="bilik_id" name="bilik_id"
+                <input type="text" id="nama_mesyuarat" name="nama_mesyuarat"
+                    value="{{ $val('nama_mesyuarat') }}"
                     required
                     aria-required="true"
-                    @error('bilik_id') aria-invalid="true" aria-describedby="ralat-bilik_id" @enderror
-                    class="form-input @error('bilik_id') border-red-400 @enderror">
-                    <option value="">Pilih bilik</option>
-                    @foreach($bilik as $b)
-                    <option value="{{ $b->id }}"
-                            data-kapasiti="{{ $b->kapasiti }}"
-                            {{ $val('bilik_id') == $b->id ? 'selected' : '' }}>
-                        {{ $b->nama }} ({{ $b->kapasiti }} orang)
-                    </option>
-                    @endforeach
-                </select>
-                @error('bilik_id')
-                <p id="ralat-bilik_id" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
-                @enderror
-            </div>
-        </div>
-
-        {{-- Sesi --}}
-        <fieldset class="mb-5" @error('sesi') aria-describedby="ralat-sesi" @enderror>
-            <legend class="form-label mb-2">
-                Masa Mesyuarat <span class="text-red-500" aria-hidden="true">*</span>
-                <span class="sr-only">(wajib, boleh pilih satu atau kedua-dua sesi)</span>
-            </legend>
-            <p class="text-xs text-gray-400 mb-3">Boleh pilih satu atau kedua-dua sesi.</p>
-            <div class="space-y-3">
-                @foreach($sesi as $key => $s)
-                @php $checked = is_array(old('sesi')) ? in_array($key, old('sesi')) : false; @endphp
-                <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all
-                    {{ $checked ? 'border-amber-400 bg-amber-50' : 'border-gray-200 hover:border-amber-300' }}"
-                    id="label-sesi-{{ $key }}"
-                    onclick="toggleSesi('{{ $key }}')">
-                    <input type="checkbox" name="sesi[]" value="{{ $key }}"
-                        id="sesi-{{ $key }}"
-                        class="text-amber-500 w-4 h-4 rounded flex-shrink-0"
-                        style="accent-color:#f59e0b"
-                        {{ $checked ? 'checked' : '' }}>
-                    <div class="flex-1">
-                        <div class="font-semibold text-gray-800 flex items-center gap-2">
-                            {{ $key === 'pagi' ? 'SESI PAGI 1' : 'SESI PETANG 2' }}
-                            <span class="sesi-status-badge hidden text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
-                                <i class="fa-solid fa-ban mr-1" aria-hidden="true"></i>Telah Ditempah
-                            </span>
-                        </div>
-                        <div class="text-sm text-gray-500">{{ $s['label'] }}</div>
-                    </div>
-                </label>
-                @endforeach
-            </div>
-            <div id="info-konflik" class="hidden mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2" role="alert" aria-live="polite">
-                <i class="fa-solid fa-triangle-exclamation mr-1" aria-hidden="true"></i>
-                <span id="info-konflik-teks"></span>
-            </div>
-            @error('sesi')
-            <p id="ralat-sesi" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
-            @enderror
-        </fieldset>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
-
-            {{-- Bilangan Peserta --}}
-            <div>
-                <label for="bilangan_peserta" class="form-label">
-                    Bilangan Peserta <span class="text-red-500" aria-hidden="true">*</span>
-                    <span class="sr-only">(wajib, sekurang-kurangnya 1)</span>
-                </label>
-                <input type="number" id="bilangan_peserta" name="bilangan_peserta"
-                    value="{{ $val('bilangan_peserta') }}"
-                    min="1"
-                    required
-                    aria-required="true"
-                    @error('bilangan_peserta') aria-invalid="true" aria-describedby="ralat-bilangan_peserta" @enderror
-                    class="form-input @error('bilangan_peserta') border-red-400 @enderror"
-                    placeholder="cth: 20">
-                <div id="info-kapasiti" role="alert" aria-live="polite"></div>
-                @error('bilangan_peserta')
-                <p id="ralat-bilangan_peserta" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                    @error('nama_mesyuarat') aria-invalid="true" aria-describedby="ralat-nama_mesyuarat" @enderror
+                    class="form-input @error('nama_mesyuarat') border-red-400 @enderror"
+                    placeholder="cth: Mesyuarat Pengurusan Bil. 4/2026">
+                @error('nama_mesyuarat')
+                <p id="ralat-nama_mesyuarat" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
                 @enderror
             </div>
 
@@ -225,37 +120,213 @@
             </div>
         </div>
 
-        {{-- Nama Pengerusi --}}
-        <div class="mb-5">
-            <label for="nama_pengerusi" class="form-label">
-                Nama Pengerusi <span class="text-red-500" aria-hidden="true">*</span>
-                <span class="sr-only">(wajib)</span>
-            </label>
-            <input type="text" id="nama_pengerusi" name="nama_pengerusi"
-                value="{{ $val('nama_pengerusi') }}"
-                required
-                aria-required="true"
-                @error('nama_pengerusi') aria-invalid="true" aria-describedby="ralat-nama_pengerusi" @enderror
-                class="form-input @error('nama_pengerusi') border-red-400 @enderror"
-                placeholder="cth: YBrs. Encik Ahmad">
-            @error('nama_pengerusi')
-            <p id="ralat-nama_pengerusi" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
-            @enderror
+        {{-- ══ Bahagian 2: Slot & Lokasi ════════════════════════════ --}}
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold flex-shrink-0" style="background:#f59e0b" aria-hidden="true">2</span>
+                Slot &amp; Lokasi
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+                {{-- Tarikh --}}
+                <div>
+                    <label for="tarikh" class="form-label">
+                        Tarikh <span class="text-red-500" aria-hidden="true">*</span>
+                        <span class="sr-only">(wajib, mesti hari ini atau selepasnya)</span>
+                    </label>
+                    <div class="relative">
+                        <i class="fa-solid fa-calendar-days absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden="true"></i>
+                        <input type="text" id="tarikh" name="tarikh"
+                            value="{{ old('tarikh') }}"
+                            required
+                            aria-required="true"
+                            placeholder="YYYY-MM-DD atau pilih dari kalendar"
+                            @error('tarikh') aria-invalid="true" aria-describedby="ralat-tarikh" @enderror
+                            class="form-input pl-10 @error('tarikh') border-red-400 @enderror">
+                    </div>
+                    @error('tarikh')
+                    <p id="ralat-tarikh" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- Bilik --}}
+                <div>
+                    <label for="bilik_id" class="form-label">
+                        Bilik Mesyuarat <span class="text-red-500" aria-hidden="true">*</span>
+                        <span class="sr-only">(wajib)</span>
+                    </label>
+                    <select id="bilik_id" name="bilik_id"
+                        required
+                        aria-required="true"
+                        @error('bilik_id') aria-invalid="true" aria-describedby="ralat-bilik_id" @enderror
+                        class="form-input @error('bilik_id') border-red-400 @enderror">
+                        <option value="">Pilih bilik</option>
+                        @foreach($bilik as $b)
+                        <option value="{{ $b->id }}"
+                                data-kapasiti="{{ $b->kapasiti }}"
+                                {{ $val('bilik_id') == $b->id ? 'selected' : '' }}>
+                            {{ $b->nama }} ({{ $b->kapasiti }} orang)
+                        </option>
+                        @endforeach
+                    </select>
+                    @error('bilik_id')
+                    <p id="ralat-bilik_id" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            {{-- Sesi --}}
+            <fieldset @error('sesi') aria-describedby="ralat-sesi" @enderror>
+                <legend class="form-label mb-2">
+                    Sesi Mesyuarat <span class="text-red-500" aria-hidden="true">*</span>
+                    <span class="sr-only">(wajib, boleh pilih satu atau kedua-dua sesi)</span>
+                </legend>
+                <p class="text-xs text-gray-400 mb-3">Boleh pilih satu atau kedua-dua sesi.</p>
+                <div class="space-y-3">
+                    @foreach($sesi as $key => $s)
+                    @php $checked = is_array(old('sesi')) ? in_array($key, old('sesi')) : false; @endphp
+                    <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all
+                        {{ $checked ? 'border-amber-400 bg-amber-50' : 'border-gray-200 hover:border-amber-300' }}"
+                        id="label-sesi-{{ $key }}"
+                        onclick="toggleSesi('{{ $key }}')">
+                        <input type="checkbox" name="sesi[]" value="{{ $key }}"
+                            id="sesi-{{ $key }}"
+                            class="text-amber-500 w-4 h-4 rounded flex-shrink-0"
+                            style="accent-color:#f59e0b"
+                            {{ $checked ? 'checked' : '' }}>
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-800 flex items-center gap-2">
+                                {{ $key === 'pagi' ? 'Sesi Pagi' : 'Sesi Petang' }}
+                                <span class="sesi-status-badge hidden text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
+                                    <i class="fa-solid fa-ban mr-1" aria-hidden="true"></i>Telah Ditempah
+                                </span>
+                            </div>
+                            <div class="text-sm text-gray-500">{{ $s['label'] }}</div>
+                        </div>
+                    </label>
+                    @endforeach
+                </div>
+                {{-- Pintasan: Sehari Penuh = tandakan kedua-dua sesi sekaligus --}}
+                <div class="mt-3 flex items-center gap-2">
+                    <button type="button"
+                        id="btn-sehari-penuh"
+                        onclick="pilihSehariPenuh()"
+                        class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-full px-3 py-1.5 transition-colors"
+                        aria-label="Pilih kedua-dua sesi pagi dan petang sekaligus">
+                        <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
+                        Sehari Penuh
+                    </button>
+                    <span class="text-xs text-gray-400">— tandakan kedua-dua sesi sekaligus</span>
+                </div>
+
+                <div id="info-konflik" class="hidden mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2" role="alert" aria-live="polite">
+                    <i class="fa-solid fa-triangle-exclamation mr-1" aria-hidden="true"></i>
+                    <span id="info-konflik-teks"></span>
+                </div>
+                @error('sesi')
+                <p id="ralat-sesi" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                @enderror
+            </fieldset>
         </div>
 
-        {{-- Catatan --}}
-        <div class="mb-7">
-            <label for="tujuan" class="form-label">Catatan</label>
-            <textarea id="tujuan" name="tujuan" rows="4"
-                @error('tujuan') aria-invalid="true" aria-describedby="ralat-tujuan" @enderror
-                class="form-input @error('tujuan') border-red-400 @enderror"
-                placeholder="Nyatakan catatan, tujuan atau agenda mesyuarat">{{ $val('tujuan') }}</textarea>
-            @error('tujuan')
-            <p id="ralat-tujuan" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
-            @enderror
+        {{-- ══ Bahagian 3: Butiran Penganjur ════════════════════════ --}}
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold flex-shrink-0" style="background:#f59e0b" aria-hidden="true">3</span>
+                Butiran Penganjur
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+
+                {{-- Bilangan Peserta --}}
+                <div>
+                    <label for="bilangan_peserta" class="form-label">
+                        Bilangan Peserta <span class="text-red-500" aria-hidden="true">*</span>
+                        <span class="sr-only">(wajib, sekurang-kurangnya 1)</span>
+                    </label>
+                    <input type="number" id="bilangan_peserta" name="bilangan_peserta"
+                        value="{{ $val('bilangan_peserta') }}"
+                        min="1"
+                        required
+                        aria-required="true"
+                        @error('bilangan_peserta') aria-invalid="true" aria-describedby="ralat-bilangan_peserta" @enderror
+                        class="form-input @error('bilangan_peserta') border-red-400 @enderror"
+                        placeholder="cth: 20">
+                    <div id="info-kapasiti" role="alert" aria-live="polite"></div>
+                    @error('bilangan_peserta')
+                    <p id="ralat-bilangan_peserta" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- Nama Pengerusi --}}
+                <div>
+                    <label for="nama_pengerusi" class="form-label">
+                        Nama Pengerusi <span class="text-red-500" aria-hidden="true">*</span>
+                        <span class="sr-only">(wajib)</span>
+                    </label>
+                    <input type="text" id="nama_pengerusi" name="nama_pengerusi"
+                        value="{{ $val('nama_pengerusi') }}"
+                        required
+                        aria-required="true"
+                        @error('nama_pengerusi') aria-invalid="true" aria-describedby="ralat-nama_pengerusi" @enderror
+                        class="form-input @error('nama_pengerusi') border-red-400 @enderror"
+                        placeholder="cth: YBrs. Encik Ahmad">
+                    @error('nama_pengerusi')
+                    <p id="ralat-nama_pengerusi" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            {{-- Catatan / Tujuan --}}
+            <div>
+                <label for="tujuan" class="form-label">Tujuan / Agenda <span class="text-gray-400 font-normal text-xs">(pilihan)</span></label>
+                <textarea id="tujuan" name="tujuan" rows="4"
+                    @error('tujuan') aria-invalid="true" aria-describedby="ralat-tujuan" @enderror
+                    class="form-input @error('tujuan') border-red-400 @enderror"
+                    placeholder="Nyatakan tujuan atau agenda mesyuarat">{{ $val('tujuan') }}</textarea>
+                @error('tujuan')
+                <p id="ralat-tujuan" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                @enderror
+            </div>
         </div>
 
-        <div class="flex gap-3">
+        {{-- Panel Ringkasan Pra-Hantar — muncul apabila bilik + tarikh + sesi dipilih --}}
+        <div id="panel-ringkasan"
+             class="hidden bg-indigo-50 border border-indigo-200 rounded-xl p-5"
+             role="status"
+             aria-live="polite"
+             aria-label="Ringkasan tempahan sebelum dihantar">
+            <h3 class="text-sm font-bold text-indigo-800 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-clipboard-check text-indigo-500" aria-hidden="true"></i>
+                Semak Sebelum Hantar
+            </h3>
+            <dl class="grid grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
+                <div>
+                    <dt class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-0.5">Bilik</dt>
+                    <dd class="font-semibold text-indigo-900" id="rs-bilik">—</dd>
+                </div>
+                <div>
+                    <dt class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-0.5">Tarikh</dt>
+                    <dd class="font-semibold text-indigo-900" id="rs-tarikh">—</dd>
+                </div>
+                <div>
+                    <dt class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-0.5">Sesi</dt>
+                    <dd class="font-semibold text-indigo-900" id="rs-sesi">—</dd>
+                </div>
+                <div>
+                    <dt class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider mb-0.5">Kapasiti Bilik</dt>
+                    <dd class="font-semibold text-indigo-900" id="rs-kapasiti">—</dd>
+                </div>
+            </dl>
+            <p class="text-xs text-indigo-400 mt-3 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-info" aria-hidden="true"></i>
+                Semak maklumat ini sebelum klik "Hantar Permohonan".
+            </p>
+        </div>
+
+        {{-- Butang --}}
+        <div class="flex gap-3 pb-2">
             <button type="submit" class="btn-primary">
                 <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Hantar Permohonan
             </button>
@@ -277,9 +348,10 @@ flatpickr(tarikhInput, {
     dateFormat: 'Y-m-d',
     minDate: 'today',
     disableMobile: true,
-    allowInput: false,
+    allowInput: true,   // Benarkan input keyboard — keyboard users & power users
     onChange: function() {
         semakKonflik();
+        kemaskiniRingkasan();
     }
 });
 
@@ -392,6 +464,7 @@ bilikSelect.addEventListener('change', function() {
     kapasitiSemasa = parseInt(opt.dataset.kapasiti, 10) || 0;
     semakKapasiti();
     semakKonflik();
+    kemaskiniRingkasan();
 });
 
 pesertaInput.addEventListener('input', semakKapasiti);
@@ -415,7 +488,65 @@ function toggleSesi(key) {
             label.classList.remove('border-amber-400', 'bg-amber-50');
             label.classList.add('border-gray-200');
         }
+        kemaskiniRingkasan();
     }, 0);
+}
+
+// ── Pintasan Sehari Penuh ──────────────────────────────────────────
+function pilihSehariPenuh() {
+    ['pagi', 'petang'].forEach(sesi => {
+        const cb    = document.getElementById('sesi-' + sesi);
+        const label = document.getElementById('label-sesi-' + sesi);
+        if (cb && !cb.disabled) {
+            cb.checked = true;
+            label.classList.add('border-amber-400', 'bg-amber-50');
+            label.classList.remove('border-gray-200');
+        }
+    });
+    kemaskiniRingkasan();
+}
+
+// ── Panel Ringkasan Pra-Hantar ─────────────────────────────────────
+// Muncul apabila bilik + tarikh + sekurang-kurangnya 1 sesi dipilih.
+function kemaskiniRingkasan() {
+    const panel = document.getElementById('panel-ringkasan');
+    if (!panel) return;
+
+    const sesiDipilih = [...document.querySelectorAll('input[name="sesi[]"]:checked:not(:disabled)')];
+    const bilikVal    = bilikSelect.value;
+    const tarikhVal   = tarikhInput.value;
+
+    if (!bilikVal || !tarikhVal || sesiDipilih.length === 0) {
+        panel.classList.add('hidden');
+        return;
+    }
+
+    // Nama bilik — buang sufiks "(X orang)" dari teks option
+    const bilikOpt  = bilikSelect.options[bilikSelect.selectedIndex];
+    const bilikNama = bilikOpt.text.replace(/\s*\(\d+\s*orang\)$/, '').trim();
+
+    // Format tarikh: YYYY-MM-DD → DD/MM/YYYY
+    const bahagian   = tarikhVal.split('-');
+    const tarikhPapar = bahagian.length === 3
+        ? bahagian[2] + '/' + bahagian[1] + '/' + bahagian[0]
+        : tarikhVal;
+
+    // Label sesi
+    const sesiMap = {
+        pagi:   'Sesi Pagi (9:00 — 13:00)',
+        petang: 'Sesi Petang (14:00 — 18:00)',
+    };
+    const sesiTeks = sesiDipilih.map(cb => sesiMap[cb.value] || cb.value).join(' + ');
+
+    // Kapasiti bilik
+    const kapasiti = parseInt(bilikOpt.dataset.kapasiti, 10) || 0;
+
+    document.getElementById('rs-bilik').textContent    = bilikNama;
+    document.getElementById('rs-tarikh').textContent   = tarikhPapar;
+    document.getElementById('rs-sesi').textContent     = sesiTeks;
+    document.getElementById('rs-kapasiti').textContent = kapasiti ? kapasiti + ' orang' : '—';
+
+    panel.classList.remove('hidden');
 }
 
 // ── Pastikan sekurang-kurangnya 1 sesi dipilih sebelum hantar ─────
@@ -436,7 +567,7 @@ document.querySelector('form').addEventListener('submit', function(e) {
     }
 });
 
-// ── Init: semak kapasiti jika ada nilai old() ──────────────────────
+// ── Init: semak kapasiti & ringkasan jika ada nilai old() ─────────
 document.addEventListener('DOMContentLoaded', function() {
     const opt = bilikSelect.options[bilikSelect.selectedIndex];
     if (opt && opt.dataset.kapasiti) {
@@ -446,6 +577,7 @@ document.addEventListener('DOMContentLoaded', function() {
         semakKonflik();
     }
     semakKapasiti();
+    kemaskiniRingkasan(); // Papar ringkasan jika old() sudah isi medan
 });
 </script>
 @endpush

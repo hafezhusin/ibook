@@ -102,7 +102,7 @@
         </fieldset>
 
         {{-- Status --}}
-        <div class="mb-7">
+        <div class="mb-5">
             <label for="status-bilik" class="form-label">
                 Status <span class="text-red-500" aria-hidden="true">*</span>
                 <span class="sr-only">(wajib)</span>
@@ -111,6 +111,38 @@
                 <option value="aktif" {{ old('status', $bilik?->status) === 'aktif' ? 'selected' : '' }}>Aktif</option>
                 <option value="tidak_aktif" {{ old('status', $bilik?->status) === 'tidak_aktif' ? 'selected' : '' }}>Tidak Aktif</option>
             </select>
+        </div>
+
+        {{-- Gambar Bilik (URL) --}}
+        <div class="mb-7">
+            <label for="gambar-bilik" class="form-label">
+                URL Gambar Bilik
+                <span class="text-gray-400 font-normal text-xs ml-1">(pilihan)</span>
+            </label>
+            <input type="url" id="gambar-bilik" name="gambar"
+                value="{{ old('gambar', $bilik?->gambar) }}"
+                class="form-input"
+                placeholder="https://example.com/gambar-bilik.jpg"
+                oninput="praLihatGambar(this.value)"
+                @error('gambar') aria-invalid="true" aria-describedby="ralat-gambar" @enderror>
+            <p class="form-hint">
+                Masukkan URL gambar bilik (JPG/PNG). Kosongkan untuk guna gambar automatik mengikut jenis bilik.
+            </p>
+            @error('gambar')
+            <p id="ralat-gambar" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+            @enderror
+
+            {{-- Preview gambar --}}
+            <div id="gambar-preview-wrap" class="mt-3 {{ old('gambar', $bilik?->gambar) ? '' : 'hidden' }}">
+                <p class="text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Pratonton</p>
+                <div class="relative w-full h-40 rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+                    <img id="gambar-preview-img"
+                         src="{{ old('gambar', $bilik?->gambar ?? '') }}"
+                         alt="Pratonton gambar bilik"
+                         class="w-full h-full object-cover"
+                         onerror="document.getElementById('gambar-preview-wrap').classList.add('hidden')">
+                </div>
+            </div>
         </div>
 
         <div class="flex gap-3">
@@ -122,4 +154,19 @@
         </div>
     </form>
 </div>
+@push('scripts')
+<script>
+function praLihatGambar(url) {
+    const wrap = document.getElementById('gambar-preview-wrap');
+    const img  = document.getElementById('gambar-preview-img');
+    if (!url || url.trim() === '') {
+        wrap.classList.add('hidden');
+        return;
+    }
+    img.src = url.trim();
+    img.onload  = () => wrap.classList.remove('hidden');
+    img.onerror = () => wrap.classList.add('hidden');
+}
+</script>
+@endpush
 @endsection

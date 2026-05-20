@@ -371,6 +371,11 @@
         {{-- Nav menu --}}
         <nav id="nav-utama" aria-label="Menu utama">
             <ul role="list" class="py-4 space-y-0.5">
+
+                {{-- ── Kumpulan: Operasi ────────────────────────── --}}
+                <li role="separator" aria-hidden="true">
+                    <p class="px-8 pb-1 pt-2 text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Operasi</p>
+                </li>
                 <li>
                     <a href="{{ route('dashboard') }}"
                        class="sidebar-link"
@@ -412,6 +417,10 @@
                     </a>
                 </li>
 
+                {{-- ── Kumpulan: Analitik ───────────────────────── --}}
+                <li role="separator" aria-hidden="true">
+                    <p class="px-8 pb-1 pt-3 text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Analitik</p>
+                </li>
                 <li>
                     <a href="{{ route('laporan') }}"
                        class="sidebar-link"
@@ -422,8 +431,9 @@
                 </li>
 
                 @if(auth()->user()->isPentadbir() || auth()->user()->isUrusSetia())
+                {{-- ── Kumpulan: Pentadbiran ────────────────────── --}}
                 <li role="separator" aria-hidden="true">
-                    <p class="px-8 py-2 text-xs text-slate-500 uppercase tracking-wider mt-2">Pentadbiran</p>
+                    <p class="px-8 pb-1 pt-3 text-[10px] text-slate-500 uppercase tracking-widest font-semibold">Pentadbiran</p>
                 </li>
                 @if(auth()->user()->isPentadbir())
                 <li>
@@ -501,7 +511,7 @@
                             onclick="toggleProfilMenu()"
                             class="w-9 h-9 rounded-full flex items-center justify-center font-bold focus:outline-none focus:ring-2 focus:ring-amber-400"
                             style="background:var(--accent); color:#1a1a2e;"
-                            aria-haspopup="true" aria-expanded="false"
+                            aria-haspopup="menu" aria-expanded="false"
                             aria-label="Menu profil {{ auth()->user()->name }}">
                         {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                     </button>

@@ -30,7 +30,9 @@
                 @endif
             </div>
             <div class="text-xs text-gray-500 truncate">{{ $p->jabatan ?? 'Tiada unit' }}</div>
-            <div class="text-xs text-gray-400 truncate">{{ $p->email }}</div>
+            <div class="text-xs text-gray-400 truncate">
+                {{ auth()->user()->isPentadbir() ? $p->email : $p->masked_email }}
+            </div>
         </div>
     </div>
 
@@ -60,7 +62,7 @@
 
     {{-- Butang tindakan --}}
     <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
-        <div class="flex gap-2">
+        <div class="flex gap-2 items-center">
             @if(auth()->user()->isPentadbir())
             <button type="button"
                 onclick="openEdit({{ $p->id }}, '{{ addslashes($p->name) }}', '{{ addslashes($p->jabatan ?? '') }}', '{{ $p->peranan }}', {{ $p->aktif ? 'true' : 'false' }})"
@@ -69,14 +71,28 @@
                 aria-haspopup="dialog" aria-controls="modal-edit">
                 <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
             </button>
-            @endif
+            {{-- Reset Kata Laluan — subordinat: ikon sahaja dengan tooltip --}}
             <button type="button"
                 onclick="openReset({{ $p->id }}, '{{ addslashes($p->name) }}')"
-                class="text-gray-400 text-xs hover:text-gray-600"
+                class="text-gray-300 text-xs hover:text-gray-500 transition"
+                title="Reset Kata Laluan"
                 aria-label="Reset kata laluan — {{ $p->name }}"
                 aria-haspopup="dialog" aria-controls="modal-reset">
-                <i class="fa-solid fa-key" aria-hidden="true"></i> Reset Kata Laluan
+                <i class="fa-solid fa-key" aria-hidden="true"></i>
             </button>
+            @else
+            {{-- Urus Setia boleh reset kata laluan sendiri sahaja --}}
+            @if($p->id === auth()->id())
+            <button type="button"
+                onclick="openReset({{ $p->id }}, '{{ addslashes($p->name) }}')"
+                class="text-gray-300 text-xs hover:text-gray-500 transition"
+                title="Reset Kata Laluan"
+                aria-label="Reset kata laluan — {{ $p->name }}"
+                aria-haspopup="dialog" aria-controls="modal-reset">
+                <i class="fa-solid fa-key" aria-hidden="true"></i>
+            </button>
+            @endif
+            @endif
         </div>
 
         @if($p->id !== auth()->id() && auth()->user()->isPentadbir())

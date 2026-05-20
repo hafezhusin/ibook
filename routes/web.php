@@ -19,8 +19,12 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Route awam - boleh akses tanpa log masuk
-Route::get('/awam/events', [KalendarController::class, 'publicEvents'])->name('awam.events');
-Route::get('/awam/bilik', [BilikController::class, 'publicList'])->name('awam.bilik');
+// throttle:60,1 = maksimum 60 request per minit per IP
+// Mencegah scraping, enumeration, dan DDoS pada endpoint terbuka
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/awam/events', [KalendarController::class, 'publicEvents'])->name('awam.events');
+    Route::get('/awam/bilik', [BilikController::class, 'publicList'])->name('awam.bilik');
+});
 
 // Routes yang memerlukan log masuk
 Route::middleware('auth.custom')->group(function () {

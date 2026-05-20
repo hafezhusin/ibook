@@ -71,4 +71,11 @@ class User extends Authenticatable
             default => 'Tidak Diketahui',
         };
     }
+
+    public function getMaskedEmailAttribute(): string
+    {
+        [$nama, $domain] = explode('@', $this->email, 2);
+        $prefix = substr($nama, 0, min(3, strlen($nama)));
+        return $prefix . '***@' . $domain;
+    }
 }

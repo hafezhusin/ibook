@@ -136,17 +136,35 @@ class KalendarController extends Controller
             $isOwn = ($t->user_id === $currentUserId);
 
             if ($awam) {
-                // Kalendar awam (halaman login)
-                $warna = '#dc2626';
-                $title = '🔴 ' . ($t->bilik->nama ?? 'Ditempah');
-            } else {
-                $warna = $isOwn ? '#16a34a' : '#2563eb'; // hijau=sendiri, biru=orang lain
-                $title = $t->nama_mesyuarat;
+                // ── Kalendar AWAM (halaman login — tanpa log masuk) ──────────────
+                // IDOR mitigation: jangan dedah tempahan_id (DB integer PK).
+                // Guna ID bukan-sequential yang hanya bermakna untuk FullCalendar.
+                // Format: b{bilik_id}_{sesi}_{tarikh} — tidak boleh digunakan untuk enumeration.
+                $idAwam = 'b' . $t->bilik_id . '_' . $t->sesi . '_' . $t->tarikh->format('Ymd');
+
+                return [
+                    'id'    => $idAwam,
+                    'title' => '🔴 ' . ($t->bilik->nama ?? 'Ditempah'),
+                    'start' => $t->tarikh->format('Y-m-d') . 'T' . $t->masa_mula,
+                    'end'   => $t->tarikh->format('Y-m-d') . 'T' . $t->masa_tamat,
+                    'color' => '#dc2626',
+                    // extendedProps awam: hanya maklumat minimum untuk paparan
+                    // TIADA tempahan_id, TIADA nama pemohon, TIADA kategori
+                    'extendedProps' => [
+                        'bilik'    => $t->bilik->nama ?? '-',
+                        'bilik_id' => $t->bilik_id,
+                        'sesi_key' => $t->sesi,
+                        'tarikh'   => $t->tarikh->format('Y-m-d'),
+                    ],
+                ];
             }
+
+            // ── Kalendar LOG MASUK — pengguna disahkan ──────────────────────
+            $warna = $isOwn ? '#16a34a' : '#2563eb'; // hijau=sendiri, biru=orang lain
 
             return [
                 'id'    => $t->id,
-                'title' => $title,
+                'title' => $t->nama_mesyuarat,
                 'start' => $t->tarikh->format('Y-m-d') . 'T' . $t->masa_mula,
                 'end'   => $t->tarikh->format('Y-m-d') . 'T' . $t->masa_tamat,
                 'color' => $warna,
