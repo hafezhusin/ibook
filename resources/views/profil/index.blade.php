@@ -80,10 +80,10 @@
                     </div>
 
                     {{-- Emel (readonly) --}}
-                    <div>
+                    <div style="opacity:0.45">
                         <label for="email" class="form-label">Emel</label>
                         <input type="email" id="email" value="{{ $user->email }}"
-                            class="form-input bg-gray-50 text-gray-400 cursor-not-allowed"
+                            class="form-input cursor-not-allowed"
                             readonly disabled aria-readonly="true"
                             autocomplete="email">
                         <p class="form-hint">Emel tidak boleh diubah. Hubungi pentadbir jika perlu.</p>
