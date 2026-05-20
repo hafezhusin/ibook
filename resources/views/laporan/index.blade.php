@@ -271,7 +271,7 @@
 
         {{-- Baki unit (tersembunyi secara lalai) --}}
         @if($mengikutUnit->count() > 5)
-        <div class="space-y-3 mt-3 hidden" id="unit-selebihnya">
+        <div class="space-y-3 mt-3" id="unit-selebihnya" style="display:none">
             @foreach($mengikutUnit->skip(5) as $u)
             <div class="flex items-center gap-3">
                 <div class="w-52 text-sm text-gray-600 truncate flex-shrink-0" title="{{ $u->unit }}">
@@ -568,11 +568,12 @@ function toggleUnit() {
     const teks       = document.getElementById('teks-btn-unit');
     const jumlahBaki = {{ isset($mengikutUnit) ? max(0, $mengikutUnit->count() - 5) : 0 }};
 
-    const terbuka = !selebihnya.classList.contains('hidden');
-    selebihnya.classList.toggle('hidden', terbuka);
-    icon.classList.toggle('fa-chevron-down', terbuka);
-    icon.classList.toggle('fa-chevron-up', !terbuka);
-    btn.setAttribute('aria-expanded', !terbuka);
+    const terbuka = selebihnya.style.display !== 'none';
+    selebihnya.style.display = terbuka ? 'none' : 'block';
+    icon.className = terbuka
+        ? 'fa-solid fa-chevron-down text-xs'
+        : 'fa-solid fa-chevron-up text-xs';
+    btn.setAttribute('aria-expanded', String(!terbuka));
     teks.textContent = terbuka
         ? `Lihat ${jumlahBaki} unit lagi`
         : 'Sembunyikan';
