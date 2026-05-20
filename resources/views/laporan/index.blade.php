@@ -23,8 +23,7 @@
     </div>
     <form method="GET" aria-label="Tapis laporan mengikut tahun">
         <label for="pilih-tahun-staf" class="sr-only">Pilih tahun laporan</label>
-        <select id="pilih-tahun-staf" name="tahun" class="form-input w-auto text-sm"
-            onchange="this.form.submit()">
+        <select id="pilih-tahun-staf" name="tahun" class="form-input w-auto text-sm">
             @foreach($senaraiTahun as $t)
             <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
             @endforeach
@@ -99,8 +98,7 @@
     <form method="GET" aria-label="Tapis laporan mengikut tahun">
         {{-- Item 3 (Finding 3): Buang aria-label redundan — label[for] sudah cukup --}}
         <label for="pilih-tahun" class="sr-only">Pilih tahun laporan</label>
-        <select id="pilih-tahun" name="tahun" class="form-input w-auto text-sm"
-            onchange="this.form.submit()">
+        <select id="pilih-tahun" name="tahun" class="form-input w-auto text-sm">
             @foreach($senaraiTahun as $t)
             <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
             @endforeach
@@ -300,7 +298,6 @@
             class="mt-4 text-xs font-semibold text-amber-600 hover:text-amber-700 flex items-center gap-1 transition"
             aria-expanded="false"
             aria-controls="unit-selebihnya"
-            onclick="toggleUnit()">
             <i class="fa-solid fa-chevron-down text-xs" id="icon-chevron-unit" aria-hidden="true"></i>
             <span id="teks-btn-unit">Lihat {{ $mengikutUnit->count() - 5 }} unit lagi</span>
         </button>
@@ -557,6 +554,11 @@ new Chart(document.getElementById('chartKategori'), {
     }
 });
 @endif
+
+// ── Wire event listeners (CSP-safe) ──────────────────────────────
+document.getElementById('pilih-tahun-staf')?.addEventListener('change', function() { this.form.submit(); });
+document.getElementById('pilih-tahun')?.addEventListener('change', function() { this.form.submit(); });
+document.getElementById('btn-lihat-unit')?.addEventListener('click', toggleUnit);
 
 // Item 3: Toggle collapsible unit
 function toggleUnit() {

@@ -45,7 +45,7 @@ class SecurityHeaders
             "style-src 'self' 'unsafe-inline' cdn.tailwindcss.com cdn.jsdelivr.net cdnjs.cloudflare.com fonts.googleapis.com",
             "font-src 'self' cdnjs.cloudflare.com fonts.gstatic.com data:",
             "img-src 'self' data: blob:",
-            "connect-src 'self' {$origin}",
+            "connect-src 'self' {$origin} cdn.jsdelivr.net",
             "frame-ancestors 'self'",
             "base-uri 'self'",
             "form-action 'self'",
