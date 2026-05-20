@@ -67,7 +67,16 @@ class TempahanController extends Controller
 
         $this->terapiFilters($query, $request);
 
-        $tempahan  = $query->orderByDesc('tarikh')->orderBy('masa_mula')->paginate(20)->withQueryString();
+        // Isih: mengikut tarikh mesyuarat apabila ada tarikh_filter aktif,
+        // selain itu isih mengikut tarikh dibuat (terbaru dahulu) supaya
+        // tempahan baharu mudah dijumpai tanpa perlu tapis.
+        $tarikhFilterAktif = in_array($request->get('tarikh_filter'), ['hari_ini','esok','7_hari','bulan_ini','akan_datang']);
+        if ($tarikhFilterAktif) {
+            $query->orderBy('tarikh')->orderBy('masa_mula');
+        } else {
+            $query->orderByDesc('created_at');
+        }
+        $tempahan  = $query->paginate(20)->withQueryString();
         $bilik     = BilikMesyuarat::where('status', 'aktif')->get();
         $kategori  = Tempahan::KATEGORI;
 
@@ -201,7 +210,7 @@ class TempahanController extends Controller
         ]);
 
         $jumlahSesi = count($validated['sesi']);
-        return redirect()->route('tempahan.index')
+        return redirect()->route('tempahan.index', ['tarikh_filter' => 'baharu'])
             ->with('success', $jumlahSesi > 1
                 ? "Tempahan ({$jumlahSesi} sesi) berjaya dibuat."
                 : 'Tempahan berjaya dibuat.');
