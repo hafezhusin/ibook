@@ -127,6 +127,12 @@ class TempahanController extends Controller
     {
         $validated = $request->validated();
 
+        // Gantikan 'lain' dengan teks kategori yang dimasukkan pengguna
+        if ($validated['kategori'] === 'lain' && !empty($validated['kategori_lain'])) {
+            $validated['kategori'] = trim($validated['kategori_lain']);
+        }
+        unset($validated['kategori_lain']);
+
         $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
         if ($validated['bilangan_peserta'] > $bilik->kapasiti) {
             return back()->withInput()->withErrors([
@@ -225,6 +231,12 @@ class TempahanController extends Controller
         // Autoriti dikendalikan oleh UpdateTempahanRequest::authorize()
         $user      = Auth::user();
         $validated = $request->validated();
+
+        // Gantikan 'lain' dengan teks kategori yang dimasukkan pengguna
+        if ($validated['kategori'] === 'lain' && !empty($validated['kategori_lain'])) {
+            $validated['kategori'] = trim($validated['kategori_lain']);
+        }
+        unset($validated['kategori_lain']);
 
         $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
         if ($validated['bilangan_peserta'] > $bilik->kapasiti) {

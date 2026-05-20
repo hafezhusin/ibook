@@ -117,6 +117,20 @@
                 @error('kategori')
                 <p id="ralat-kategori" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
                 @enderror
+
+                {{-- Input Lain-lain — muncul apabila "Lain-lain" dipilih --}}
+                <div id="kategori-lain-wrap" class="{{ old('kategori') === 'lain' ? '' : 'hidden' }} mt-2">
+                    <label for="kategori-lain-input" class="sr-only">Nyatakan kategori</label>
+                    <input type="text" id="kategori-lain-input" name="kategori_lain"
+                        value="{{ old('kategori_lain') }}"
+                        class="form-input @error('kategori_lain') border-red-400 @enderror"
+                        placeholder="Nyatakan kategori mesyuarat..."
+                        maxlength="100"
+                        @error('kategori_lain') aria-invalid="true" aria-describedby="ralat-kategori-lain" @enderror>
+                    @error('kategori_lain')
+                    <p id="ralat-kategori-lain" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
         </div>
 
@@ -557,8 +571,27 @@ document.querySelector('form').addEventListener('submit', function(e) {
     }
 });
 
+// ── Kategori Lain-lain: tunjuk/sembunyi text field ────────────────
+function toggleKategoriLain() {
+    const sel  = document.getElementById('kategori');
+    const wrap = document.getElementById('kategori-lain-wrap');
+    const inp  = document.getElementById('kategori-lain-input');
+    if (!sel || !wrap || !inp) return;
+    const isLain = sel.value === 'lain';
+    wrap.classList.toggle('hidden', !isLain);
+    inp.required = isLain;
+    if (!isLain) inp.value = '';
+}
+
 // ── Init: event listeners + semak kapasiti & ringkasan ───────────
 document.addEventListener('DOMContentLoaded', function() {
+    // Kategori Lain-lain
+    const selectKategori = document.getElementById('kategori');
+    if (selectKategori) {
+        selectKategori.addEventListener('change', toggleKategoriLain);
+        toggleKategoriLain(); // init — tunjuk jika old('kategori') === 'lain'
+    }
+
     // Sesi checkbox — guna 'change' event (CSP-safe, tiada onclick di HTML)
     ['pagi', 'petang'].forEach(function(key) {
         const cb = document.getElementById('sesi-' + key);

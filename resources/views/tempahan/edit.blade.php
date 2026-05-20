@@ -99,13 +99,24 @@
                         <label for="kategori" class="form-label">
                             Kategori <span class="text-red-500" aria-hidden="true">*</span>
                         </label>
+                        @php
+                            // Nilai dari old() (jika ada ralat borang) atau dari DB
+                            $kategoriKeys      = array_keys($kategori);
+                            $kategoriTersimpan = $tempahan->kategori;
+                            // Jika nilai tersimpan bukan salah satu kunci yang diketahui → ia adalah teks tersuai
+                            $isKategoriCustom  = !in_array($kategoriTersimpan, $kategoriKeys);
+                            // Nilai untuk select: 'lain' jika tersuai, atau nilai tersimpan
+                            $kategoriSelectVal = old('kategori', $isKategoriCustom ? 'lain' : $kategoriTersimpan);
+                            // Nilai untuk text field: teks tersuai atau old()
+                            $kategoriLainVal   = old('kategori_lain', $isKategoriCustom ? $kategoriTersimpan : '');
+                        @endphp
                         <select id="kategori" name="kategori"
                             class="form-input @error('kategori') !border-red-400 @enderror"
                             required aria-required="true"
                             @error('kategori') aria-invalid="true" @enderror>
                             <option value="">-- Pilih Kategori --</option>
                             @foreach($kategori as $key => $label)
-                            <option value="{{ $key }}" {{ old('kategori', $tempahan->kategori) === $key ? 'selected' : '' }}>
+                            <option value="{{ $key }}" {{ $kategoriSelectVal === $key ? 'selected' : '' }}>
                                 {{ $label }}
                             </option>
                             @endforeach
@@ -115,6 +126,22 @@
                             <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ $message }}
                         </p>
                         @enderror
+
+                        {{-- Input Lain-lain — muncul apabila "Lain-lain" dipilih --}}
+                        <div id="kategori-lain-wrap" class="{{ $kategoriSelectVal === 'lain' ? '' : 'hidden' }} mt-2">
+                            <label for="kategori-lain-input" class="sr-only">Nyatakan kategori</label>
+                            <input type="text" id="kategori-lain-input" name="kategori_lain"
+                                value="{{ $kategoriLainVal }}"
+                                class="form-input @error('kategori_lain') !border-red-400 @enderror"
+                                placeholder="Nyatakan kategori mesyuarat..."
+                                maxlength="100"
+                                @error('kategori_lain') aria-invalid="true" aria-describedby="ralat-edit-kategori-lain" @enderror>
+                            @error('kategori_lain')
+                            <p id="ralat-edit-kategori-lain" class="form-error" role="alert">
+                                <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ $message }}
+                            </p>
+                            @enderror
+                        </div>
                     </div>
 
                     <div>
@@ -234,5 +261,23 @@ flatpickr('#tarikh', {
     disableMobile: true,
     defaultDate: '{{ old('tarikh', $tempahan->tarikh->format('Y-m-d')) }}'
 });
+
+// ── Kategori Lain-lain ─────────────────────────────────────────────
+(function () {
+    const sel  = document.getElementById('kategori');
+    const wrap = document.getElementById('kategori-lain-wrap');
+    const inp  = document.getElementById('kategori-lain-input');
+    if (!sel || !wrap || !inp) return;
+
+    function toggle() {
+        const isLain = sel.value === 'lain';
+        wrap.classList.toggle('hidden', !isLain);
+        inp.required = isLain;
+        if (!isLain) inp.value = '';
+    }
+
+    sel.addEventListener('change', toggle);
+    toggle(); // init
+})();
 </script>
 @endpush
