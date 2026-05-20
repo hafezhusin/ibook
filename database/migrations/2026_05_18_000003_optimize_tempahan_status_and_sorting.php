@@ -14,21 +14,42 @@ return new class extends Migration
             ->where('status', 'menunggu')
             ->update(['status' => 'diluluskan']);
 
-        // Tukar enum status kepada dua pilihan sahaja.
-        DB::statement("ALTER TABLE tempahan MODIFY status ENUM('diluluskan','ditolak') NOT NULL DEFAULT 'diluluskan'");
+        // ENUM MODIFY hanya relevan untuk MySQL/MariaDB.
+        // SQLite (digunakan semasa testing) tidak sokong ALTER MODIFY.
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE tempahan MODIFY status ENUM('diluluskan','ditolak') NOT NULL DEFAULT 'diluluskan'");
+        }
 
         // Index khusus untuk sorting senarai tempahan.
-        Schema::table('tempahan', function (Blueprint $table) {
-            $table->index(['tarikh', 'masa_mula'], 'idx_tempahan_tarikh_masa_mula');
-        });
+        // SQLite sokong CREATE INDEX, jadi ini selamat untuk kedua-dua driver.
+        if (!$this->indexExists('tempahan', 'idx_tempahan_tarikh_masa_mula')) {
+            Schema::table('tempahan', function (Blueprint $table) {
+                $table->index(['tarikh', 'masa_mula'], 'idx_tempahan_tarikh_masa_mula');
+            });
+        }
     }
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE tempahan MODIFY status ENUM('menunggu','diluluskan','ditolak') NOT NULL DEFAULT 'menunggu'");
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE tempahan MODIFY status ENUM('menunggu','diluluskan','ditolak') NOT NULL DEFAULT 'menunggu'");
+        }
 
         Schema::table('tempahan', function (Blueprint $table) {
             $table->dropIndex('idx_tempahan_tarikh_masa_mula');
         });
+    }
+
+    private function indexExists(string $table, string $index): bool
+    {
+        try {
+            $indexes = DB::select("PRAGMA index_list({$table})");
+            foreach ($indexes as $idx) {
+                if ($idx->name === $index) return true;
+            }
+            return false;
+        } catch (\Throwable) {
+            return false; // MySQL — biarkan schema builder uruskan
+        }
     }
 };

@@ -143,7 +143,7 @@ class TempahanController extends Controller
             DB::transaction(function () use ($validated, &$konflikSesi) {
                 foreach ($validated['sesi'] as $sesi) {
                     $konflik = Tempahan::where('bilik_id', $validated['bilik_id'])
-                        ->where('tarikh', $validated['tarikh'])
+                        ->whereDate('tarikh', $validated['tarikh'])
                         ->where('sesi', $sesi)
                         ->where('status', '!=', Tempahan::STATUS_DITOLAK)
                         ->lockForUpdate()
@@ -234,7 +234,7 @@ class TempahanController extends Controller
         }
 
         $konflik = Tempahan::where('bilik_id', $validated['bilik_id'])
-            ->where('tarikh', $validated['tarikh'])
+            ->whereDate('tarikh', $validated['tarikh'])
             ->where('sesi', $validated['sesi'])
             ->where('status', '!=', Tempahan::STATUS_DITOLAK)
             ->where('id', '!=', $tempahan->id)
@@ -290,7 +290,7 @@ class TempahanController extends Controller
         $hasil = [];
         foreach (['pagi', 'petang'] as $sesi) {
             $hasil[$sesi] = Tempahan::where('bilik_id', $bilikId)
-                ->where('tarikh', $tarikh)
+                ->whereDate('tarikh', $tarikh)
                 ->where('sesi', $sesi)
                 ->where('status', '!=', Tempahan::STATUS_DITOLAK)
                 ->exists();

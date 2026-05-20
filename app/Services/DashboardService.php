@@ -15,8 +15,11 @@ class DashboardService
      */
     private function kunciCache(User $user): string
     {
-        $skop = $user->isStaf() ? "staf.{$user->id}" : "admin.{$user->peranan}";
-        return "dashboard.v1.{$skop}";
+        // Sertakan versi supaya luputkanSemuaCache() benar-benar buang semua entri cache.
+        // Setiap kali versi dinaikkan, kunci berubah → cache lama diabaikan secara automatik.
+        $versi = Cache::get('dashboard.cache.version', 1);
+        $skop  = $user->isStaf() ? "staf.{$user->id}" : "admin.{$user->peranan}";
+        return "dashboard.v{$versi}.{$skop}";
     }
 
     /**
