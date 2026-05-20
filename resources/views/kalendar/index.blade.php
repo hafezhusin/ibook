@@ -300,16 +300,17 @@ document.addEventListener('DOMContentLoaded', function () {
         height: 'auto',
         dayMaxEvents: 4,
         events: function (info, successCallback, failureCallback) {
-            // Ambil SEMUA events dari server — tapis dilakukan di DOM
-            fetch('{{ route("kalendar.events") }}?start=' + encodeURIComponent(info.startStr)
-                    + '&end=' + encodeURIComponent(info.endStr), { cache: 'no-store' })
+            var url = '{{ route("kalendar.events") }}?start=' + encodeURIComponent(info.startStr)
+                    + '&end=' + encodeURIComponent(info.endStr);
+            if (selectedBilikId) {
+                url += '&bilik_id=' + selectedBilikId;
+            }
+            fetch(url, { cache: 'no-store' })
                 .then(function (r) { return r.json(); })
                 .then(successCallback)
                 .catch(failureCallback);
         },
         eventsSet: function (events) {
-            // Re-apply filter selepas events dirender (navigasi bulan dll)
-            setTimeout(applyFilter, 50);
             updateStatusHariIniFromCurrentEvents(events);
         },
 
@@ -380,16 +381,6 @@ document.addEventListener('DOMContentLoaded', function () {
     calendar.render();
 });
 
-// ---- Tapis event mengikut bilik menggunakan FullCalendar API ----
-function applyFilter() {
-    if (!calendar) return;
-    var sel = selectedBilikId;
-    calendar.getEvents().forEach(function (event) {
-        var show = (!sel || Number(event.extendedProps.bilik_id) === sel);
-        event.setProp('display', show ? 'auto' : 'none');
-    });
-}
-
 // ---- Filter bilik (desktop sidebar) ----
 function filterBilik(bilikId, el) {
     selectedBilikId = bilikId ? Number(bilikId) : null;
@@ -401,7 +392,7 @@ function filterBilik(bilikId, el) {
     el.setAttribute('aria-pressed', 'true');
     var mobSel = document.getElementById('mob-filter-bilik');
     if (mobSel) mobSel.value = bilikId || '';
-    applyFilter();
+    calendar.refetchEvents();
 }
 
 // ---- Filter bilik (mobile dropdown) ----
@@ -418,7 +409,7 @@ function filterBilikMobile(val) {
         var btnSemua = document.getElementById('btn-semua');
         if (btnSemua) { btnSemua.classList.add('aktif'); btnSemua.setAttribute('aria-pressed', 'true'); }
     }
-    applyFilter();
+    calendar.refetchEvents();
 }
 
 // ---- Status hari ini (guna event semasa, tanpa fetch tambahan) ----
