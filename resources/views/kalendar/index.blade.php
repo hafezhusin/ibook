@@ -299,16 +299,17 @@ document.addEventListener('DOMContentLoaded', function () {
         buttonText: { today:'Hari Ini', month:'Bulan', week:'Minggu', day:'Hari' },
         height: 'auto',
         dayMaxEvents: 4,
-        events: {
-            url: '{{ route("kalendar.events") }}',
-            extraParams: function () {
-                return selectedBilikId ? { bilik_id: selectedBilikId } : {};
-            },
-            failure: function () {
-                console.error('Gagal memuatkan acara kalendar.');
-            }
+        events: function (info, successCallback, failureCallback) {
+            // Ambil SEMUA events dari server — tapis dilakukan di DOM
+            fetch('{{ route("kalendar.events") }}?start=' + encodeURIComponent(info.startStr)
+                    + '&end=' + encodeURIComponent(info.endStr), { cache: 'no-store' })
+                .then(function (r) { return r.json(); })
+                .then(successCallback)
+                .catch(failureCallback);
         },
         eventsSet: function (events) {
+            // Re-apply DOM filter selepas events dirender (navigasi bulan dll)
+            setTimeout(applyDomFilter, 200);
             updateStatusHariIniFromCurrentEvents(events);
         },
 
@@ -370,6 +371,8 @@ document.addEventListener('DOMContentLoaded', function () {
         },
 
         eventDidMount: function (info) {
+            // Tag setiap event dengan bilik_id untuk DOM filtering
+            info.el.setAttribute('data-bilik-id', info.event.extendedProps.bilik_id || '');
             info.el.style.borderRadius = '4px';
             info.el.style.padding = '2px 4px';
             info.el.setAttribute('aria-label',
@@ -379,38 +382,43 @@ document.addEventListener('DOMContentLoaded', function () {
     calendar.render();
 });
 
+// ---- Tapis event mengikut bilik terus pada DOM ----
+function applyDomFilter() {
+    var sel = selectedBilikId;
+    document.querySelectorAll('[data-bilik-id]').forEach(function (el) {
+        el.style.display = (!sel || Number(el.getAttribute('data-bilik-id')) === sel) ? '' : 'none';
+    });
+}
+
 // ---- Filter bilik (desktop sidebar) ----
 function filterBilik(bilikId, el) {
-    selectedBilikId = bilikId;
-    document.querySelectorAll('.bilik-btn').forEach(b => {
+    selectedBilikId = bilikId ? Number(bilikId) : null;
+    document.querySelectorAll('.bilik-btn').forEach(function (b) {
         b.classList.remove('aktif');
         b.setAttribute('aria-pressed', 'false');
     });
     el.classList.add('aktif');
     el.setAttribute('aria-pressed', 'true');
-    // Segerak dropdown mudah alih
-    const mobSel = document.getElementById('mob-filter-bilik');
+    var mobSel = document.getElementById('mob-filter-bilik');
     if (mobSel) mobSel.value = bilikId || '';
-    if (calendar) calendar.refetchEvents();
+    applyDomFilter();
 }
 
 // ---- Filter bilik (mobile dropdown) ----
 function filterBilikMobile(val) {
-    const bilikId = val ? parseInt(val) : null;
-    selectedBilikId = bilikId;
-    // Segerak butang sidebar desktop
-    document.querySelectorAll('.bilik-btn').forEach(b => {
+    selectedBilikId = val ? Number(val) : null;
+    document.querySelectorAll('.bilik-btn').forEach(function (b) {
         b.classList.remove('aktif');
         b.setAttribute('aria-pressed', 'false');
     });
-    if (bilikId) {
-        const btn = document.querySelector('.bilik-btn[data-bilik-id="' + bilikId + '"]');
+    if (selectedBilikId) {
+        var btn = document.querySelector('.bilik-btn[data-bilik-id="' + selectedBilikId + '"]');
         if (btn) { btn.classList.add('aktif'); btn.setAttribute('aria-pressed', 'true'); }
     } else {
-        const btnSemua = document.getElementById('btn-semua');
+        var btnSemua = document.getElementById('btn-semua');
         if (btnSemua) { btnSemua.classList.add('aktif'); btnSemua.setAttribute('aria-pressed', 'true'); }
     }
-    if (calendar) calendar.refetchEvents();
+    applyDomFilter();
 }
 
 // ---- Status hari ini (guna event semasa, tanpa fetch tambahan) ----
