@@ -299,7 +299,15 @@ document.addEventListener('DOMContentLoaded', function () {
         buttonText: { today:'Hari Ini', month:'Bulan', week:'Minggu', day:'Hari' },
         height: 'auto',
         dayMaxEvents: 4,
-        events: fetchEvents,
+        events: {
+            url: '{{ route("kalendar.events") }}',
+            extraParams: function () {
+                return selectedBilikId ? { bilik_id: selectedBilikId } : {};
+            },
+            failure: function () {
+                console.error('Gagal memuatkan acara kalendar.');
+            }
+        },
         eventsSet: function (events) {
             updateStatusHariIniFromCurrentEvents(events);
         },
@@ -370,16 +378,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     calendar.render();
 });
-
-// ---- Fetch events dengan filter bilik ----
-function fetchEvents(info, successCallback, failureCallback) {
-    const params = new URLSearchParams({ start: info.startStr, end: info.endStr });
-    if (selectedBilikId) params.append('bilik_id', selectedBilikId);
-    fetch('{{ route("kalendar.events") }}?' + params)
-        .then(r => r.json())
-        .then(successCallback)
-        .catch(failureCallback);
-}
 
 // ---- Filter bilik (desktop sidebar) ----
 function filterBilik(bilikId, el) {
