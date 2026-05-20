@@ -308,8 +308,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 .catch(failureCallback);
         },
         eventsSet: function (events) {
-            // Re-apply DOM filter selepas events dirender (navigasi bulan dll)
-            setTimeout(applyDomFilter, 200);
+            // Re-apply filter selepas events dirender (navigasi bulan dll)
+            setTimeout(applyFilter, 50);
             updateStatusHariIniFromCurrentEvents(events);
         },
 
@@ -371,8 +371,6 @@ document.addEventListener('DOMContentLoaded', function () {
         },
 
         eventDidMount: function (info) {
-            // Tag setiap event dengan bilik_id untuk DOM filtering
-            info.el.setAttribute('data-bilik-id', info.event.extendedProps.bilik_id || '');
             info.el.style.borderRadius = '4px';
             info.el.style.padding = '2px 4px';
             info.el.setAttribute('aria-label',
@@ -382,16 +380,13 @@ document.addEventListener('DOMContentLoaded', function () {
     calendar.render();
 });
 
-// ---- Tapis event mengikut bilik terus pada DOM ----
-function applyDomFilter() {
+// ---- Tapis event mengikut bilik menggunakan FullCalendar API ----
+function applyFilter() {
+    if (!calendar) return;
     var sel = selectedBilikId;
-    // Gunakan .fc-event[data-bilik-id] supaya sidebar buttons tidak terjejas
-    document.querySelectorAll('.fc-event[data-bilik-id]').forEach(function (el) {
-        var show = (!sel || Number(el.getAttribute('data-bilik-id')) === sel);
-        // Sembunyikan harness (wrapper) supaya tidak tinggal ruang kosong
-        var harness = el.closest('.fc-daygrid-event-harness, .fc-timegrid-event-harness');
-        var target  = harness || el;
-        target.style.display = show ? '' : 'none';
+    calendar.getEvents().forEach(function (event) {
+        var show = (!sel || Number(event.extendedProps.bilik_id) === sel);
+        event.setProp('display', show ? 'auto' : 'none');
     });
 }
 
@@ -406,7 +401,7 @@ function filterBilik(bilikId, el) {
     el.setAttribute('aria-pressed', 'true');
     var mobSel = document.getElementById('mob-filter-bilik');
     if (mobSel) mobSel.value = bilikId || '';
-    applyDomFilter();
+    applyFilter();
 }
 
 // ---- Filter bilik (mobile dropdown) ----
@@ -423,7 +418,7 @@ function filterBilikMobile(val) {
         var btnSemua = document.getElementById('btn-semua');
         if (btnSemua) { btnSemua.classList.add('aktif'); btnSemua.setAttribute('aria-pressed', 'true'); }
     }
-    applyDomFilter();
+    applyFilter();
 }
 
 // ---- Status hari ini (guna event semasa, tanpa fetch tambahan) ----
