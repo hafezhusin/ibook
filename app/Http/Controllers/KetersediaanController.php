@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BilikMesyuarat;
 use App\Models\Tempahan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class KetersediaanController extends Controller
 {
@@ -34,15 +35,26 @@ class KetersediaanController extends Controller
             ->orderBy('nama')
             ->get();
 
-        $hasil = $bilikList->map(function ($bilik) use ($tarikh, $sesiList, $peserta) {
+        // Satu query sahaja untuk semua bilik + sesi pada tarikh tersebut.
+        // Cache 60 saat — mengelak query berulang untuk tarikh/sesi yang sama.
+        // Cache dikosongkan apabila tempahan baharu dicipta (bumpKalendarCacheVersion).
+        $cacheKey = 'ketersediaan_' . $tarikh . '_' . $sesiPilihan;
+
+        $ditempahMap = Cache::remember($cacheKey, 60, function () use ($tarikh, $sesiList) {
+            return Tempahan::where('tarikh', $tarikh)
+                ->whereIn('sesi', $sesiList)
+                ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+                ->get(['bilik_id', 'sesi'])
+                ->groupBy('bilik_id')
+                ->map(fn($rows) => $rows->pluck('sesi')->all());
+        });
+
+        $hasil = $bilikList->map(function ($bilik) use ($sesiList, $peserta, $ditempahMap) {
+            $sesiDitempah = $ditempahMap->get($bilik->id, []);
+
             $statusSesi = [];
             foreach ($sesiList as $sesi) {
-                $ditempah = Tempahan::where('bilik_id', $bilik->id)
-                    ->where('tarikh', $tarikh)
-                    ->where('sesi', $sesi)
-                    ->where('status', '!=', Tempahan::STATUS_DITOLAK)
-                    ->exists();
-                $statusSesi[$sesi] = !$ditempah; // true = masih kosong
+                $statusSesi[$sesi] = !in_array($sesi, $sesiDitempah);
             }
 
             $semuaTersedia   = !in_array(false, $statusSesi, true);

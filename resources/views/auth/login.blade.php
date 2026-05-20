@@ -274,7 +274,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/ms.global.min.js"></script>
-<script>
+<script nonce="{{ $cspNonce }}">
 let calendar;
 let selectedBilik = null;
 let allBilik = [];

@@ -659,7 +659,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 // ── Tapis Lanjutan toggle ─────────────────────────────────────────
 function toggleLanjutan() {
     const panel = document.getElementById('panel-lanjutan');

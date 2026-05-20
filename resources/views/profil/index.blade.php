@@ -226,7 +226,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ $cspNonce }}">
 // ── Tunjuk/sembunyi kata laluan ────────────────────────────────────
 function togglePwd(fieldId, btn) {
     const input = document.getElementById(fieldId);

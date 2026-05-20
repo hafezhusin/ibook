@@ -155,7 +155,7 @@
     </form>
 </div>
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 function praLihatGambar(url) {
     const wrap = document.getElementById('gambar-preview-wrap');
     const img  = document.getElementById('gambar-preview-img');

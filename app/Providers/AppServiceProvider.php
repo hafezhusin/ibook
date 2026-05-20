@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Tempahan;
 use App\Policies\TempahanPolicy;
+use App\Services\CspNonce;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -15,6 +16,9 @@ class AppServiceProvider extends ServiceProvider
     {
         // Kongsi tetapan sistem ke semua view
         \Illuminate\Support\Facades\View::share('tetapan', \App\Models\Tetapan::getAll());
+
+        // Kongsi CSP nonce ke semua view — untuk <script nonce="{{ $cspNonce }}">
+        \Illuminate\Support\Facades\View::share('cspNonce', CspNonce::get());
 
         // Daftarkan Policy
         Gate::policy(Tempahan::class, TempahanPolicy::class);

@@ -409,7 +409,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 const LS_VIEW_KEY = 'ibook_pengguna_view';
 let tabSemasa  = 'aktif';
 let viewSemasa = localStorage.getItem(LS_VIEW_KEY) || 'kad';

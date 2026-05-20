@@ -340,7 +340,7 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ms.js"></script>
-<script>
+<script nonce="{{ $cspNonce }}">
 // ── Flatpickr date picker ──────────────────────────────────────────
 const tarikhInput = document.getElementById('tarikh');
 flatpickr(tarikhInput, {

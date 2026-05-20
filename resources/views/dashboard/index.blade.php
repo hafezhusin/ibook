@@ -359,7 +359,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 flatpickr('#quick-tarikh', {
     locale: 'ms',
     dateFormat: 'Y-m-d',

@@ -594,7 +594,7 @@
 </div>
 
 @stack('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 // ── Pintasan papan kekunci: tekan "/" untuk fokus carian global ──
 (function () {
     const input = document.getElementById('carian-global');

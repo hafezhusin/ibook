@@ -227,7 +227,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 flatpickr('#tarikh', {
     locale: 'ms',
     dateFormat: 'Y-m-d',

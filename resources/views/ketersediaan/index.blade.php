@@ -178,7 +178,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 // Init Flatpickr
 flatpickr('#cek-tarikh', {
     locale: 'ms',

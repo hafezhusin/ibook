@@ -18,6 +18,8 @@ class ActivityLog extends Model
         'penerangan',
         'butiran',
         'ip_address',
+        'prev_hash',
+        'record_hash',
         'dicipta_pada',
     ];
 

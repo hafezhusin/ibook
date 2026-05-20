@@ -8,7 +8,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 
 /**
- * AuditLogger — Pencatat Aktiviti Sistem
+ * AuditLogger — Pencatat Aktiviti Sistem dengan Rantai Hash SHA-256
+ *
+ * Setiap rekod audit menyimpan:
+ *   - prev_hash   : hash rekod sebelumnya (null untuk rekod pertama)
+ *   - record_hash : SHA-256 bagi semua medan kanonik rekod ini
+ *
+ * Integriti boleh disahkan dengan: php artisan audit:verify
  *
  * Guna: AuditLogger::catat('buat_tempahan', $tempahan, ['nota' => '...']);
  */
@@ -29,15 +35,43 @@ class AuditLogger
         ?string $penerangan = null
     ): void {
         try {
+            $masa       = now();
+            $penggunaId = Auth::id();
+            $ip         = Request::ip();
+            $peneranganFinal = $penerangan ?? self::janaPenerangan($tindakan, $model);
+            $butiranFinal    = empty($butiran) ? null : $butiran;
+
+            // Dapatkan hash rekod terkini untuk membentuk rantai
+            $prevHash = ActivityLog::latest('dicipta_pada')
+                ->latest('id')
+                ->value('record_hash');
+
+            // Bina kanonikal rekod ini untuk pengiraan hash
+            $kanonikal = json_encode([
+                'pengguna_id' => $penggunaId,
+                'tindakan'    => $tindakan,
+                'model_jenis' => $model ? class_basename($model) : null,
+                'model_id'    => $model?->getKey(),
+                'penerangan'  => $peneranganFinal,
+                'butiran'     => $butiranFinal,
+                'ip_address'  => $ip,
+                'prev_hash'   => $prevHash,
+                'dicipta_pada'=> $masa->toIso8601String(),
+            ], JSON_UNESCAPED_UNICODE);
+
+            $recordHash = hash('sha256', $kanonikal);
+
             ActivityLog::create([
-                'pengguna_id'  => Auth::id(),
+                'pengguna_id'  => $penggunaId,
                 'tindakan'     => $tindakan,
                 'model_jenis'  => $model ? class_basename($model) : null,
                 'model_id'     => $model?->getKey(),
-                'penerangan'   => $penerangan ?? self::janaPenerangan($tindakan, $model),
-                'butiran'      => empty($butiran) ? null : $butiran,
-                'ip_address'   => Request::ip(),
-                'dicipta_pada' => now(),
+                'penerangan'   => $peneranganFinal,
+                'butiran'      => $butiranFinal,
+                'ip_address'   => $ip,
+                'prev_hash'    => $prevHash,
+                'record_hash'  => $recordHash,
+                'dicipta_pada' => $masa,
             ]);
         } catch (\Throwable $e) {
             // Jangan biarkan kegagalan logging pecahkan aliran utama

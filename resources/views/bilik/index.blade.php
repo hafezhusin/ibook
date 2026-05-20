@@ -166,7 +166,7 @@
 </section>
 
 @push('scripts')
-<script>
+<script nonce="{{ $cspNonce }}">
 function cariBilik(kata) {
     const carian = kata.trim().toLowerCase();
     document.querySelectorAll('.kad-bilik').forEach(kad => {

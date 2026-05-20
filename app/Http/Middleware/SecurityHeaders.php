@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\CspNonce;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -36,9 +37,11 @@ class SecurityHeaders
         $scheme    = $request->getScheme();
         $origin    = $scheme . '://' . $host . ($port && !in_array($port, [80, 443]) ? ':' . $port : '');
 
+        $nonce = CspNonce::get();
+
         $csp = implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' cdn.tailwindcss.com cdn.jsdelivr.net cdnjs.cloudflare.com",
+            "script-src 'self' 'nonce-{$nonce}' cdn.tailwindcss.com cdn.jsdelivr.net cdnjs.cloudflare.com",
             "style-src 'self' 'unsafe-inline' cdn.tailwindcss.com cdn.jsdelivr.net cdnjs.cloudflare.com fonts.googleapis.com",
             "font-src 'self' cdnjs.cloudflare.com fonts.gstatic.com data:",
             "img-src 'self' data: blob:",

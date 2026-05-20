@@ -13,6 +13,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TempahanExport;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class TempahanController extends Controller
 {
@@ -133,41 +134,57 @@ class TempahanController extends Controller
             ]);
         }
 
+        // Semak konflik & cipta tempahan dalam satu transaksi atomik
+        // lockForUpdate() mengunci baris yang berkaitan supaya dua permintaan
+        // serentak tidak boleh melalui semakan konflik secara bersamaan.
         $konflikSesi = [];
-        foreach ($validated['sesi'] as $sesi) {
-            $konflik = Tempahan::where('bilik_id', $validated['bilik_id'])
-                ->where('tarikh', $validated['tarikh'])
-                ->where('sesi', $sesi)
-                ->where('status', '!=', Tempahan::STATUS_DITOLAK)
-                ->exists();
-            if ($konflik) {
-                $konflikSesi[] = Tempahan::MASA_SESI[$sesi]['label'];
+
+        try {
+            DB::transaction(function () use ($validated, &$konflikSesi) {
+                foreach ($validated['sesi'] as $sesi) {
+                    $konflik = Tempahan::where('bilik_id', $validated['bilik_id'])
+                        ->where('tarikh', $validated['tarikh'])
+                        ->where('sesi', $sesi)
+                        ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+                        ->lockForUpdate()
+                        ->exists();
+                    if ($konflik) {
+                        $konflikSesi[] = Tempahan::MASA_SESI[$sesi]['label'];
+                    }
+                }
+
+                if (!empty($konflikSesi)) {
+                    // Lempar exception untuk rollback transaksi & keluar
+                    throw new \RuntimeException('konflik_sesi');
+                }
+
+                foreach ($validated['sesi'] as $sesi) {
+                    $masaSesi = Tempahan::MASA_SESI[$sesi];
+                    Tempahan::create([
+                        'nama_mesyuarat'   => $validated['nama_mesyuarat'],
+                        'tarikh'           => $validated['tarikh'],
+                        'bilik_id'         => $validated['bilik_id'],
+                        'sesi'             => $sesi,
+                        'masa_mula'        => $masaSesi['mula'],
+                        'masa_tamat'       => $masaSesi['tamat'],
+                        'bilangan_peserta' => $validated['bilangan_peserta'],
+                        'kategori'         => $validated['kategori'],
+                        'nama_pengerusi'   => $validated['nama_pengerusi'],
+                        'tujuan'           => $validated['tujuan'] ?? null,
+                        'user_id'          => Auth::id(),
+                        'status'           => Tempahan::STATUS_DILULUSKAN,
+                    ]);
+                }
+            });
+        } catch (\RuntimeException $e) {
+            if ($e->getMessage() === 'konflik_sesi') {
+                return back()->withInput()->withErrors([
+                    'sesi' => 'Bilik telah ditempah untuk sesi: ' . implode(', ', $konflikSesi)
+                ]);
             }
+            throw $e;
         }
 
-        if (!empty($konflikSesi)) {
-            return back()->withInput()->withErrors([
-                'sesi' => 'Bilik telah ditempah untuk sesi: ' . implode(', ', $konflikSesi)
-            ]);
-        }
-
-        foreach ($validated['sesi'] as $sesi) {
-            $masaSesi = Tempahan::MASA_SESI[$sesi];
-            Tempahan::create([
-                'nama_mesyuarat'   => $validated['nama_mesyuarat'],
-                'tarikh'           => $validated['tarikh'],
-                'bilik_id'         => $validated['bilik_id'],
-                'sesi'             => $sesi,
-                'masa_mula'        => $masaSesi['mula'],
-                'masa_tamat'       => $masaSesi['tamat'],
-                'bilangan_peserta' => $validated['bilangan_peserta'],
-                'kategori'         => $validated['kategori'],
-                'nama_pengerusi'   => $validated['nama_pengerusi'],
-                'tujuan'           => $validated['tujuan'] ?? null,
-                'user_id'          => Auth::id(),
-                'status'           => Tempahan::STATUS_DILULUSKAN,
-            ]);
-        }
         $this->bumpKalendarCacheVersion();
 
         AuditLogger::catat('buat_tempahan', null, [
