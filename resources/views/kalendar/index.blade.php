@@ -385,8 +385,13 @@ document.addEventListener('DOMContentLoaded', function () {
 // ---- Tapis event mengikut bilik terus pada DOM ----
 function applyDomFilter() {
     var sel = selectedBilikId;
-    document.querySelectorAll('[data-bilik-id]').forEach(function (el) {
-        el.style.display = (!sel || Number(el.getAttribute('data-bilik-id')) === sel) ? '' : 'none';
+    // Gunakan .fc-event[data-bilik-id] supaya sidebar buttons tidak terjejas
+    document.querySelectorAll('.fc-event[data-bilik-id]').forEach(function (el) {
+        var show = (!sel || Number(el.getAttribute('data-bilik-id')) === sel);
+        // Sembunyikan harness (wrapper) supaya tidak tinggal ruang kosong
+        var harness = el.closest('.fc-daygrid-event-harness, .fc-timegrid-event-harness');
+        var target  = harness || el;
+        target.style.display = show ? '' : 'none';
     });
 }
 

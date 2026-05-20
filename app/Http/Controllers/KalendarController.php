@@ -14,7 +14,11 @@ class KalendarController extends Controller
     public function index()
     {
         $bilik = BilikMesyuarat::where('status', 'aktif')->orderBy('nama')->get();
-        return view('kalendar.index', compact('bilik'));
+        return response()
+            ->view('kalendar.index', compact('bilik'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('X-LiteSpeed-Cache-Control', 'no-cache');
     }
 
     public function events(Request $request)
