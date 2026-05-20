@@ -80,7 +80,10 @@ class KalendarController extends Controller
             return $this->formatEvents($query->get(), false, $user->id);
         });
 
-        return response()->json($events);
+        return response()->json($events)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('X-LiteSpeed-Cache-Control', 'no-cache');
     }
 
     // Route awam - tanpa log masuk
@@ -131,7 +134,10 @@ class KalendarController extends Controller
             return $this->formatEvents($query->get(), true);
         });
 
-        return response()->json($events);
+        return response()->json($events)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('X-LiteSpeed-Cache-Control', 'no-cache');
     }
 
     private function formatEvents($tempahan, bool $awam = false, int $currentUserId = 0): array

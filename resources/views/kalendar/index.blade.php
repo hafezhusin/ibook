@@ -384,6 +384,7 @@ document.addEventListener('DOMContentLoaded', function () {
 // ---- Filter bilik (desktop sidebar) ----
 function filterBilik(bilikId, el) {
     selectedBilikId = bilikId ? Number(bilikId) : null;
+    console.log('[iBook] filterBilik dipanggil, bilik_id =', selectedBilikId);
     document.querySelectorAll('.bilik-btn').forEach(function (b) {
         b.classList.remove('aktif');
         b.setAttribute('aria-pressed', 'false');
@@ -393,6 +394,7 @@ function filterBilik(bilikId, el) {
     var mobSel = document.getElementById('mob-filter-bilik');
     if (mobSel) mobSel.value = bilikId || '';
     calendar.refetchEvents();
+    console.log('[iBook] refetchEvents dipanggil');
 }
 
 // ---- Filter bilik (mobile dropdown) ----
