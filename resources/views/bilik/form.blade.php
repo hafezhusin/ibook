@@ -26,6 +26,7 @@
 
     <form method="POST"
         action="{{ $bilik ? route('bilik.update', $bilik) : route('bilik.store') }}"
+        enctype="multipart/form-data"
         novalidate
         aria-label="{{ $bilik ? 'Borang edit bilik mesyuarat' : 'Borang tambah bilik mesyuarat baru' }}">
         @csrf
@@ -113,33 +114,52 @@
             </select>
         </div>
 
-        {{-- Gambar Bilik (URL) --}}
+        {{-- Gambar Bilik (Upload) --}}
         <div class="mb-7">
             <label for="gambar-bilik" class="form-label">
-                URL Gambar Bilik
+                Gambar Bilik
                 <span class="text-gray-400 font-normal text-xs ml-1">(pilihan)</span>
             </label>
-            <input type="url" id="gambar-bilik" name="gambar"
-                value="{{ old('gambar', $bilik?->gambar) }}"
-                class="form-input"
-                placeholder="https://example.com/gambar-bilik.jpg"
-                @error('gambar') aria-invalid="true" aria-describedby="ralat-gambar" @enderror>
-            <p class="form-hint">
-                Masukkan URL gambar bilik (JPG/PNG). Kosongkan untuk guna gambar automatik mengikut jenis bilik.
-            </p>
+
+            {{-- Drop zone --}}
+            <div id="gambar-dropzone"
+                 class="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer transition-colors hover:border-amber-400 hover:bg-amber-50"
+                 role="button" tabindex="0" aria-label="Kawasan muat naik gambar bilik">
+                <input type="file" id="gambar-bilik" name="gambar"
+                    accept="image/jpeg,image/png,image/webp"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    @error('gambar') aria-invalid="true" aria-describedby="ralat-gambar" @enderror>
+                <div id="gambar-placeholder">
+                    <i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-300 mb-2" aria-hidden="true"></i>
+                    <p class="text-sm text-gray-500">Klik atau seret gambar ke sini</p>
+                    <p class="text-xs text-gray-400 mt-1">JPG, PNG atau WebP • Maks 5MB</p>
+                    <p class="text-xs text-gray-400">Gambar akan diubah saiz automatik kepada 800×352px</p>
+                </div>
+            </div>
+
+            <p class="form-hint mt-1">Kosongkan untuk kekalkan gambar sedia ada atau guna gambar automatik.</p>
+
             @error('gambar')
             <p id="ralat-gambar" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
             @enderror
 
-            {{-- Preview gambar --}}
-            <div id="gambar-preview-wrap" class="mt-3 {{ old('gambar', $bilik?->gambar) ? '' : 'hidden' }}">
-                <p class="text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">Pratonton</p>
-                <div class="relative w-full h-40 rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+            {{-- Preview gambar (semasa edit atau selepas pilih fail) --}}
+            @php $gambarSediada = $bilik?->gambar; @endphp
+            <div id="gambar-preview-wrap" class="mt-3 {{ $gambarSediada ? '' : 'hidden' }}">
+                <p class="text-xs text-gray-400 mb-1.5 font-semibold uppercase tracking-wider">
+                    <span id="gambar-preview-label">{{ $gambarSediada ? 'Gambar Semasa' : 'Pratonton' }}</span>
+                </p>
+                <div class="relative w-full rounded-xl overflow-hidden bg-gray-100 border border-gray-200" style="height:176px">
                     <img id="gambar-preview-img"
-                         src="{{ old('gambar', $bilik?->gambar ?? '') }}"
+                         src="{{ $gambarSediada ?? '' }}"
                          alt="Pratonton gambar bilik"
-                         class="w-full h-full object-cover"
-                         onerror="document.getElementById('gambar-preview-wrap').classList.add('hidden')">
+                         class="w-full h-full object-cover">
+                    {{-- Butang buang pratonton --}}
+                    <button type="button" id="gambar-preview-buang"
+                        class="absolute top-2 right-2 bg-white/80 hover:bg-white text-gray-600 hover:text-red-600 rounded-full w-7 h-7 flex items-center justify-center shadow transition-colors"
+                        aria-label="Buang gambar yang dipilih">
+                        <i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -155,21 +175,88 @@
 </div>
 @push('scripts')
 <script nonce="{{ $cspNonce }}">
-document.getElementById('gambar-bilik').addEventListener('input', function() {
-    praLihatGambar(this.value);
-});
+(function () {
+    const input     = document.getElementById('gambar-bilik');
+    const dropzone  = document.getElementById('gambar-dropzone');
+    const wrap      = document.getElementById('gambar-preview-wrap');
+    const img       = document.getElementById('gambar-preview-img');
+    const label     = document.getElementById('gambar-preview-label');
+    const buangBtn  = document.getElementById('gambar-preview-buang');
+    const placeholder = document.getElementById('gambar-placeholder');
 
-function praLihatGambar(url) {
-    const wrap = document.getElementById('gambar-preview-wrap');
-    const img  = document.getElementById('gambar-preview-img');
-    if (!url || url.trim() === '') {
-        wrap.classList.add('hidden');
-        return;
+    // Tunjuk pratonton apabila fail dipilih
+    if (input) {
+        input.addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+
+            // Sahkan jenis & saiz pada klien (server tetap semak semula)
+            if (!file.type.match(/image\/(jpeg|png|webp)/)) {
+                alert('Sila pilih gambar dalam format JPG, PNG atau WebP.');
+                this.value = '';
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                alert('Saiz gambar melebihi 5MB. Sila pilih gambar yang lebih kecil.');
+                this.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                img.src = e.target.result;
+                wrap.classList.remove('hidden');
+                if (label) label.textContent = 'Pratonton (Akan Dimuat Naik)';
+                // Ubah warna border dropzone jadi hijau
+                dropzone.classList.remove('border-gray-300', 'hover:border-amber-400');
+                dropzone.classList.add('border-green-400', 'bg-green-50');
+                if (placeholder) {
+                    placeholder.innerHTML = '<i class="fa-solid fa-circle-check text-2xl text-green-500 mb-1" aria-hidden="true"></i><p class="text-sm text-green-700 font-medium">' + file.name + '</p>';
+                }
+            };
+            reader.readAsDataURL(file);
+        });
     }
-    img.src = url.trim();
-    img.onload  = () => wrap.classList.remove('hidden');
-    img.onerror = () => wrap.classList.add('hidden');
-}
+
+    // Butang buang — kosongkan input dan sembunyikan pratonton
+    if (buangBtn) {
+        buangBtn.addEventListener('click', function () {
+            if (input) {
+                input.value = '';
+            }
+            wrap.classList.add('hidden');
+            img.src = '';
+            // Reset dropzone
+            dropzone.classList.remove('border-green-400', 'bg-green-50');
+            dropzone.classList.add('border-gray-300');
+            if (placeholder) {
+                placeholder.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-3xl text-gray-300 mb-2" aria-hidden="true"></i><p class="text-sm text-gray-500">Klik atau seret gambar ke sini</p><p class="text-xs text-gray-400 mt-1">JPG, PNG atau WebP • Maks 5MB</p><p class="text-xs text-gray-400">Gambar akan diubah saiz automatik kepada 800×352px</p>';
+            }
+        });
+    }
+
+    // Drag-over visual
+    if (dropzone) {
+        dropzone.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            this.classList.add('border-amber-400', 'bg-amber-50');
+        });
+        dropzone.addEventListener('dragleave', function () {
+            this.classList.remove('border-amber-400', 'bg-amber-50');
+        });
+        dropzone.addEventListener('drop', function (e) {
+            e.preventDefault();
+            this.classList.remove('border-amber-400', 'bg-amber-50');
+            if (e.dataTransfer.files.length && input) {
+                // Assign ke file input
+                const dt = new DataTransfer();
+                dt.items.add(e.dataTransfer.files[0]);
+                input.files = dt.files;
+                input.dispatchEvent(new Event('change'));
+            }
+        });
+    }
+})();
 </script>
 @endpush
 @endsection

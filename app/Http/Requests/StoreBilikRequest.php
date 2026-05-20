@@ -20,7 +20,7 @@ class StoreBilikRequest extends FormRequest
             'kemudahan'   => ['nullable', 'array'],
             'kemudahan.*' => ['string', 'max:100'],
             'status'      => ['required', 'in:aktif,tidak_aktif'],
-            'gambar'      => ['nullable', 'url', 'max:2048'],
+            'gambar'      => ['nullable', 'file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
         ];
     }
 
@@ -33,7 +33,9 @@ class StoreBilikRequest extends FormRequest
             'kapasiti.max'      => 'Kapasiti tidak boleh melebihi 500 orang.',
             'status.required'   => 'Sila pilih status bilik.',
             'status.in'         => 'Status tidak sah.',
-            'gambar.url'        => 'URL gambar tidak sah. Sila masukkan URL yang betul (bermula dengan https://).',
+            'gambar.image'      => 'Fail yang dimuat naik mestilah gambar.',
+            'gambar.mimes'      => 'Gambar mestilah dalam format JPG, PNG atau WebP.',
+            'gambar.max'        => 'Saiz gambar tidak boleh melebihi 5MB.',
         ];
     }
 }

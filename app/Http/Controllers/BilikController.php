@@ -51,7 +51,15 @@ class BilikController extends Controller
 
     public function store(StoreBilikRequest $request)
     {
-        $bilik = BilikMesyuarat::create($request->validated());
+        $data = $request->validated();
+
+        if ($request->hasFile('gambar')) {
+            $data['gambar'] = $this->simpanGambarBilik($request->file('gambar'));
+        } else {
+            unset($data['gambar']);
+        }
+
+        $bilik = BilikMesyuarat::create($data);
         AuditLogger::catat('tambah_bilik', $bilik, ['nama' => $bilik->nama]);
 
         return redirect()->route('bilik.index')
@@ -69,11 +77,81 @@ class BilikController extends Controller
         $data['dikemaskini_oleh'] = auth()->user()->name;
         $data['dikemaskini_pada'] = now();
 
+        if ($request->hasFile('gambar')) {
+            $data['gambar'] = $this->simpanGambarBilik($request->file('gambar'), $bilik->gambar);
+        } else {
+            unset($data['gambar']);
+        }
+
         $bilik->update($data);
         AuditLogger::catat('kemaskini_bilik', $bilik, ['nama' => $bilik->nama]);
 
         return redirect()->route('bilik.index')
             ->with('success', 'Maklumat bilik mesyuarat berjaya dikemaskini.');
+    }
+
+    /**
+     * Simpan gambar bilik — resize/crop cover ke 800×352px menggunakan GD.
+     * Kembalikan path relatif bermula dengan /uploads/bilik/...
+     */
+    private function simpanGambarBilik($file, ?string $lamaGambar = null): string
+    {
+        $dir = public_path('uploads/bilik');
+        if (!is_dir($dir)) {
+            mkdir($dir, 0755, true);
+        }
+
+        // Padam gambar lama jika ada
+        if ($lamaGambar && str_starts_with($lamaGambar, '/uploads/bilik/')) {
+            $lamaPath = public_path(ltrim($lamaGambar, '/'));
+            if (file_exists($lamaPath)) {
+                @unlink($lamaPath);
+            }
+        }
+
+        // Buat nama fail unik
+        $namaFail   = uniqid('bilik_', true) . '.jpg';
+        $targetPath = $dir . '/' . $namaFail;
+
+        // Load imej sumber mengikut MIME
+        $mime = $file->getMimeType();
+        $src  = match (true) {
+            str_contains($mime, 'png')  => imagecreatefrompng($file->getRealPath()),
+            str_contains($mime, 'webp') => imagecreatefromwebp($file->getRealPath()),
+            default                     => imagecreatefromjpeg($file->getRealPath()),
+        };
+
+        $srcW = imagesx($src);
+        $srcH = imagesy($src);
+
+        $targetW = 800;
+        $targetH = 352;
+
+        // Cover crop: skala supaya gambar memenuhi sasaran, kemudian potong tengah
+        $scale    = max($targetW / $srcW, $targetH / $srcH);
+        $cropW    = (int) ceil($targetW / $scale);
+        $cropH    = (int) ceil($targetH / $scale);
+        $offsetX  = (int) floor(($srcW - $cropW) / 2);
+        $offsetY  = (int) floor(($srcH - $cropH) / 2);
+
+        $dst = imagecreatetruecolor($targetW, $targetH);
+        // Latar putih (untuk PNG lutsinar)
+        $white = imagecolorallocate($dst, 255, 255, 255);
+        imagefill($dst, 0, 0, $white);
+
+        imagecopyresampled(
+            $dst, $src,
+            0, 0,
+            $offsetX, $offsetY,
+            $targetW, $targetH,
+            $cropW, $cropH
+        );
+
+        imagejpeg($dst, $targetPath, 90);
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        return '/uploads/bilik/' . $namaFail;
     }
 
     public function destroy(BilikMesyuarat $bilik)
@@ -84,6 +162,14 @@ class BilikController extends Controller
                 'Bilik tidak boleh dipadam kerana mempunyai rekod tempahan. ' .
                 'Sila nyahaktifkan bilik ini sebagai gantinya.'
             );
+        }
+
+        // Padam fail gambar jika ada (sebelum soft-delete)
+        if ($bilik->gambar && str_starts_with($bilik->gambar, '/uploads/bilik/')) {
+            $lamaPath = public_path(ltrim($bilik->gambar, '/'));
+            if (file_exists($lamaPath)) {
+                @unlink($lamaPath);
+            }
         }
 
         AuditLogger::catat('padam_bilik', null, ['nama' => $bilik->nama, 'id' => $bilik->id]);
