@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,8 +13,9 @@ class ProfilController extends Controller
 {
     public function show()
     {
-        $user = Auth::user();
-        return view('profil.index', compact('user'));
+        $user  = Auth::user();
+        $units = User::SENARAI_UNIT;
+        return view('profil.index', compact('user', 'units'));
     }
 
     public function update(Request $request)
@@ -22,9 +24,10 @@ class ProfilController extends Controller
 
         $validated = $request->validate([
             'name'    => 'required|string|max:255',
-            'jabatan' => 'nullable|string|max:255',
+            'jabatan' => ['nullable', 'string', 'in:' . implode(',', User::SENARAI_UNIT)],
         ], [
-            'name.required' => 'Sila masukkan nama penuh anda.',
+            'name.required'  => 'Sila masukkan nama penuh anda.',
+            'jabatan.in'     => 'Sila pilih unit yang sah dari senarai.',
         ]);
 
         $user->update($validated);

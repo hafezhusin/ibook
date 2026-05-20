@@ -89,15 +89,20 @@
                         <p class="form-hint">Emel tidak boleh diubah. Hubungi pentadbir jika perlu.</p>
                     </div>
 
-                    {{-- Unit/Jabatan --}}
+                    {{-- Unit --}}
                     <div>
-                        <label for="jabatan" class="form-label">Unit / Jabatan</label>
-                        <input type="text" id="jabatan" name="jabatan"
-                            value="{{ old('jabatan', $user->jabatan) }}"
-                            class="form-input"
-                            placeholder="cth: Unit Aplikasi Gunasama"
-                            autocomplete="organization"
+                        <label for="jabatan" class="form-label">Unit</label>
+                        <select id="jabatan" name="jabatan"
+                            class="form-input @error('jabatan') border-red-400 @enderror"
                             @error('jabatan') aria-invalid="true" aria-describedby="ralat-jabatan" @enderror>
+                            <option value="">— Pilih Unit —</option>
+                            @foreach($units as $unit)
+                            <option value="{{ $unit }}"
+                                {{ old('jabatan', $user->jabatan) === $unit ? 'selected' : '' }}>
+                                {{ $unit }}
+                            </option>
+                            @endforeach
+                        </select>
                         @error('jabatan')
                         <p id="ralat-jabatan" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
                         @enderror

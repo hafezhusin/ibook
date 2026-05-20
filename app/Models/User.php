@@ -10,9 +10,38 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    const PERANAN_PENTADBIR = 'pentadbir_sistem';
+    const PERANAN_PENTADBIR  = 'pentadbir_sistem';
     const PERANAN_URUS_SETIA = 'urus_setia';
-    const PERANAN_STAF = 'staf';
+    const PERANAN_STAF       = 'staf';
+
+    const SENARAI_UNIT = [
+        'Helpdesk BPTM',
+        'Pejabat Pengarah',
+        'Seksyen Digital dan Projek Khas',
+        'Seksyen Kualiti dan Perancangan',
+        'Seksyen Perkhidmatan ICT 1',
+        'Sub Unit CM',
+        'Sub Unit LMS',
+        'Sub Unit TR',
+        'Unit Aplikasi Gunasama',
+        'Unit Authorization',
+        'Unit Bayaran',
+        'Unit Gaji',
+        'Unit GLFMCO, Aplikasi BPTM',
+        'Unit Khidmat Pelanggan',
+        'Unit Lejar Am dan Kawalan Data Induk',
+        'Unit Maklumat Online (eApps)',
+        'Unit Operasi Aplikasi Teras',
+        'Unit Pelaporan Strategik (BWBI)',
+        'Unit Pengkosan',
+        'Unit Pengurusan Antaramuka / Integrasi',
+        'Unit Pengurusan Dana, Pinjaman dan Pelaburan',
+        'Unit Pengurusan Infrastruktur',
+        'Unit Pengurusan Rangkaian dan Keselamatan ICT',
+        'Unit Pengurusan Wang Tak Dituntut',
+        'Unit Pentadbiran dan Pengurusan Kewangan',
+        'Unit Terimaan',
+    ];
 
     protected $fillable = [
         'name',
