@@ -37,7 +37,6 @@
             <i class="fa-solid fa-door-open text-amber-400 mr-1" aria-hidden="true"></i>Bilik:
         </label>
         <select id="mob-filter-bilik"
-                onchange="filterBilikMobile(this.value)"
                 class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white">
             <option value="">Semua Bilik</option>
             @foreach($bilik as $b)
@@ -78,8 +77,8 @@
                 <div role="listitem">
                     <button type="button"
                         class="bilik-btn aktif"
-                        onclick="filterBilik(null, this)"
                         aria-pressed="true"
+                        data-bilik-id=""
                         id="btn-semua">
                         <div class="font-semibold text-gray-800 text-sm">Semua Bilik</div>
                         <div class="text-xs text-gray-400 mt-0.5">Papar semua tempahan</div>
@@ -103,7 +102,6 @@
                     <div role="listitem">
                         <button type="button"
                             class="bilik-btn"
-                            onclick="filterBilik({{ $b->id }}, this)"
                             aria-pressed="false"
                             data-bilik-id="{{ $b->id }}">
                             <div class="font-semibold text-gray-800 text-sm leading-snug">{{ $b->nama }}</div>
@@ -187,8 +185,7 @@
                     <h2 id="ev-modal-heading" class="font-bold text-white text-base leading-snug break-words"></h2>
                 </div>
                 <button type="button"
-                    onclick="document.getElementById('event-modal').classList.add('hidden')"
-                    class="flex-shrink-0 text-gray-400 hover:text-white mt-0.5"
+                    class="js-modal-close flex-shrink-0 text-gray-400 hover:text-white mt-0.5"
                     aria-label="Tutup">
                     <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
                 </button>
@@ -259,8 +256,7 @@
             </div>
             {{-- Tutup --}}
             <button type="button"
-                onclick="document.getElementById('event-modal').classList.add('hidden')"
-                class="w-full text-center text-sm text-gray-400 hover:text-gray-600 py-1"
+                class="js-modal-close w-full text-center text-sm text-gray-400 hover:text-gray-600 py-1"
                 aria-label="Tutup butiran acara">
                 Tutup
             </button>
@@ -384,7 +380,6 @@ document.addEventListener('DOMContentLoaded', function () {
 // ---- Filter bilik (desktop sidebar) ----
 function filterBilik(bilikId, el) {
     selectedBilikId = bilikId ? Number(bilikId) : null;
-    console.log('[iBook] filterBilik dipanggil, bilik_id =', selectedBilikId);
     document.querySelectorAll('.bilik-btn').forEach(function (b) {
         b.classList.remove('aktif');
         b.setAttribute('aria-pressed', 'false');
@@ -394,7 +389,6 @@ function filterBilik(bilikId, el) {
     var mobSel = document.getElementById('mob-filter-bilik');
     if (mobSel) mobSel.value = bilikId || '';
     calendar.refetchEvents();
-    console.log('[iBook] refetchEvents dipanggil');
 }
 
 // ---- Filter bilik (mobile dropdown) ----
@@ -514,11 +508,38 @@ function updateStatusHariIniFromCurrentEvents(events) {
     }
 }
 
+// ---- Wiring event listeners (CSP-compliant — tiada onclick/onchange inline) ----
+document.addEventListener('DOMContentLoaded', function () {
+
+    // Butang bilik (desktop sidebar + semua bilik)
+    document.querySelectorAll('.bilik-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var bilikId = btn.getAttribute('data-bilik-id');
+            filterBilik(bilikId ? Number(bilikId) : null, btn);
+        });
+    });
+
+    // Mobile dropdown tapis bilik
+    var mobSel = document.getElementById('mob-filter-bilik');
+    if (mobSel) {
+        mobSel.addEventListener('change', function () {
+            filterBilikMobile(this.value);
+        });
+    }
+
+    // Butang tutup modal
+    document.querySelectorAll('.js-modal-close').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('event-modal').classList.add('hidden');
+        });
+    });
+});
+
 // ---- Tutup modal dengan Esc ----
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') document.getElementById('event-modal').classList.add('hidden');
 });
-document.addEventListener('click', e => {
+document.addEventListener('click', function (e) {
     const modal = document.getElementById('event-modal');
     if (e.target === modal) modal.classList.add('hidden');
 });
