@@ -608,7 +608,11 @@ new Chart(document.getElementById('chartKategori'), {
 
 // ── Chart: Sesi Pagi vs Petang (Stacked Bar) ─────────────────────
 @if(!$isStaf)
-const sesiData = @json($dataBulanSesi ?? ['pagi' => [0,0,0,0,0,0,0,0,0,0,0,0], 'petang' => [0,0,0,0,0,0,0,0,0,0,0,0]]);
+@php
+    $sesiDefault = ['pagi' => array_fill(0, 12, 0), 'petang' => array_fill(0, 12, 0)];
+    $sesiJson    = isset($dataBulanSesi) ? $dataBulanSesi : $sesiDefault;
+@endphp
+const sesiData = @json($sesiJson);
 new Chart(document.getElementById('chartSesi'), {
     type: 'bar',
     data: {
