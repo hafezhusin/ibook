@@ -348,7 +348,15 @@
             </a>
         </div>
 
+        @php
+            $grupHariIni    = $mesyuaratAkanDatang->filter(fn($m) => $m->tarikh->isToday());
+            $grupEsok       = $mesyuaratAkanDatang->filter(fn($m) => $m->tarikh->isTomorrow());
+            $grupSeterusnya = $mesyuaratAkanDatang->filter(fn($m) => !$m->tarikh->isToday() && !$m->tarikh->isTomorrow());
+            $hadSeterusnya  = 3;
+        @endphp
+
         @if($mesyuaratAkanDatang->isEmpty())
+        {{-- Empty state --}}
         <div class="text-center py-10 px-6">
             <div class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4" style="background:#fef3c7">
                 <i class="fa-solid fa-calendar-days text-3xl" style="color:#f59e0b" aria-hidden="true"></i>
@@ -367,42 +375,73 @@
                 </a>
             </div>
         </div>
+
         @else
-        <ul role="list" class="divide-y divide-gray-50">
-            @foreach($mesyuaratAkanDatang as $m)
-            <li class="flex gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
-                <div class="text-center min-w-[44px] flex-shrink-0" aria-hidden="true">
-                    <div class="text-xs text-gray-400 uppercase font-semibold">{{ $m->tarikh->isoFormat('ddd') }}</div>
-                    <div class="text-xl font-extrabold leading-tight"
-                         style="color:{{ $m->tarikh->isToday() ? '#d97706' : '#374151' }}">
-                        {{ $m->tarikh->format('d') }}
-                    </div>
-                    <div class="text-xs text-gray-400">{{ $m->tarikh->isoFormat('MMM') }}</div>
+        <div class="divide-y divide-gray-100">
+
+            {{-- ── KUMPULAN: HARI INI ────────────────────────── --}}
+            @if($grupHariIni->isNotEmpty())
+            <div>
+                <div class="flex items-center gap-2 px-6 py-2 bg-amber-50 border-b border-amber-100">
+                    <span class="w-2 h-2 rounded-full bg-amber-500" style="animation:pulse 2s infinite" aria-hidden="true"></span>
+                    <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">Hari Ini</span>
+                    <span class="text-xs text-amber-500">— {{ $grupHariIni->count() }} mesyuarat</span>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <div class="font-semibold text-gray-800 truncate">{{ $m->nama_mesyuarat }}</div>
-                    <div class="text-xs text-gray-500 mt-0.5 flex flex-wrap gap-x-2">
-                        <span><i class="fa-solid fa-door-open text-amber-400 mr-1" aria-hidden="true"></i>{{ $m->bilik->nama ?? '—' }}</span>
-                        <span>&middot; {{ $m->masa_label }}</span>
-                        <span>&middot; {{ $m->bilangan_peserta }} peserta</span>
-                    </div>
-                    @if($m->tarikh->isToday())
-                    <span class="inline-block mt-1 text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                        Hari Ini
-                    </span>
-                    @endif
+                <ul role="list" class="divide-y divide-gray-50">
+                    @foreach($grupHariIni as $m)
+                    @include('dashboard._item-mesyuarat', ['m' => $m, 'warnaTarikh' => '#d97706'])
+                    @endforeach
+                </ul>
+            </div>
+            @endif
+
+            {{-- ── KUMPULAN: ESOK ────────────────────────────── --}}
+            @if($grupEsok->isNotEmpty())
+            <div>
+                <div class="flex items-center gap-2 px-6 py-2 bg-blue-50 border-b border-blue-100">
+                    <span class="w-2 h-2 rounded-full bg-blue-400" aria-hidden="true"></span>
+                    <span class="text-xs font-bold text-blue-700 uppercase tracking-wider">Esok</span>
+                    <span class="text-xs text-blue-400">— {{ $grupEsok->count() }} mesyuarat</span>
                 </div>
-                <div class="flex flex-col items-end gap-2 flex-shrink-0">
-                    <span class="badge-lulus">Disahkan</span>
-                    <a href="{{ route('tempahan.show', $m) }}"
-                       class="text-xs text-gray-400 hover:text-amber-500"
-                       aria-label="Butiran: {{ $m->nama_mesyuarat }}">
-                        Butiran →
-                    </a>
+                <ul role="list" class="divide-y divide-gray-50">
+                    @foreach($grupEsok as $m)
+                    @include('dashboard._item-mesyuarat', ['m' => $m, 'warnaTarikh' => '#2563eb'])
+                    @endforeach
+                </ul>
+            </div>
+            @endif
+
+            {{-- ── KUMPULAN: SETERUSNYA ──────────────────────── --}}
+            @if($grupSeterusnya->isNotEmpty())
+            <div>
+                <div class="flex items-center gap-2 px-6 py-2 bg-gray-50 border-b border-gray-100">
+                    <span class="w-2 h-2 rounded-full bg-gray-400" aria-hidden="true"></span>
+                    <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Seterusnya</span>
+                    <span class="text-xs text-gray-400">— {{ $grupSeterusnya->count() }} mesyuarat</span>
                 </div>
-            </li>
-            @endforeach
-        </ul>
+                <ul role="list" class="divide-y divide-gray-50">
+                    @foreach($grupSeterusnya->take($hadSeterusnya) as $m)
+                    @include('dashboard._item-mesyuarat', ['m' => $m, 'warnaTarikh' => '#374151'])
+                    @endforeach
+                </ul>
+                @if($grupSeterusnya->count() > $hadSeterusnya)
+                <ul role="list" class="divide-y divide-gray-50 hidden" id="senarai-seterusnya-baki">
+                    @foreach($grupSeterusnya->skip($hadSeterusnya) as $m)
+                    @include('dashboard._item-mesyuarat', ['m' => $m, 'warnaTarikh' => '#374151'])
+                    @endforeach
+                </ul>
+                <div class="px-6 py-3">
+                    <button id="btn-tunjuk-baki" type="button"
+                            class="text-xs text-amber-500 hover:text-amber-600 font-semibold flex items-center gap-1.5 transition-colors">
+                        <i class="fa-solid fa-chevron-down text-xs" aria-hidden="true"></i>
+                        +{{ $grupSeterusnya->count() - $hadSeterusnya }} mesyuarat lagi
+                    </button>
+                </div>
+                @endif
+            </div>
+            @endif
+
+        </div>
         @endif
     </section>
 
@@ -505,5 +544,15 @@ flatpickr('#quick-tarikh', {
     disableMobile: true,
     defaultDate: new Date()
 });
+
+// Toggle "+X mesyuarat lagi"
+const btnBaki = document.getElementById('btn-tunjuk-baki');
+if (btnBaki) {
+    btnBaki.addEventListener('click', function () {
+        const baki = document.getElementById('senarai-seterusnya-baki');
+        if (baki) baki.classList.remove('hidden');
+        this.style.display = 'none';
+    });
+}
 </script>
 @endpush
