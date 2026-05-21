@@ -90,7 +90,7 @@
         {{-- Jata Negara + Jabatan --}}
         <div class="flex flex-col items-center text-center mb-8">
             <img src="{{ $logoJabatanLogin }}" alt="Logo Jabatan"
-                 class="h-16 w-16 object-contain drop-shadow-lg mb-3"
+                 class="h-20 w-20 object-contain mb-3" style="padding:4px; overflow:visible"
                  onerror="this.style.display='none'">
             <p class="text-amber-400 font-semibold leading-tight" style="font-size:11px; letter-spacing:0.05em; text-transform:uppercase">
                 {{ $namaJabatanLogin ?: 'Jabatan Akauntan Negara Malaysia' }}
