@@ -362,7 +362,9 @@
         @php
             $namaSistem  = $tetapan['nama_sistem']  ?? 'iBook 2.0';
             $namaJabatan = $tetapan['nama_jabatan'] ?? '';
-            $logoJabatan = $tetapan['logo_jabatan'] ?? '';
+            // Guna logo dari tetapan, atau default ke Jata Negara jika tiada
+            $logoJabatan = $tetapan['logo_jabatan'] ?? '/images/jata-negara.png';
+            if (empty($logoJabatan)) $logoJabatan = '/images/jata-negara.png';
         @endphp
 
         {{-- Strip jabatan di bahagian atas sidebar --}}
