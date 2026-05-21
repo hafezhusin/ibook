@@ -117,7 +117,8 @@ class TempahanController extends Controller
         $duplikat = null;
         if ($request->filled('duplikat_id')) {
             $asal = Tempahan::find($request->duplikat_id);
-            if ($asal) {
+            // Semak pengguna berhak akses tempahan asal sebelum duplikat
+            if ($asal && $asal->bolehDiEditOleh(Auth::user())) {
                 $duplikat = [
                     'nama_mesyuarat'   => $asal->nama_mesyuarat,
                     'bilik_id'         => $asal->bilik_id,

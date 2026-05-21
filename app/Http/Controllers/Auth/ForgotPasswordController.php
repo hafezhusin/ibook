@@ -80,7 +80,7 @@ class ForgotPasswordController extends Controller
 
         return back()->withErrors(['email' => match ($status) {
             Password::INVALID_TOKEN   => 'Pautan ini telah tamat tempoh atau tidak sah. Sila mohon pautan baharu.',
-            Password::INVALID_USER    => 'Emel tidak dijumpai dalam sistem.',
+            Password::INVALID_USER    => 'Pautan tidak sah atau telah tamat tempoh. Sila mohon pautan baharu.',
             Password::RESET_THROTTLED => 'Terlalu banyak percubaan. Sila cuba sebentar lagi.',
             default                   => 'Ralat berlaku. Sila cuba semula.',
         }]);

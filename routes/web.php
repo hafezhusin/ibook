@@ -20,10 +20,13 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Lupa & set semula kata laluan
+// throttle:5,1 = maksimum 5 percubaan per minit per IP — cegah spam emel & brute force token
 Route::get('/lupa-kata-laluan', [ForgotPasswordController::class, 'showLinkForm'])->name('password.request');
-Route::post('/lupa-kata-laluan', [ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
+Route::middleware('throttle:5,1')->group(function () {
+    Route::post('/lupa-kata-laluan', [ForgotPasswordController::class, 'sendResetLink'])->name('password.email');
+    Route::post('/reset-kata-laluan', [ForgotPasswordController::class, 'reset'])->name('password.update');
+});
 Route::get('/reset-kata-laluan/{token}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
-Route::post('/reset-kata-laluan', [ForgotPasswordController::class, 'reset'])->name('password.update');
 
 // Route awam - boleh akses tanpa log masuk
 // throttle:60,1 = maksimum 60 request per minit per IP
