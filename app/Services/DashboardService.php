@@ -123,6 +123,14 @@ class DashboardService
             'peratusan' => $b->penggunaan_bulan_ini,
         ]);
 
+        // Ketersediaan bilik hari ini — pagi & petang (guna data yang dah dikira, tiada query baru)
+        $ketersediaanHariIni = $bilik->map(fn ($b) => [
+            'nama'     => $b->nama,
+            'kapasiti' => $b->kapasiti,
+            'pagi'     => !$bilikDitempahPagi->contains($b->id),
+            'petang'   => !$bilikDitempahPetang->contains($b->id),
+        ]);
+
         return [
             'jumlahTempahan'      => $jumlahTempahan,
             'jumlahTempahanLepas' => $jumlahTempahanLepas,
@@ -133,9 +141,10 @@ class DashboardService
             'jumlahBilikAktif'    => $jumlahBilikAktif,
             'bilikAdaSesiKosong'  => $bilik->filter(fn ($b) => !$bilikPenuh->contains($b->id))->count(),
             'kadarPenggunaan'     => $kadarPenggunaan,
-            'mesyuaratAkanDatang' => $mesyuaratAkanDatang,
-            'penggunaanBilik'     => $penggunaanBilik,
-            'bulanIni'            => $bulanIni,
+            'mesyuaratAkanDatang'  => $mesyuaratAkanDatang,
+            'penggunaanBilik'      => $penggunaanBilik,
+            'ketersediaanHariIni'  => $ketersediaanHariIni,
+            'bulanIni'             => $bulanIni,
             'tahunIni'            => $tahunIni,
             'bulanLepas'          => $bulanLepas,
             'tahunLepas'          => $tahunLepas,

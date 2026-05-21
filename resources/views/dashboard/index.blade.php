@@ -320,37 +320,89 @@
         @endif
     </section>
 
-    {{-- Penggunaan Bilik --}}
-    <section class="bg-white rounded-xl shadow-sm overflow-hidden" aria-labelledby="heading-penggunaan">
-        <div class="px-5 py-4 border-b border-gray-100">
-            <h2 id="heading-penggunaan" class="font-bold text-gray-800">Penggunaan Bilik</h2>
-            <p class="text-xs text-gray-400 mt-0.5">{{ $namaBulan[$bulanIni] }} {{ $tahunIni }}</p>
+    {{-- Ketersediaan Bilik Hari Ini --}}
+    <section class="bg-white rounded-xl shadow-sm overflow-hidden" aria-labelledby="heading-ketersediaan">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div>
+                <h2 id="heading-ketersediaan" class="font-bold text-gray-800">Ketersediaan Hari Ini</h2>
+                <p class="text-xs text-gray-400 mt-0.5">{{ \Carbon\Carbon::today()->isoFormat('D MMMM YYYY') }}</p>
+            </div>
+            <a href="{{ route('ketersediaan') }}?tarikh={{ today()->format('Y-m-d') }}&sesi=semua&peserta=1"
+               class="text-xs font-semibold text-amber-500 hover:text-amber-600 flex items-center gap-1"
+               aria-label="Lihat ketersediaan penuh">
+                Semak Penuh →
+            </a>
         </div>
-        <div class="px-5 py-4">
-            <ul role="list" class="space-y-4">
-                @foreach($penggunaanBilik as $b)
-                <li>
-                    <div class="flex justify-between items-center text-sm mb-1.5">
-                        <span class="text-gray-700 font-medium truncate max-w-[140px]"
-                              title="{{ $b['nama'] }}">{{ $b['nama'] }}</span>
-                        <span class="font-bold text-sm ml-2 flex-shrink-0"
-                              style="color:{{ $b['peratusan'] >= 80 ? '#dc2626' : ($b['peratusan'] >= 50 ? '#d97706' : '#16a34a') }}">
-                            {{ $b['peratusan'] }}%
+
+        {{-- Legend --}}
+        <div class="px-5 pt-3 pb-1 flex items-center gap-4">
+            <div class="flex items-center gap-1.5">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                <span class="text-xs text-gray-500">Kosong</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                <span class="text-xs text-gray-500">Penuh</span>
+            </div>
+            <div class="ml-auto flex gap-3 text-xs font-bold text-gray-400">
+                <span>PAGI</span>
+                <span>PTNG</span>
+            </div>
+        </div>
+
+        <ul role="list" class="divide-y divide-gray-50 px-5 pb-2">
+            @forelse($ketersediaanHariIni as $b)
+            <li class="flex items-center py-2.5 gap-3">
+                {{-- Nama bilik --}}
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-gray-800 truncate" title="{{ $b['nama'] }}">
+                        {{ $b['nama'] }}
+                    </p>
+                    <p class="text-xs text-gray-400">{{ $b['kapasiti'] }} orang</p>
+                </div>
+                {{-- Status Pagi --}}
+                <div class="flex-shrink-0 w-14 text-center">
+                    @if($b['pagi'])
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50"
+                              title="Pagi: Kosong" aria-label="{{ $b['nama'] }} pagi kosong">
+                            <i class="fa-solid fa-check text-green-500 text-xs" aria-hidden="true"></i>
                         </span>
-                    </div>
-                    <div class="progress-bar" role="progressbar"
-                        aria-valuenow="{{ $b['peratusan'] }}" aria-valuemin="0" aria-valuemax="100"
-                        aria-label="{{ $b['nama'] }}: {{ $b['peratusan'] }}% digunakan">
-                        <div class="progress-fill" style="width:{{ $b['peratusan'] }}%;
-                            background:{{ $b['peratusan'] >= 80 ? '#dc2626' : ($b['peratusan'] >= 50 ? '#f59e0b' : '#16a34a') }}">
-                        </div>
-                    </div>
-                </li>
-                @endforeach
-            </ul>
-            <a href="{{ route('laporan') }}"
-               class="mt-5 flex items-center justify-center gap-1 text-xs text-amber-500 hover:text-amber-600 font-semibold">
-                <i class="fa-solid fa-chart-bar" aria-hidden="true"></i> Laporan Lengkap
+                    @else
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50"
+                              title="Pagi: Ditempah" aria-label="{{ $b['nama'] }} pagi ditempah">
+                            <i class="fa-solid fa-xmark text-red-400 text-xs" aria-hidden="true"></i>
+                        </span>
+                    @endif
+                </div>
+                {{-- Status Petang --}}
+                <div class="flex-shrink-0 w-14 text-center">
+                    @if($b['petang'])
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-50"
+                              title="Petang: Kosong" aria-label="{{ $b['nama'] }} petang kosong">
+                            <i class="fa-solid fa-check text-green-500 text-xs" aria-hidden="true"></i>
+                        </span>
+                    @else
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50"
+                              title="Petang: Ditempah" aria-label="{{ $b['nama'] }} petang ditempah">
+                            <i class="fa-solid fa-xmark text-red-400 text-xs" aria-hidden="true"></i>
+                        </span>
+                    @endif
+                </div>
+            </li>
+            @empty
+            <li class="py-8 text-center">
+                <p class="text-sm text-gray-400">Tiada bilik aktif</p>
+            </li>
+            @endforelse
+        </ul>
+
+        <div class="px-5 pb-4">
+            <a href="{{ route('tempahan.create') }}"
+               class="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold text-white transition-colors"
+               style="background:#f59e0b"
+               onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+                <i class="fa-solid fa-plus text-xs" aria-hidden="true"></i>
+                Buat Tempahan Baru
             </a>
         </div>
     </section>
