@@ -35,7 +35,23 @@
         .form-input { width:100%; border:1.5px solid rgba(255,255,255,0.2); border-radius:8px; padding:11px 14px; font-size:14px; outline:none; transition:border .2s; background:rgba(255,255,255,0.08); color:white; }
         .form-input::placeholder { color: rgba(255,255,255,0.35); }
         .form-input:focus { border-color:#f59e0b; box-shadow:0 0 0 3px rgba(245,158,11,.2); }
-        .left-panel { background: linear-gradient(160deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%); }
+        .left-panel {
+            background-color: #1a1a2e; /* fallback jika gambar belum ada */
+            background-image:
+                linear-gradient(160deg, rgba(15,20,40,0.82) 0%, rgba(20,30,60,0.75) 50%, rgba(10,30,60,0.85) 100%),
+                url('/images/bptm-bg.webp');
+            background-size: cover;
+            background-position: center center;
+            background-repeat: no-repeat;
+        }
+        /* Fallback ke JPG jika WebP tidak disokong */
+        @supports not (background-image: url('x.webp')) {
+            .left-panel {
+                background-image:
+                    linear-gradient(160deg, rgba(15,20,40,0.82) 0%, rgba(20,30,60,0.75) 50%, rgba(10,30,60,0.85) 100%),
+                    url('/images/bptm-bg.jpg');
+            }
+        }
         .fc .fc-toolbar-title { font-size: 1rem !important; font-weight: 700; color: #1f2937; }
         .fc .fc-button { background: #f59e0b !important; border-color: #f59e0b !important; font-size: 11px !important; padding: 4px 10px !important; border-radius: 6px !important; }
         .fc .fc-button:hover { background: #d97706 !important; border-color: #d97706 !important; }
