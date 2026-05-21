@@ -23,6 +23,7 @@ class UpdateTetapanRequest extends FormRequest
         return [
             'nama_sistem'       => ['nullable', 'string', 'max:120'],
             'nama_jabatan'      => ['required', 'string', 'max:150'],
+            'logo_jabatan'      => ['nullable', 'string', 'max:255'],
             'emel_pentadbir'    => ['nullable', 'email:rfc', 'max:150'],
             'emel_notifikasi'   => ['nullable', 'email:rfc', 'max:150'],
             'notif_tempahan_baru'  => ['nullable', 'boolean'],
@@ -41,6 +42,7 @@ class UpdateTetapanRequest extends FormRequest
         $this->merge([
             'nama_sistem'     => trim((string) ($this->nama_sistem ?? '')),
             'nama_jabatan'    => trim((string) ($this->nama_jabatan ?? '')),
+            'logo_jabatan'    => trim((string) ($this->logo_jabatan ?? '')),
             'emel_pentadbir'  => strtolower(trim((string) ($this->emel_pentadbir ?? ''))),
             'emel_notifikasi' => strtolower(trim((string) ($this->emel_notifikasi ?? ''))),
         ]);

@@ -16,6 +16,7 @@ class TetapanController extends Controller
     private const KUNCI_DIURUS = [
         'nama_sistem',
         'nama_jabatan',
+        'logo_jabatan',
         'emel_pentadbir',
         'emel_notifikasi',
         'notif_tempahan_baru',
@@ -53,6 +54,7 @@ class TetapanController extends Controller
         // ── 2. Simpan nilai BARU ──
         Tetapan::set('nama_sistem',    $request->validated()['nama_sistem'] ?? '');
         Tetapan::set('nama_jabatan',   $request->validated()['nama_jabatan']);
+        Tetapan::set('logo_jabatan',   $request->validated()['logo_jabatan'] ?? '');
         Tetapan::set('emel_pentadbir', $request->validated()['emel_pentadbir'] ?? '');
         Tetapan::set('emel_notifikasi', $request->validated()['emel_notifikasi'] ?? '');
         Tetapan::set('notif_tempahan_baru',   $request->boolean('notif_tempahan_baru') ? '1' : '0');

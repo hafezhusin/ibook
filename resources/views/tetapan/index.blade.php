@@ -80,9 +80,38 @@
                         required aria-required="true"
                         maxlength="150"
                         @error('nama_jabatan') aria-invalid="true" aria-describedby="ralat-nama_jabatan" @enderror>
-                    <p class="form-hint">Akan dipaparkan di footer sistem pada setiap halaman.</p>
+                    <p class="form-hint">Akan dipaparkan di header dan footer sistem.</p>
                     @error('nama_jabatan')
                     <p id="ralat-nama_jabatan" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- Logo Jabatan --}}
+                <div>
+                    <label for="logo_jabatan" class="form-label">
+                        <i class="fa-solid fa-image text-gray-400 mr-1" aria-hidden="true"></i>
+                        Logo Jabatan
+                        <span class="ml-1 text-xs font-normal text-gray-400">(pilihan)</span>
+                    </label>
+                    @php $logoSemasa = $tetapan['logo_jabatan'] ?? ''; @endphp
+                    @if($logoSemasa)
+                    <div class="mb-3 flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <img src="{{ $logoSemasa }}" alt="Logo jabatan semasa" class="h-10 w-10 object-contain">
+                        <div>
+                            <p class="text-xs font-medium text-gray-600">Logo semasa</p>
+                            <p class="text-xs text-gray-400 break-all">{{ $logoSemasa }}</p>
+                        </div>
+                    </div>
+                    @endif
+                    <input type="url" id="logo_jabatan" name="logo_jabatan"
+                        value="{{ old('logo_jabatan', $logoSemasa) }}"
+                        class="form-input"
+                        placeholder="cth: /images/logo-bptm.png"
+                        maxlength="255"
+                        @error('logo_jabatan') aria-invalid="true" aria-describedby="ralat-logo_jabatan" @enderror>
+                    <p class="form-hint">URL logo jabatan — akan dipaparkan di sidebar dan header. Saiz cadangan: 120×120px (PNG/WebP dengan latar telus).</p>
+                    @error('logo_jabatan')
+                    <p id="ralat-logo_jabatan" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
                     @enderror
                 </div>
 

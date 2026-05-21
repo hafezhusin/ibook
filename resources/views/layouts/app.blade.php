@@ -6,6 +6,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="{{ $tetapan['nama_sistem'] ?? 'iBook 2.0' }} — Sistem Tempahan Bilik Mesyuarat">
     <title>@yield('title', $tetapan['nama_sistem'] ?? 'iBook 2.0') — {{ $tetapan['nama_jabatan'] ?? 'Sistem Tempahan Bilik Mesyuarat' }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     @stack('styles')
@@ -19,7 +22,10 @@
         }
 
         /* ── Tipografi & Asas ───────────────────────────────────── */
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; color: #1f2937; }
+        body { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; background: #f3f4f6; color: #1f2937; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Inter', system-ui, sans-serif; font-weight: 700; letter-spacing: -0.02em; }
+        .page-title { font-size: 1.5rem; font-weight: 800; color: #0f172a; letter-spacing: -0.03em; line-height: 1.2; }
+        .page-subtitle { font-size: 0.875rem; color: #6b7280; font-weight: 400; margin-top: 2px; }
 
         /* ── Skip Navigation (WCAG 2.4.1) ──────────────────────── */
         .skip-link {
@@ -352,19 +358,45 @@
     {{-- ── Sidebar / Navigasi Utama ──────────────────────────────── --}}
     <aside class="sidebar fixed top-0 left-0 z-30" aria-label="Bar sisi navigasi">
 
-        {{-- Logo --}}
-        @php $namaSistem = $tetapan['nama_sistem'] ?? ''; @endphp
+        {{-- Logo & Branding Jabatan --}}
+        @php
+            $namaSistem  = $tetapan['nama_sistem']  ?? 'iBook 2.0';
+            $namaJabatan = $tetapan['nama_jabatan'] ?? '';
+            $logoJabatan = $tetapan['logo_jabatan'] ?? '';
+        @endphp
+
+        {{-- Strip jabatan di bahagian atas sidebar --}}
+        @if($namaJabatan || $logoJabatan)
+        <div class="px-4 py-3 border-b border-slate-700/60" style="background:rgba(245,158,11,0.06)">
+            <div class="flex items-center gap-2.5">
+                @if($logoJabatan)
+                <img src="{{ $logoJabatan }}" alt="Logo {{ $namaJabatan }}"
+                     class="h-8 w-8 object-contain flex-shrink-0">
+                @else
+                {{-- Placeholder ikon kerajaan --}}
+                <div class="w-8 h-8 rounded flex items-center justify-center flex-shrink-0"
+                     style="background:rgba(245,158,11,0.15)">
+                    <i class="fa-solid fa-landmark text-amber-400 text-sm" aria-hidden="true"></i>
+                </div>
+                @endif
+                <span class="text-slate-300 leading-tight font-medium" style="font-size:11px; line-height:1.3">
+                    {{ $namaJabatan ?: 'Bahagian Pengurusan Teknologi Maklumat' }}
+                </span>
+            </div>
+        </div>
+        @endif
+
+        {{-- Nama sistem --}}
         <div class="p-5 border-b border-slate-700">
             <a href="{{ route('dashboard') }}" class="flex items-center gap-3"
-               aria-label="{{ $namaSistem ?: 'iBook 2.0' }} — Halaman Utama">
+               aria-label="{{ $namaSistem }} — Halaman Utama">
                 <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:var(--accent)" aria-hidden="true">
                     <i class="fa-solid fa-book-open text-white text-sm"></i>
                 </div>
-                @if($namaSistem)
-                <span class="text-white font-bold leading-tight" style="font-size:13px">{{ $namaSistem }}</span>
-                @else
-                <span class="text-white font-bold text-lg">iBook <span style="color:var(--accent)">2.0</span></span>
-                @endif
+                <div>
+                    <span class="text-white font-bold block" style="font-size:14px; letter-spacing:-0.01em">{{ $namaSistem }}</span>
+                    <span class="text-slate-400 block" style="font-size:10px; margin-top:1px">Sistem Tempahan Bilik Mesyuarat</span>
+                </div>
             </a>
         </div>
 
@@ -472,7 +504,24 @@
     <div class="flex-1 ml-[260px]">
 
         {{-- Top bar --}}
-        <header class="bg-white shadow-sm sticky top-0 z-20 px-6 py-3 flex items-center justify-between" role="banner">
+        <header class="bg-white sticky top-0 z-20" role="banner" style="box-shadow:0 1px 0 #e5e7eb, 0 2px 8px rgba(0,0,0,0.04)">
+
+            {{-- Government identity strip --}}
+            @if($namaJabatan)
+            <div class="px-6 py-1.5 border-b border-gray-100 flex items-center gap-2" style="background:#fafafa">
+                @if($logoJabatan)
+                <img src="{{ $logoJabatan }}" alt="" class="h-5 w-5 object-contain" aria-hidden="true">
+                @else
+                <i class="fa-solid fa-landmark text-amber-500 text-xs" aria-hidden="true"></i>
+                @endif
+                <span class="text-xs font-semibold text-gray-500 tracking-wide uppercase" style="font-size:10px; letter-spacing:0.06em">
+                    {{ $namaJabatan }}
+                </span>
+            </div>
+            @endif
+
+            {{-- Main header row --}}
+            <div class="px-6 py-3 flex items-center justify-between">
 
             {{-- Carian Global --}}
             <form method="GET" action="{{ route('carian') }}" role="search" aria-label="Carian sistem merentas semua modul">
@@ -537,6 +586,8 @@
                     </div>
                 </div>
             </div>
+
+            </div>{{-- end main header row --}}
         </header>
 
         {{-- Kandungan utama --}}
