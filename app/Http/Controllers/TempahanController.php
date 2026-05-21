@@ -302,12 +302,13 @@ class TempahanController extends Controller
 
     public function cekKonflik(Request $request)
     {
-        $bilikId = $request->bilik_id;
-        $tarikh  = $request->tarikh;
+        $request->validate([
+            'bilik_id' => ['required', 'integer', 'exists:bilik_mesyuarat,id'],
+            'tarikh'   => ['required', 'date'],
+        ]);
 
-        if (!$bilikId || !$tarikh) {
-            return response()->json(['pagi' => false, 'petang' => false]);
-        }
+        $bilikId = (int) $request->bilik_id;
+        $tarikh  = $request->tarikh;
 
         $hasil = [];
         foreach (['pagi', 'petang'] as $sesi) {

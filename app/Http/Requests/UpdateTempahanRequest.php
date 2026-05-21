@@ -25,7 +25,7 @@ class UpdateTempahanRequest extends FormRequest
     {
         return [
             'nama_mesyuarat'   => ['required', 'string', 'max:255'],
-            'tarikh'           => ['required', 'date'],
+            'tarikh'           => ['required', 'date', 'after_or_equal:today'],
             'bilik_id'         => ['required', 'exists:bilik_mesyuarat,id'],
             'sesi'             => ['required', 'in:' . SesiTempahan::validasiIn()],
             'bilangan_peserta' => ['required', 'integer', 'min:1'],
@@ -41,6 +41,7 @@ class UpdateTempahanRequest extends FormRequest
         return [
             'nama_mesyuarat.required'   => 'Sila masukkan nama mesyuarat.',
             'tarikh.required'           => 'Sila pilih tarikh.',
+            'tarikh.after_or_equal'     => 'Tarikh tidak boleh kurang dari hari ini.',
             'bilik_id.required'         => 'Sila pilih bilik mesyuarat.',
             'bilik_id.exists'           => 'Bilik yang dipilih tidak wujud.',
             'sesi.required'             => 'Sila pilih sesi mesyuarat.',

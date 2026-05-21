@@ -17,13 +17,20 @@ class KetersediaanController extends Controller
 
     public function cek(Request $request)
     {
+        $request->validate([
+            'tarikh'  => ['required', 'date'],
+            'sesi'    => ['nullable', 'in:pagi,petang,semua'],
+            'peserta' => ['nullable', 'integer', 'min:1', 'max:1000'],
+        ], [
+            'tarikh.required' => 'Tarikh diperlukan.',
+            'tarikh.date'     => 'Format tarikh tidak sah.',
+            'sesi.in'         => 'Nilai sesi tidak sah.',
+            'peserta.integer' => 'Bilangan peserta tidak sah.',
+        ]);
+
         $tarikh      = $request->tarikh;
         $sesiPilihan = $request->sesi ?? 'semua';
         $peserta     = max(1, (int) $request->peserta);
-
-        if (!$tarikh) {
-            return response()->json(['error' => 'Tarikh diperlukan'], 422);
-        }
 
         $sesiList = match($sesiPilihan) {
             'pagi'   => ['pagi'],
