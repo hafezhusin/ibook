@@ -66,7 +66,7 @@ class LaporanController extends Controller
         // =============================================
         $isTahunSemasa = ($tahun === now()->year);
         $ttl      = $isTahunSemasa ? self::CACHE_INI_TTL : self::CACHE_LALU_TTL;
-        $cacheKey = "laporan_admin_{$tahun}" . ($bilikFilter ? "_b{$bilikFilter}" : '');
+        $cacheKey = "laporan_v2_admin_{$tahun}" . ($bilikFilter ? "_b{$bilikFilter}" : '');
 
         // Data dikira sekali dan dicache (tidak bergantung kepada pengguna)
         $data = Cache::remember($cacheKey, $ttl, fn () => $this->kiraLaporanAdmin($tahun, $bilikFilter));
