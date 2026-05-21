@@ -93,7 +93,7 @@
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-800">Laporan</h1>
-        <p class="text-gray-500 text-sm mt-1">Ringkasan penggunaan bilik dan tempahan{{ $bilikFilter ? ' — ' . ($senaraibilik->firstWhere('id', $bilikFilter)?->nama ?? '') : '' }}</p>
+        <p class="text-gray-500 text-sm mt-1">Ringkasan penggunaan bilik dan tempahan{{ ($bilikFilter ?? null) ? ' — ' . (($senaraibilik ?? collect())->firstWhere('id', $bilikFilter)?->nama ?? '') : '' }}</p>
     </div>
     <form method="GET" class="flex flex-wrap items-center gap-2" aria-label="Tapis laporan">
         <label for="pilih-tahun" class="sr-only">Pilih tahun laporan</label>
@@ -105,26 +105,26 @@
         <label for="pilih-bilik" class="sr-only">Tapis mengikut bilik</label>
         <select id="pilih-bilik" name="bilik_id" class="form-input text-sm w-auto">
             <option value="">Semua Bilik</option>
-            @foreach($senaraibilik as $b)
-            <option value="{{ $b->id }}" {{ $bilikFilter == $b->id ? 'selected' : '' }}>{{ $b->nama }}</option>
+            @foreach(($senaraibilik ?? collect()) as $b)
+            <option value="{{ $b->id }}" {{ ($bilikFilter ?? null) == $b->id ? 'selected' : '' }}>{{ $b->nama }}</option>
             @endforeach
         </select>
         <button type="submit" class="btn-primary text-sm py-2 px-4">
             <i class="fa-solid fa-filter text-xs" aria-hidden="true"></i> Tapis
         </button>
-        @if($bilikFilter)
+        @if($bilikFilter ?? null)
         <a href="{{ route('laporan', ['tahun' => $tahun]) }}" class="btn-secondary text-sm py-2 px-3" title="Padam filter bilik">
             <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
         </a>
         @endif
         {{-- Eksport --}}
         <div class="flex gap-1.5 ml-2">
-            <a href="{{ route('tempahan.pdf', ['tarikh_dari' => $tahun.'-01-01', 'tarikh_hingga' => $tahun.'-12-31'] + ($bilikFilter ? ['bilik_id' => $bilikFilter] : [])) }}"
+            <a href="{{ route('tempahan.pdf', ['tarikh_dari' => $tahun.'-01-01', 'tarikh_hingga' => $tahun.'-12-31'] + (($bilikFilter ?? null) ? ['bilik_id' => $bilikFilter] : [])) }}"
                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white transition"
                style="background:#dc2626" title="Eksport PDF — data tahun {{ $tahun }}">
                 <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> PDF
             </a>
-            <a href="{{ route('tempahan.excel', ['tarikh_dari' => $tahun.'-01-01', 'tarikh_hingga' => $tahun.'-12-31'] + ($bilikFilter ? ['bilik_id' => $bilikFilter] : [])) }}"
+            <a href="{{ route('tempahan.excel', ['tarikh_dari' => $tahun.'-01-01', 'tarikh_hingga' => $tahun.'-12-31'] + (($bilikFilter ?? null) ? ['bilik_id' => $bilikFilter] : [])) }}"
                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white transition"
                style="background:#16a34a" title="Eksport Excel — data tahun {{ $tahun }}">
                 <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Excel
@@ -608,7 +608,7 @@ new Chart(document.getElementById('chartKategori'), {
 
 // ── Chart: Sesi Pagi vs Petang (Stacked Bar) ─────────────────────
 @if(!$isStaf)
-const sesiData = @json($dataBulanSesi);
+const sesiData = @json($dataBulanSesi ?? ['pagi' => [0,0,0,0,0,0,0,0,0,0,0,0], 'petang' => [0,0,0,0,0,0,0,0,0,0,0,0]]);
 new Chart(document.getElementById('chartSesi'), {
     type: 'bar',
     data: {
