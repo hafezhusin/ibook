@@ -89,20 +89,47 @@
 {{-- PAPARAN PENTADBIR / URUS SETIA — Semua Statistik             --}}
 {{-- ============================================================ --}}
 
-{{-- Header + pemilih tahun --}}
-<div class="flex items-center justify-between mb-6">
+{{-- Header + filter bar --}}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-800">Laporan</h1>
-        <p class="text-gray-500 text-sm mt-1">Ringkasan penggunaan bilik dan tempahan</p>
+        <p class="text-gray-500 text-sm mt-1">Ringkasan penggunaan bilik dan tempahan{{ $bilikFilter ? ' — ' . ($senaraibilik->firstWhere('id', $bilikFilter)?->nama ?? '') : '' }}</p>
     </div>
-    <form method="GET" aria-label="Tapis laporan mengikut tahun">
-        {{-- Item 3 (Finding 3): Buang aria-label redundan — label[for] sudah cukup --}}
+    <form method="GET" class="flex flex-wrap items-center gap-2" aria-label="Tapis laporan">
         <label for="pilih-tahun" class="sr-only">Pilih tahun laporan</label>
-        <select id="pilih-tahun" name="tahun" class="form-input w-auto text-sm">
+        <select id="pilih-tahun" name="tahun" class="form-input text-sm w-auto">
             @foreach($senaraiTahun as $t)
             <option value="{{ $t }}" {{ $tahun == $t ? 'selected' : '' }}>{{ $t }}</option>
             @endforeach
         </select>
+        <label for="pilih-bilik" class="sr-only">Tapis mengikut bilik</label>
+        <select id="pilih-bilik" name="bilik_id" class="form-input text-sm w-auto">
+            <option value="">Semua Bilik</option>
+            @foreach($senaraibilik as $b)
+            <option value="{{ $b->id }}" {{ $bilikFilter == $b->id ? 'selected' : '' }}>{{ $b->nama }}</option>
+            @endforeach
+        </select>
+        <button type="submit" class="btn-primary text-sm py-2 px-4">
+            <i class="fa-solid fa-filter text-xs" aria-hidden="true"></i> Tapis
+        </button>
+        @if($bilikFilter)
+        <a href="{{ route('laporan', ['tahun' => $tahun]) }}" class="btn-secondary text-sm py-2 px-3" title="Padam filter bilik">
+            <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
+        </a>
+        @endif
+        {{-- Eksport --}}
+        <div class="flex gap-1.5 ml-2">
+            <a href="{{ route('tempahan.pdf', ['tarikh_dari' => $tahun.'-01-01', 'tarikh_hingga' => $tahun.'-12-31'] + ($bilikFilter ? ['bilik_id' => $bilikFilter] : [])) }}"
+               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white transition"
+               style="background:#dc2626" title="Eksport PDF — data tahun {{ $tahun }}">
+                <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> PDF
+            </a>
+            <a href="{{ route('tempahan.excel', ['tarikh_dari' => $tahun.'-01-01', 'tarikh_hingga' => $tahun.'-12-31'] + ($bilikFilter ? ['bilik_id' => $bilikFilter] : [])) }}"
+               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white transition"
+               style="background:#16a34a" title="Eksport Excel — data tahun {{ $tahun }}">
+                <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Excel
+            </a>
+        </div>
     </form>
 </div>
 
@@ -229,6 +256,30 @@
         @endif
     </section>
 </div>
+
+{{-- ══════════════════════════════════════════ --}}
+{{-- CHART: SESI PAGI vs PETANG                 --}}
+{{-- ══════════════════════════════════════════ --}}
+<section class="bg-white rounded-xl shadow-sm p-6 mb-6" aria-labelledby="heading-chart-sesi">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 id="heading-chart-sesi" class="font-bold text-gray-800">Sesi Pagi vs Petang — {{ $tahun }}</h2>
+            <p class="text-xs text-gray-400 mt-0.5">Perbandingan penggunaan sesi tempahan diluluskan setiap bulan</p>
+        </div>
+        <div class="flex items-center gap-4 text-xs font-semibold">
+            <span class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-sm inline-block" style="background:#f59e0b"></span> Pagi
+            </span>
+            <span class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-sm inline-block" style="background:#2563eb"></span> Petang
+            </span>
+        </div>
+    </div>
+    <canvas id="chartSesi" height="160"
+        role="img"
+        aria-label="Graf bar bertindan: perbandingan sesi pagi dan petang bagi tahun {{ $tahun }}">
+    </canvas>
+</section>
 
 {{-- ══════════════════════════════════════════ --}}
 {{-- Item 3: UNIT DENGAN COLLAPSIBLE            --}}
@@ -555,9 +606,54 @@ new Chart(document.getElementById('chartKategori'), {
 });
 @endif
 
+// ── Chart: Sesi Pagi vs Petang (Stacked Bar) ─────────────────────
+@if(!$isStaf)
+const sesiData = @json($dataBulanSesi);
+new Chart(document.getElementById('chartSesi'), {
+    type: 'bar',
+    data: {
+        labels: bulanLabel,
+        datasets: [
+            {
+                label: 'Sesi Pagi',
+                data: sesiData.pagi,
+                backgroundColor: 'rgba(245,158,11,0.85)',
+                borderColor: '#f59e0b',
+                borderWidth: 1,
+                borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
+                borderSkipped: 'bottom',
+            },
+            {
+                label: 'Sesi Petang',
+                data: sesiData.petang,
+                backgroundColor: 'rgba(37,99,235,0.8)',
+                borderColor: '#2563eb',
+                borderWidth: 1,
+                borderRadius: { topLeft: 0, topRight: 0 },
+                borderSkipped: 'bottom',
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + ctx.parsed.y }
+            }
+        },
+        scales: {
+            x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
+            y: { stacked: true, beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: '#f3f4f6' } }
+        }
+    }
+});
+@endif
+
 // ── Wire event listeners (CSP-safe) ──────────────────────────────
 document.getElementById('pilih-tahun-staf')?.addEventListener('change', function() { this.form.submit(); });
 document.getElementById('pilih-tahun')?.addEventListener('change', function() { this.form.submit(); });
+document.getElementById('pilih-bilik')?.addEventListener('change', function() { this.form.submit(); });
 document.getElementById('btn-lihat-unit')?.addEventListener('click', toggleUnit);
 
 // Item 3: Toggle collapsible unit

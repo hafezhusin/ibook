@@ -20,10 +20,12 @@ class LaporanController extends Controller
     public function index(Request $request)
     {
         $tahun       = (int) $request->get('tahun', now()->year);
+        $bilikFilter = $request->filled('bilik_id') ? (int) $request->bilik_id : null;
         $user        = Auth::user();
         $isStaf      = $user->isStaf();
         $isPentadbir = $user->isPentadbir();
         $senaraiTahun = range(now()->year, now()->year - 4);
+        $senaraibilik = BilikMesyuarat::where('status', 'aktif')->orderBy('nama')->get(['id', 'nama']);
 
         // ── Item 5: Log audit akses laporan ──
         AuditLogger::catat('akses_laporan', null, [
@@ -39,6 +41,7 @@ class LaporanController extends Controller
             $userIdUnit = DB::table('users')->where('jabatan', $jabatan)->pluck('id')->toArray();
 
             $dataBulan        = $this->kiraBulan($tahun, $userIdUnit);
+            $dataBulanSesi    = $this->kiraBulanSesi($tahun, $userIdUnit);
             $mengikutKategori = Tempahan::selectRaw('kategori, COUNT(*) as jumlah')
                 ->whereYear('tarikh', $tahun)
                 ->whereIn('user_id', $userIdUnit)
@@ -53,8 +56,8 @@ class LaporanController extends Controller
                 ->whereIn('user_id', $userIdUnit)->count();
 
             return view('laporan.index', compact(
-                'dataBulan', 'mengikutKategori', 'tahun', 'senaraiTahun',
-                'jabatan', 'totalDiluluskan', 'totalDitolak', 'isStaf'
+                'dataBulan', 'dataBulanSesi', 'mengikutKategori', 'tahun', 'senaraiTahun',
+                'jabatan', 'totalDiluluskan', 'totalDitolak', 'isStaf', 'senaraibilik', 'bilikFilter'
             ));
         }
 
@@ -63,16 +66,18 @@ class LaporanController extends Controller
         // =============================================
         $isTahunSemasa = ($tahun === now()->year);
         $ttl      = $isTahunSemasa ? self::CACHE_INI_TTL : self::CACHE_LALU_TTL;
-        $cacheKey = "laporan_admin_{$tahun}";
+        $cacheKey = "laporan_admin_{$tahun}" . ($bilikFilter ? "_b{$bilikFilter}" : '');
 
         // Data dikira sekali dan dicache (tidak bergantung kepada pengguna)
-        $data = Cache::remember($cacheKey, $ttl, fn () => $this->kiraLaporanAdmin($tahun));
+        $data = Cache::remember($cacheKey, $ttl, fn () => $this->kiraLaporanAdmin($tahun, $bilikFilter));
 
         // Tambah nilai yang bergantung kepada pengguna (tidak boleh dicache)
         $data['isPentadbir']  = $isPentadbir;
         $data['isStaf']       = false;
         $data['tahun']        = $tahun;
         $data['senaraiTahun'] = $senaraiTahun;
+        $data['senaraibilik'] = $senaraibilik;
+        $data['bilikFilter']  = $bilikFilter;
 
         return view('laporan.index', $data);
     }
@@ -80,15 +85,17 @@ class LaporanController extends Controller
     // ─────────────────────────────────────────────────────────
     // Kira semua data laporan admin — boleh dicache selamat
     // ─────────────────────────────────────────────────────────
-    private function kiraLaporanAdmin(int $tahun): array
+    private function kiraLaporanAdmin(int $tahun, ?int $bilikId = null): array
     {
         // ── 1. Tempahan mengikut bulan ──
-        $dataBulan       = $this->kiraBulan($tahun);
+        $dataBulan       = $this->kiraBulan($tahun, [], $bilikId);
+        $dataBulanSesi   = $this->kiraBulanSesi($tahun, [], $bilikId);
         $totalDiluluskan = array_sum($dataBulan);
 
         // ── 2. Tempahan mengikut kategori ──
         $mengikutKategori = Tempahan::selectRaw('kategori, COUNT(*) as jumlah')
             ->whereYear('tarikh', $tahun)
+            ->when($bilikId, fn ($q) => $q->where('bilik_id', $bilikId))
             ->groupBy('kategori')
             ->get();
 
@@ -158,7 +165,7 @@ class LaporanController extends Controller
             : null;
 
         return compact(
-            'dataBulan', 'totalDiluluskan',
+            'dataBulan', 'dataBulanSesi', 'totalDiluluskan',
             'mengikutKategori', 'mengikutUnit',
             'top10Pengguna', 'bilik',
             'unitPalingAktif', 'bilikPalingGuna', 'purataPenggunaan',
@@ -169,25 +176,49 @@ class LaporanController extends Controller
     // ─────────────────────────────────────────────────────────
     // Kira data bulan — boleh tapis mengikut user IDs (unit staf)
     // ─────────────────────────────────────────────────────────
-    private function kiraBulan(int $tahun, array $userIds = []): array
+    private function kiraBulan(int $tahun, array $userIds = [], ?int $bilikId = null): array
     {
         $query = Tempahan::selectRaw('MONTH(tarikh) as bulan, COUNT(*) as jumlah')
             ->whereYear('tarikh', $tahun)
             ->where('status', Tempahan::STATUS_DILULUSKAN)
+            ->when(!empty($userIds), fn ($q) => $q->whereIn('user_id', $userIds))
+            ->when($bilikId, fn ($q) => $q->where('bilik_id', $bilikId))
             ->groupBy('bulan')
             ->orderBy('bulan');
 
-        if (!empty($userIds)) {
-            $query->whereIn('user_id', $userIds);
-        }
-
         $mengikutBulan = $query->get()->keyBy('bulan');
-
         $data = [];
         for ($i = 1; $i <= 12; $i++) {
             $data[] = $mengikutBulan->get($i)?->jumlah ?? 0;
         }
         return $data;
+    }
+
+    /**
+     * Kira tempahan per bulan diasingkan mengikut sesi (pagi/petang).
+     * Digunakan untuk stacked bar chart sesi.
+     */
+    private function kiraBulanSesi(int $tahun, array $userIds = [], ?int $bilikId = null): array
+    {
+        $rows = Tempahan::selectRaw('MONTH(tarikh) as bulan, sesi, COUNT(*) as jumlah')
+            ->whereYear('tarikh', $tahun)
+            ->where('status', Tempahan::STATUS_DILULUSKAN)
+            ->when(!empty($userIds), fn ($q) => $q->whereIn('user_id', $userIds))
+            ->when($bilikId, fn ($q) => $q->where('bilik_id', $bilikId))
+            ->groupBy('bulan', 'sesi')
+            ->orderBy('bulan')
+            ->get();
+
+        $pagi   = array_fill(0, 12, 0);
+        $petang = array_fill(0, 12, 0);
+
+        foreach ($rows as $r) {
+            $idx = $r->bulan - 1;
+            if ($r->sesi === 'pagi')   $pagi[$idx]   = $r->jumlah;
+            if ($r->sesi === 'petang') $petang[$idx] = $r->jumlah;
+        }
+
+        return ['pagi' => $pagi, 'petang' => $petang];
     }
 
     // ─────────────────────────────────────────────────────────
