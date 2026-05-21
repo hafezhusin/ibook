@@ -17,14 +17,13 @@ class TempahanPolicy
     }
 
     /**
-     * Pengguna boleh lihat butiran tempahan jika:
-     * - Pentadbir / Urus Setia: semua tempahan
-     * - Staf: tempahan sendiri atau rakan seunit
+     * Semua pengguna log masuk boleh lihat butiran mana-mana tempahan.
+     * (Konsisten dengan kalendar yang memaparkan semua tempahan kepada semua pengguna.)
+     * Hak sunting dikawal secara berasingan oleh policy update().
      */
     public function view(User $user, Tempahan $tempahan): bool
     {
-        if (!$user->isStaf()) return true;
-        return $tempahan->bolehDiEditOleh($user);
+        return true;
     }
 
     /**
