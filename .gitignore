@@ -22,3 +22,5 @@ yarn-error.log
 /.idea
 /.vscode
 /bootstrap/cache/*.php
+
+public/deploy.php
