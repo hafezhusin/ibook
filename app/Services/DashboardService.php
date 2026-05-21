@@ -131,6 +131,22 @@ class DashboardService
             'petang'   => !$bilikDitempahPetang->contains($b->id),
         ]);
 
+        // Mesyuarat seterusnya milik pengguna ini (sentiasa user-scoped, tanpa mengira peranan)
+        $mesyuaratSeterusnya = Tempahan::where('user_id', $user->id)
+            ->where('tarikh', '>=', today())
+            ->where('status', Tempahan::STATUS_DILULUSKAN)
+            ->with('bilik:id,nama')
+            ->orderBy('tarikh')
+            ->orderBy('masa_mula')
+            ->first();
+
+        // Ketersediaan esok (2 query ringan, guna koleksi $bilik yang dah diload)
+        $esok = today()->addDay();
+        $bilikDitempahPagiEsok   = Tempahan::whereDate('tarikh', $esok)->where('sesi', 'pagi')->where('status', Tempahan::STATUS_DILULUSKAN)->pluck('bilik_id');
+        $bilikDitempahPetangEsok = Tempahan::whereDate('tarikh', $esok)->where('sesi', 'petang')->where('status', Tempahan::STATUS_DILULUSKAN)->pluck('bilik_id');
+        $bilikKosongEsokPagi     = $bilik->filter(fn ($b) => !$bilikDitempahPagiEsok->contains($b->id))->count();
+        $bilikKosongEsokPetang   = $bilik->filter(fn ($b) => !$bilikDitempahPetangEsok->contains($b->id))->count();
+
         return [
             'jumlahTempahan'      => $jumlahTempahan,
             'jumlahTempahanLepas' => $jumlahTempahanLepas,
@@ -144,6 +160,9 @@ class DashboardService
             'mesyuaratAkanDatang'  => $mesyuaratAkanDatang,
             'penggunaanBilik'      => $penggunaanBilik,
             'ketersediaanHariIni'  => $ketersediaanHariIni,
+            'mesyuaratSeterusnya'  => $mesyuaratSeterusnya,
+            'bilikKosongEsokPagi'  => $bilikKosongEsokPagi,
+            'bilikKosongEsokPetang'=> $bilikKosongEsokPetang,
             'bulanIni'             => $bulanIni,
             'tahunIni'            => $tahunIni,
             'bulanLepas'          => $bulanLepas,

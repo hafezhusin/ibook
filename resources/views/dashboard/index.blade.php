@@ -59,14 +59,100 @@
     $namaBulan = ['','Januari','Februari','Mac','April','Mei','Jun','Julai','Ogos','September','Oktober','November','Disember'];
 @endphp
 
-<div class="mb-6 flex items-start justify-between">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-800">Selamat Datang, {{ auth()->user()->name }}</h1>
-        <p class="text-gray-500 mt-1">{{ \Carbon\Carbon::now()->isoFormat('dddd, D MMMM YYYY') }}</p>
+{{-- ══ Intelligent Hero Banner ════════════════════════════════════ --}}
+@php
+    $namaFirst = Str::before(auth()->user()->name, ' ') ?: auth()->user()->name;
+    $bannerState = $mesyuaratSeterusnya
+        ? ($mesyuaratSeterusnya->tarikh->isToday() ? 'today' : 'upcoming')
+        : 'empty';
+    $tarikhLabel = match(true) {
+        $mesyuaratSeterusnya?->tarikh->isToday()    => 'Hari Ini',
+        $mesyuaratSeterusnya?->tarikh->isTomorrow() => 'Esok',
+        default => $mesyuaratSeterusnya?->tarikh->isoFormat('D MMM') ?? '',
+    };
+@endphp
+<div class="rounded-2xl mb-6 overflow-hidden"
+     style="background:linear-gradient(135deg,#1a1a2e 0%,#16213e 60%,#0f3460 100%)">
+    <div class="px-6 py-5 flex flex-col md:flex-row md:items-center gap-5">
+
+        {{-- Kiri: Greeting + mesyuarat seterusnya --}}
+        <div class="flex-1 min-w-0">
+            <p class="text-slate-500 text-xs font-medium mb-1">
+                {{ \Carbon\Carbon::now()->isoFormat('dddd, D MMMM YYYY') }}
+            </p>
+            <h1 class="text-white font-bold text-xl mb-3" style="letter-spacing:-0.02em">
+                Selamat Datang, {{ $namaFirst }}
+            </h1>
+
+            {{-- State: ada mesyuarat --}}
+            @if($mesyuaratSeterusnya)
+            <div class="flex items-start gap-3 p-3 rounded-xl"
+                 style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.2)">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                     style="background:rgba(245,158,11,0.18)">
+                    <i class="fa-solid fa-calendar-check text-amber-400" aria-hidden="true"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-amber-400 text-xs font-bold uppercase tracking-wider mb-0.5">
+                        Mesyuarat Seterusnya &bull; {{ $tarikhLabel }}
+                    </p>
+                    <p class="text-white font-semibold text-sm truncate">
+                        {{ $mesyuaratSeterusnya->nama_mesyuarat }}
+                    </p>
+                    <p class="text-slate-400 text-xs mt-0.5">
+                        <i class="fa-solid fa-door-open mr-1 text-amber-500/60" aria-hidden="true"></i>
+                        {{ $mesyuaratSeterusnya->bilik->nama ?? '—' }}
+                        &middot; {{ $mesyuaratSeterusnya->masa_label }}
+                    </p>
+                </div>
+                <a href="{{ route('tempahan.show', $mesyuaratSeterusnya) }}"
+                   class="text-amber-400 hover:text-amber-300 text-xs font-semibold flex-shrink-0 flex items-center gap-1 mt-0.5 transition-colors">
+                    Lihat <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
+                </a>
+            </div>
+
+            {{-- State: tiada mesyuarat --}}
+            @else
+            <div class="flex items-center gap-3 p-3 rounded-xl"
+                 style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08)">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                     style="background:rgba(255,255,255,0.07)">
+                    <i class="fa-solid fa-calendar-plus text-slate-400" aria-hidden="true"></i>
+                </div>
+                <div>
+                    <p class="text-slate-300 text-sm font-medium">Tiada mesyuarat akan datang</p>
+                    <p class="text-slate-500 text-xs">Jadualkan mesyuarat anda sekarang</p>
+                </div>
+            </div>
+            @endif
+        </div>
+
+        {{-- Kanan: Availability esok + CTA --}}
+        <div class="flex flex-col gap-3 md:items-end flex-shrink-0">
+            <div class="flex flex-wrap gap-2">
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                     style="background:rgba(255,255,255,0.07);color:#94a3b8">
+                    <i class="fa-solid fa-sun text-amber-400 text-xs" aria-hidden="true"></i>
+                    Esok Pagi:
+                    <span class="ml-1 font-bold {{ $bilikKosongEsokPagi > 0 ? 'text-green-400' : 'text-red-400' }}">
+                        {{ $bilikKosongEsokPagi }} kosong
+                    </span>
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                     style="background:rgba(255,255,255,0.07);color:#94a3b8">
+                    <i class="fa-solid fa-moon text-blue-400 text-xs" aria-hidden="true"></i>
+                    Esok Ptng:
+                    <span class="ml-1 font-bold {{ $bilikKosongEsokPetang > 0 ? 'text-green-400' : 'text-red-400' }}">
+                        {{ $bilikKosongEsokPetang }} kosong
+                    </span>
+                </div>
+            </div>
+            <a href="{{ route('tempahan.create') }}" class="btn-primary whitespace-nowrap">
+                <i class="fa-solid fa-plus" aria-hidden="true"></i> Tempahan Baru
+            </a>
+        </div>
+
     </div>
-    <a href="{{ route('tempahan.create') }}" class="btn-primary">
-        <i class="fa-solid fa-plus" aria-hidden="true"></i> Tempahan Baru
-    </a>
 </div>
 
 {{-- ══ Kad Statistik ══════════════════════════════════════════════ --}}
