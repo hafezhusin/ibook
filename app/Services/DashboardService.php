@@ -5,7 +5,9 @@ namespace App\Services;
 use App\Models\BilikMesyuarat;
 use App\Models\Tempahan;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class DashboardService
 {
@@ -147,6 +149,12 @@ class DashboardService
         $bilikKosongEsokPagi     = $bilik->filter(fn ($b) => !$bilikDitempahPagiEsok->contains($b->id))->count();
         $bilikKosongEsokPetang   = $bilik->filter(fn ($b) => !$bilikDitempahPetangEsok->contains($b->id))->count();
 
+        // ── Trend 6 bulan ─────────────────────────────────────────────
+        $trendBulanan = $this->kiraTrendBulanan($query, 6);
+
+        // ── Statistik kategori bulan ini ───────────────────────────────
+        $statistikKategori = $this->kiraKategori($query, $bulanIni, $tahunIni);
+
         return [
             'jumlahTempahan'      => $jumlahTempahan,
             'jumlahTempahanLepas' => $jumlahTempahanLepas,
@@ -167,7 +175,55 @@ class DashboardService
             'tahunIni'            => $tahunIni,
             'bulanLepas'          => $bulanLepas,
             'tahunLepas'          => $tahunLepas,
+            'trendBulanan'        => $trendBulanan,
+            'statistikKategori'   => $statistikKategori,
         ];
+    }
+
+    /**
+     * Kira jumlah tempahan per bulan untuk N bulan ke belakang.
+     * Menghormati skop pengguna (staf: sendiri sahaja, admin: semua).
+     */
+    private function kiraTrendBulanan($baseQuery, int $bulan): array
+    {
+        $namaBulan = ['','Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'];
+        $hasil     = [];
+
+        for ($i = $bulan - 1; $i >= 0; $i--) {
+            $tarikh = Carbon::now()->subMonths($i);
+            $jumlah = (clone $baseQuery)
+                ->whereMonth('tarikh', $tarikh->month)
+                ->whereYear('tarikh', $tarikh->year)
+                ->count();
+
+            $hasil[] = [
+                'label'  => $namaBulan[$tarikh->month] . ' ' . $tarikh->year,
+                'jumlah' => $jumlah,
+            ];
+        }
+
+        return $hasil;
+    }
+
+    /**
+     * Kira jumlah tempahan mengikut kategori untuk bulan tertentu.
+     */
+    private function kiraKategori($baseQuery, int $bulan, int $tahun): array
+    {
+        $labelKategori = Tempahan::KATEGORI;
+
+        $rows = (clone $baseQuery)
+            ->whereMonth('tarikh', $bulan)
+            ->whereYear('tarikh', $tahun)
+            ->select('kategori', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('kategori')
+            ->orderByDesc('jumlah')
+            ->get();
+
+        return $rows->map(fn ($r) => [
+            'label'  => $labelKategori[$r->kategori] ?? $r->kategori,
+            'jumlah' => $r->jumlah,
+        ])->values()->toArray();
     }
 
     private function kiraTrend(int $sekarang, int $lepas): array

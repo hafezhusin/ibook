@@ -533,9 +533,120 @@
     </section>
 
 </div>
+
+{{-- ══ Grafik Statistik ════════════════════════════════════════ --}}
+@php
+    $labelKategoriWarna = [
+        '#f59e0b','#2563eb','#16a34a','#dc2626','#7c3aed','#0891b2','#ea580c','#be185d',
+    ];
+@endphp
+<section aria-labelledby="heading-grafik" class="mt-6">
+    <div class="flex items-center gap-3 mb-4">
+        <h2 id="heading-grafik" class="font-bold text-gray-800 text-lg">Grafik & Statistik</h2>
+        <span class="text-xs text-gray-400 font-medium px-2 py-0.5 bg-gray-100 rounded-full">
+            {{ $namaBulan[$bulanIni] }} {{ $tahunIni }}
+        </span>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {{-- Trend 6 Bulan (bar chart — 2 kolum) --}}
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-5">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="font-bold text-gray-800 text-sm">Trend Tempahan</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">6 bulan ke belakang</p>
+                </div>
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#fef3c7">
+                    <i class="fa-solid fa-chart-line text-amber-500 text-sm" aria-hidden="true"></i>
+                </div>
+            </div>
+            <div class="relative" style="height:220px">
+                <canvas id="chart-trend" aria-label="Carta bar trend tempahan 6 bulan" role="img"></canvas>
+            </div>
+        </div>
+
+        {{-- Kategori Mesyuarat (donut — 1 kolum) --}}
+        <div class="bg-white rounded-xl shadow-sm p-5">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="font-bold text-gray-800 text-sm">Kategori Mesyuarat</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Bulan {{ $namaBulan[$bulanIni] }}</p>
+                </div>
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:#eff6ff">
+                    <i class="fa-solid fa-chart-pie text-blue-500 text-sm" aria-hidden="true"></i>
+                </div>
+            </div>
+            @if(count($statistikKategori) > 0)
+            <div class="relative flex items-center justify-center" style="height:160px">
+                <canvas id="chart-kategori" aria-label="Carta donut kategori mesyuarat" role="img"></canvas>
+            </div>
+            {{-- Legend --}}
+            <ul class="mt-3 space-y-1.5">
+                @foreach(array_slice($statistikKategori, 0, 5) as $i => $kat)
+                <li class="flex items-center gap-2 text-xs text-gray-600">
+                    <span class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style="background:{{ $labelKategoriWarna[$i % count($labelKategoriWarna)] }}"></span>
+                    <span class="truncate flex-1" title="{{ $kat['label'] }}">{{ $kat['label'] }}</span>
+                    <span class="font-bold text-gray-800">{{ $kat['jumlah'] }}</span>
+                </li>
+                @endforeach
+            </ul>
+            @else
+            <div class="flex flex-col items-center justify-center py-8 text-center">
+                <i class="fa-solid fa-chart-pie text-gray-200 text-4xl mb-2" aria-hidden="true"></i>
+                <p class="text-xs text-gray-400">Tiada data bulan ini</p>
+            </div>
+            @endif
+        </div>
+
+        {{-- Penggunaan Bilik (horizontal bar — penuh) --}}
+        <div class="lg:col-span-3 bg-white rounded-xl shadow-sm p-5">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="font-bold text-gray-800 text-sm">Penggunaan Bilik</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Peratusan penggunaan bulan {{ $namaBulan[$bulanIni] }}</p>
+                </div>
+                <a href="{{ route('laporan') }}"
+                   class="text-xs font-semibold text-amber-500 hover:text-amber-600 flex items-center gap-1">
+                    Laporan Penuh →
+                </a>
+            </div>
+            @if($penggunaanBilik->isNotEmpty())
+            <div class="space-y-3">
+                @foreach($penggunaanBilik as $b)
+                @php $pct = min(100, max(0, $b['peratusan'])); @endphp
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-gray-700 truncate max-w-[60%]"
+                              title="{{ $b['nama'] }}">{{ $b['nama'] }}</span>
+                        <span class="text-xs font-bold ml-2
+                            {{ $pct >= 80 ? 'text-red-600' : ($pct >= 50 ? 'text-amber-600' : 'text-green-600') }}">
+                            {{ $pct }}%
+                        </span>
+                    </div>
+                    <div class="w-full bg-gray-100 rounded-full h-2.5" role="progressbar"
+                         aria-valuenow="{{ $pct }}" aria-valuemin="0" aria-valuemax="100"
+                         aria-label="{{ $b['nama'] }}: {{ $pct }}% digunakan">
+                        <div class="h-2.5 rounded-full transition-all duration-500"
+                             style="width:{{ $pct }}%;background:{{ $pct >= 80 ? '#dc2626' : ($pct >= 50 ? '#f59e0b' : '#16a34a') }}">
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+            @else
+            <p class="text-sm text-gray-400 text-center py-6">Tiada data penggunaan bilik</p>
+            @endif
+        </div>
+
+    </div>
+</section>
+
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script nonce="{{ $cspNonce }}">
 flatpickr('#quick-tarikh', {
     locale: 'ms',
@@ -552,6 +663,85 @@ if (btnBaki) {
         const baki = document.getElementById('senarai-seterusnya-baki');
         if (baki) baki.classList.remove('hidden');
         this.style.display = 'none';
+    });
+}
+
+// ── Chart.js — Trend 6 Bulan ──────────────────────────────────
+const trendData = @json($trendBulanan);
+const ctxTrend  = document.getElementById('chart-trend');
+if (ctxTrend && trendData.length) {
+    new Chart(ctxTrend, {
+        type: 'bar',
+        data: {
+            labels:   trendData.map(d => d.label),
+            datasets: [{
+                label:           'Tempahan',
+                data:            trendData.map(d => d.jumlah),
+                backgroundColor: trendData.map((_, i) =>
+                    i === trendData.length - 1 ? '#f59e0b' : '#fde68a'),
+                borderColor:     trendData.map((_, i) =>
+                    i === trendData.length - 1 ? '#d97706' : '#fbbf24'),
+                borderWidth:     1.5,
+                borderRadius:    6,
+                borderSkipped:   false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ' ' + ctx.parsed.y + ' tempahan'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0, font: { size: 11 } },
+                    grid:  { color: '#f3f4f6' }
+                },
+                x: {
+                    ticks: { font: { size: 11 } },
+                    grid:  { display: false }
+                }
+            }
+        }
+    });
+}
+
+// ── Chart.js — Kategori Mesyuarat (Donut) ─────────────────────
+const kategoriData   = @json($statistikKategori);
+const kategoriWarna  = ['#f59e0b','#2563eb','#16a34a','#dc2626','#7c3aed','#0891b2','#ea580c','#be185d'];
+const ctxKategori    = document.getElementById('chart-kategori');
+if (ctxKategori && kategoriData.length) {
+    new Chart(ctxKategori, {
+        type: 'doughnut',
+        data: {
+            labels:   kategoriData.map(d => d.label),
+            datasets: [{
+                data:            kategoriData.map(d => d.jumlah),
+                backgroundColor: kategoriWarna.slice(0, kategoriData.length),
+                borderWidth:     2,
+                borderColor:     '#ffffff',
+                hoverOffset:     6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ' ' + ctx.label + ': ' + ctx.parsed + ' tempahan'
+                    }
+                }
+            }
+        }
     });
 }
 </script>
