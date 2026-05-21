@@ -370,15 +370,14 @@
         {{-- Strip jabatan di bahagian atas sidebar --}}
         @if($namaJabatan || $logoJabatan)
         <div class="px-4 py-3 border-b border-slate-700/60" style="background:rgba(245,158,11,0.06)">
-            <div class="flex items-center gap-2.5">
+            <div class="flex items-center gap-3">
                 @if($logoJabatan)
                 <img src="{{ $logoJabatan }}" alt="Logo {{ $namaJabatan }}"
-                     class="h-8 w-8 object-contain flex-shrink-0">
+                     class="object-contain flex-shrink-0" style="height:48px; width:auto">
                 @else
-                {{-- Placeholder ikon kerajaan --}}
-                <div class="w-8 h-8 rounded flex items-center justify-center flex-shrink-0"
-                     style="background:rgba(245,158,11,0.15)">
-                    <i class="fa-solid fa-landmark text-amber-400 text-sm" aria-hidden="true"></i>
+                <div class="rounded flex items-center justify-center flex-shrink-0"
+                     style="width:48px;height:48px;background:rgba(245,158,11,0.15)">
+                    <i class="fa-solid fa-landmark text-amber-400 text-lg" aria-hidden="true"></i>
                 </div>
                 @endif
                 <span class="text-slate-300 leading-tight font-medium" style="font-size:11px; line-height:1.3">
