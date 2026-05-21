@@ -88,19 +88,17 @@
         @endphp
 
         {{-- Jata Negara + Jabatan --}}
-        <div class="flex items-center gap-3 mb-8">
+        <div class="flex flex-col items-center text-center mb-8">
             <img src="{{ $logoJabatanLogin }}" alt="Logo Jabatan"
-                 class="h-14 w-14 object-contain flex-shrink-0 drop-shadow-lg"
+                 class="h-16 w-16 object-contain drop-shadow-lg mb-3"
                  onerror="this.style.display='none'">
-            <div>
-                <p class="text-amber-400 font-semibold leading-tight" style="font-size:11px; letter-spacing:0.05em; text-transform:uppercase">
-                    {{ $namaJabatanLogin ?: 'Jabatan Akauntan Negara Malaysia' }}
-                </p>
-                <p class="text-white font-bold mt-0.5" style="font-size:18px; letter-spacing:-0.01em">
-                    {{ $namaSistemLogin }}
-                </p>
-                <p class="text-slate-400" style="font-size:11px; margin-top:1px">Sistem Tempahan Bilik Mesyuarat</p>
-            </div>
+            <p class="text-amber-400 font-semibold leading-tight" style="font-size:11px; letter-spacing:0.05em; text-transform:uppercase">
+                {{ $namaJabatanLogin ?: 'Jabatan Akauntan Negara Malaysia' }}
+            </p>
+            <p class="text-white font-bold mt-1" style="font-size:18px; letter-spacing:-0.01em">
+                {{ $namaSistemLogin }}
+            </p>
+            <p class="text-slate-400" style="font-size:11px; margin-top:2px">Sistem Tempahan Bilik Mesyuarat</p>
         </div>
 
         <h1 class="text-white font-bold mb-1" style="font-size:1.6rem; letter-spacing:-0.02em">Selamat Datang</h1>
