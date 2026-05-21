@@ -14,6 +14,20 @@
     .bilik-btn:hover { background: #fef3c7; border-color: #f59e0b; }
     .bilik-btn.aktif  { background: #fef3c7; border-color: #f59e0b; }
     .bilik-btn:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+
+    /* ── Modal animasi ── */
+    #event-modal { transition: opacity .18s ease; }
+    #event-modal.hidden { opacity: 0; pointer-events: none; display: flex !important; visibility: hidden; }
+    #event-modal:not(.hidden) { opacity: 1; visibility: visible; }
+    #event-modal-inner {
+        transform: scale(.96) translateY(8px);
+        transition: transform .2s cubic-bezier(.34,1.56,.64,1), opacity .18s ease;
+        opacity: 0;
+    }
+    #event-modal:not(.hidden) #event-modal-inner {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
 </style>
 @endpush
 
@@ -168,11 +182,11 @@
 
 {{-- ===== MODAL BUTIRAN ACARA ===== --}}
 <div id="event-modal"
-    class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50"
     role="dialog"
     aria-modal="true"
     aria-labelledby="ev-modal-heading">
-    <div class="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+    <div id="event-modal-inner" class="bg-white rounded-t-2xl sm:rounded-xl shadow-xl w-full max-w-md sm:mx-4 overflow-hidden">
 
         {{-- Header --}}
         <div id="ev-header" class="px-6 pt-5 pb-4" style="background:#1a1a2e">
@@ -237,6 +251,14 @@
                 </dt>
                 <dd class="text-gray-700">Pemohon: <span id="ev-pemohon"></span></dd>
             </div>
+            {{-- Tujuan/Agenda (hanya tunjuk bila ada) --}}
+            <div id="ev-tujuan-wrap" class="hidden flex items-start gap-3">
+                <dt class="flex-shrink-0 w-5 mt-0.5">
+                    <i class="fa-solid fa-file-lines text-amber-400" aria-hidden="true"></i>
+                    <span class="sr-only">Tujuan:</span>
+                </dt>
+                <dd class="text-gray-600 text-xs leading-relaxed italic" id="ev-tujuan"></dd>
+            </div>
         </dl>
 
         {{-- Footer: Tindakan --}}
@@ -246,7 +268,13 @@
                 <a id="ev-btn-butiran" href="#"
                    class="btn-primary flex-1 justify-center text-sm"
                    aria-label="Lihat butiran penuh tempahan ini">
-                    <i class="fa-solid fa-eye" aria-hidden="true"></i> Lihat Butiran
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i> Butiran
+                </a>
+                {{-- Edit — hanya untuk tempahan sendiri --}}
+                <a id="ev-btn-edit" href="#"
+                   class="btn-secondary flex-1 justify-center text-sm hidden"
+                   aria-label="Edit tempahan ini">
+                    <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
                 </a>
                 <a id="ev-btn-duplikat" href="{{ route('tempahan.create') }}"
                    class="btn-secondary flex-1 justify-center text-sm"
@@ -347,24 +375,43 @@ document.addEventListener('DOMContentLoaded', function () {
 
             document.getElementById('ev-header').style.background = p.is_own ? '#14532d' : '#1a1a2e';
 
+            // ── Tujuan/Agenda ───────────────────────────────────────
+            const tujuanWrap = document.getElementById('ev-tujuan-wrap');
+            const tujuanEl   = document.getElementById('ev-tujuan');
+            if (p.tujuan && p.tujuan.trim()) {
+                tujuanEl.textContent = p.tujuan;
+                tujuanWrap.classList.remove('hidden');
+            } else {
+                tujuanWrap.classList.add('hidden');
+            }
+
             // ── Butang tindakan ─────────────────────────────────────
-            // Lihat Butiran → /tempahan/{id}
-            const btnButiran = document.getElementById('ev-btn-butiran');
+            const btnButiran  = document.getElementById('ev-btn-butiran');
+            const btnEdit     = document.getElementById('ev-btn-edit');
+            const btnDuplikat = document.getElementById('ev-btn-duplikat');
+
             if (p.tempahan_id) {
                 btnButiran.href = '{{ url("/tempahan") }}/' + p.tempahan_id;
-                btnButiran.style.display = '';
+                btnButiran.classList.remove('hidden');
             } else {
-                btnButiran.style.display = 'none';
+                btnButiran.classList.add('hidden');
+            }
+
+            // Butang Edit — tunjuk hanya untuk tempahan sendiri
+            if (p.is_own && p.tempahan_id) {
+                btnEdit.href = '{{ url("/tempahan") }}/' + p.tempahan_id + '/edit';
+                btnEdit.classList.remove('hidden');
+            } else {
+                btnEdit.classList.add('hidden');
             }
 
             // Duplikat → /tempahan/baru?duplikat_id=X
-            const btnDuplikat = document.getElementById('ev-btn-duplikat');
             if (p.tempahan_id) {
                 btnDuplikat.href = '{{ route("tempahan.create") }}?duplikat_id=' + p.tempahan_id;
             }
 
             document.getElementById('event-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('ev-btn-butiran').focus(), 50);
+            setTimeout(() => document.getElementById('ev-btn-butiran').focus(), 80);
         },
 
         eventDidMount: function (info) {

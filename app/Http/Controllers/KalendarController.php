@@ -60,6 +60,7 @@ class KalendarController extends Controller
                     'bilangan_peserta',
                     'kategori',
                     'nama_pengerusi',
+                    'tujuan',
                 ])
                 ->with([
                     'bilik:id,nama,lokasi',
@@ -191,6 +192,7 @@ class KalendarController extends Controller
                     'kategori'       => $t->kategori,
                     'nama_pengerusi' => $t->nama_pengerusi,
                     'pemohon'        => $t->pengguna->name ?? '-',
+                    'tujuan'         => $t->tujuan ?? '',
                     'is_own'         => $isOwn,
                 ],
             ];
