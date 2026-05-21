@@ -49,6 +49,7 @@ class KalendarController extends Controller
             $query = Tempahan::query()
                 ->select([
                     'id',
+                    'ulid',
                     'nama_mesyuarat',
                     'tarikh',
                     'masa_mula',
@@ -181,6 +182,7 @@ class KalendarController extends Controller
                 'color' => $warna,
                 'extendedProps' => [
                     'tempahan_id'    => $t->id,
+                    'tempahan_ulid'  => $t->ulid,
                     'bilik'          => $t->bilik->nama ?? '-',
                     'lokasi'         => $t->bilik->lokasi ?? '',
                     'bilik_id'       => $t->bilik_id,

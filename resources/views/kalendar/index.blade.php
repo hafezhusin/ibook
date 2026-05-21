@@ -390,22 +390,22 @@ document.addEventListener('DOMContentLoaded', function () {
             const btnEdit     = document.getElementById('ev-btn-edit');
             const btnDuplikat = document.getElementById('ev-btn-duplikat');
 
-            if (p.tempahan_id) {
-                btnButiran.href = '{{ url("/tempahan") }}/' + p.tempahan_id;
+            if (p.tempahan_ulid) {
+                btnButiran.href = '{{ url("/tempahan") }}/' + p.tempahan_ulid;
                 btnButiran.classList.remove('hidden');
             } else {
                 btnButiran.classList.add('hidden');
             }
 
             // Butang Edit — tunjuk hanya untuk tempahan sendiri
-            if (p.is_own && p.tempahan_id) {
-                btnEdit.href = '{{ url("/tempahan") }}/' + p.tempahan_id + '/edit';
+            if (p.is_own && p.tempahan_ulid) {
+                btnEdit.href = '{{ url("/tempahan") }}/' + p.tempahan_ulid + '/edit';
                 btnEdit.classList.remove('hidden');
             } else {
                 btnEdit.classList.add('hidden');
             }
 
-            // Duplikat → /tempahan/baru?duplikat_id=X
+            // Duplikat → /tempahan/baru?duplikat_id=X (guna integer ID)
             if (p.tempahan_id) {
                 btnDuplikat.href = '{{ route("tempahan.create") }}?duplikat_id=' + p.tempahan_id;
             }
