@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log Masuk - {{ $tetapan['nama_sistem'] ?? 'iBook 2.0' }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; }
+        body { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
 
         /* ── Skip link ── */
         .skip-link {
@@ -76,18 +79,31 @@
 {{-- ===== PANEL KIRI: LOGIN ===== --}}
 <main id="borang-log-masuk" class="left-panel w-full lg:w-[380px] xl:w-[420px] flex-shrink-0 flex flex-col justify-between p-8 overflow-y-auto" aria-label="Borang log masuk iBook 2.0">
     <div>
-        {{-- Logo --}}
-        <div class="flex items-center gap-3 mb-10" aria-hidden="true">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center shadow-lg" style="background:#f59e0b">
-                <i class="fa-solid fa-book-open text-white text-lg" aria-hidden="true"></i>
-            </div>
+        {{-- Branding Jabatan --}}
+        @php
+            $namaSistemLogin = $tetapan['nama_sistem'] ?? 'iBook 2.0';
+            $namaJabatanLogin = $tetapan['nama_jabatan'] ?? '';
+            $logoJabatanLogin = $tetapan['logo_jabatan'] ?? '/images/jata-negara.png';
+            if (empty($logoJabatanLogin)) $logoJabatanLogin = '/images/jata-negara.png';
+        @endphp
+
+        {{-- Jata Negara + Jabatan --}}
+        <div class="flex items-center gap-3 mb-8">
+            <img src="{{ $logoJabatanLogin }}" alt="Logo Jabatan"
+                 class="h-14 w-14 object-contain flex-shrink-0 drop-shadow-lg"
+                 onerror="this.style.display='none'">
             <div>
-                @php $namaSistemLogin = $tetapan['nama_sistem'] ?? 'iBook 2.0'; @endphp
-                <span class="text-white font-bold text-xl leading-tight">{{ $namaSistemLogin }}</span>
+                <p class="text-amber-400 font-semibold leading-tight" style="font-size:11px; letter-spacing:0.05em; text-transform:uppercase">
+                    {{ $namaJabatanLogin ?: 'Jabatan Akauntan Negara Malaysia' }}
+                </p>
+                <p class="text-white font-bold mt-0.5" style="font-size:18px; letter-spacing:-0.01em">
+                    {{ $namaSistemLogin }}
+                </p>
+                <p class="text-slate-400" style="font-size:11px; margin-top:1px">Sistem Tempahan Bilik Mesyuarat</p>
             </div>
         </div>
 
-        <h1 class="text-white text-2xl font-bold mb-1">Selamat Datang</h1>
+        <h1 class="text-white font-bold mb-1" style="font-size:1.6rem; letter-spacing:-0.02em">Selamat Datang</h1>
         <p class="text-slate-400 text-sm mb-8">Log masuk untuk membuat tempahan bilik mesyuarat</p>
 
         {{-- Mesej berjaya set semula kata laluan --}}
