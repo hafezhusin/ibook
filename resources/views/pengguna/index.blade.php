@@ -56,15 +56,24 @@
 @endif
 
 {{-- ── Carian --}}
-<div class="mb-4">
-    <div class="relative">
+<form id="form-carian" method="GET" action="{{ route('pengguna.index') }}" class="mb-4" role="search">
+    <div class="relative w-full md:w-80">
         <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" aria-hidden="true"></i>
-        <input type="search" id="carian-pengguna"
+        <input type="search" id="carian-pengguna" name="cari"
+            value="{{ $cari }}"
             placeholder="Cari nama, emel atau unit..."
-            class="form-input pl-9 text-sm w-full md:w-80"
-            aria-label="Cari pengguna">
+            class="form-input pl-9 pr-8 text-sm w-full"
+            aria-label="Cari pengguna"
+            autocomplete="off">
+        @if($cari !== '')
+        <a href="{{ route('pengguna.index') }}"
+            class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            aria-label="Kosongkan carian" title="Kosongkan carian">
+            <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
+        </a>
+        @endif
     </div>
-</div>
+</form>
 
 {{-- ── Tab + View Toggle Bar ── --}}
 <div class="flex items-center justify-between mb-4">
@@ -431,9 +440,16 @@ document.getElementById('btn-tutup-reset').addEventListener('click', function() 
     document.getElementById('modal-reset').classList.add('hidden');
 });
 
-// Carian pengguna
+// Carian pengguna — tapis segera (visual) + hantar ke server selepas 650ms
+let _carianTimer = null;
 document.getElementById('carian-pengguna').addEventListener('input', function() {
-    caripenggunaFilter(this.value);
+    const kata = this.value;
+    caripenggunaFilter(kata);           // maklum balas visual segera
+
+    clearTimeout(_carianTimer);
+    _carianTimer = setTimeout(function() {
+        document.getElementById('form-carian').submit();
+    }, 650);
 });
 
 // Tab buttons
@@ -517,7 +533,7 @@ function tukarTab(tab) {
     // reset checkbox semua bila tukar tab
     document.querySelectorAll('.checkbox-pengguna:checked').forEach(cb => cb.checked = false);
     kemaskiniToolbar();
-    // apply carian semula
+    // apply carian visual semula (teks dalam input sahaja — server sudah menapis)
     caripenggunaFilter(document.getElementById('carian-pengguna').value);
 }
 

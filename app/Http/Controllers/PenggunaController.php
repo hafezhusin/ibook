@@ -12,15 +12,27 @@ use Illuminate\Validation\Rules\Password;
 
 class PenggunaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Gunakan parameter halaman berbeza bagi setiap tab
-        $penggunaAktif     = User::where('aktif', true)->orderBy('name')
-                                 ->paginate(25, ['*'], 'page_aktif');
-        $penggunaNyahaktif = User::where('aktif', false)->orderBy('name')
-                                 ->paginate(25, ['*'], 'page_nyahaktif');
+        $cari = trim($request->input('cari', ''));
 
-        return view('pengguna.index', compact('penggunaAktif', 'penggunaNyahaktif'));
+        $queryAktif     = User::where('aktif', true)->orderBy('name');
+        $queryNyahaktif = User::where('aktif', false)->orderBy('name');
+
+        if ($cari !== '') {
+            $filter = function ($q) use ($cari) {
+                $q->where('name', 'like', "%{$cari}%")
+                  ->orWhere('email', 'like', "%{$cari}%")
+                  ->orWhere('jabatan', 'like', "%{$cari}%");
+            };
+            $queryAktif->where($filter);
+            $queryNyahaktif->where($filter);
+        }
+
+        $penggunaAktif     = $queryAktif->paginate(25, ['*'], 'page_aktif')->appends(['cari' => $cari]);
+        $penggunaNyahaktif = $queryNyahaktif->paginate(25, ['*'], 'page_nyahaktif')->appends(['cari' => $cari]);
+
+        return view('pengguna.index', compact('penggunaAktif', 'penggunaNyahaktif', 'cari'));
     }
 
     public function store(StorePenggunaRequest $request)
