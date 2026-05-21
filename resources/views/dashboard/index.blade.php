@@ -294,7 +294,7 @@
               class="flex flex-1 flex-wrap gap-3 items-end"
               aria-label="Semak ketersediaan bilik pantas">
 
-            <div class="flex-1 min-w-[150px]">
+            <div class="flex-1 min-w-[140px]">
                 <label for="quick-tarikh" class="sr-only">Tarikh</label>
                 <div class="relative">
                     <input type="text" id="quick-tarikh" name="tarikh"
@@ -305,7 +305,7 @@
                 </div>
             </div>
 
-            <div class="min-w-[180px]">
+            <div class="flex-1 min-w-[140px]">
                 <label for="quick-sesi" class="sr-only">Sesi</label>
                 <select id="quick-sesi" name="sesi" class="form-input">
                     <option value="semua">Kedua-dua Sesi</option>
@@ -314,7 +314,7 @@
                 </select>
             </div>
 
-            <div class="min-w-[130px]">
+            <div class="w-24">
                 <label for="quick-peserta" class="sr-only">Bilangan peserta</label>
                 <input type="number" id="quick-peserta" name="peserta"
                     min="1" max="500" value="10"

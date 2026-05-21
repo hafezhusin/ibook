@@ -158,6 +158,42 @@
             border: 2px solid #fff;
         }
 
+        /* ══════════════════════════════════════════════════════════
+           MOBILE RESPONSIVENESS
+           ══════════════════════════════════════════════════════════ */
+
+        /* Overlay gelap bila sidebar dibuka pada mobile */
+        #sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.55);
+            z-index: 25;
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+        }
+        #sidebar-overlay.aktif { display: block; }
+
+        /* Mobile: sidebar tersembunyi di luar skrin */
+        @media (max-width: 1023px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+                z-index: 30;
+            }
+            .sidebar.mobile-open {
+                transform: translateX(0);
+                box-shadow: 6px 0 24px rgba(0,0,0,.45);
+            }
+        }
+
+        /* Desktop: sidebar sentiasa kelihatan */
+        @media (min-width: 1024px) {
+            .sidebar { transform: none !important; transition: none !important; }
+            #sidebar-overlay { display: none !important; }
+            #btn-hamburger { display: none !important; }
+        }
+
         /* ── Mode tinggi kontras (forced-colors) ────────────────── */
         @media (forced-colors: active) {
             .btn-primary, .btn-danger, .btn-success, .btn-secondary { border: 2px solid ButtonText; }
@@ -353,10 +389,13 @@
     <a href="#kandungan-utama" class="skip-link">Langkau ke kandungan utama</a>
     <a href="#nav-utama" class="skip-link" style="left:220px">Langkau ke navigasi</a>
 
+{{-- Overlay untuk mobile sidebar --}}
+<div id="sidebar-overlay" aria-hidden="true"></div>
+
 <div class="flex">
 
     {{-- ── Sidebar / Navigasi Utama ──────────────────────────────── --}}
-    <aside class="sidebar fixed top-0 left-0 z-30" aria-label="Bar sisi navigasi">
+    <aside id="sidebar-utama" class="sidebar fixed top-0 left-0 z-30" aria-label="Bar sisi navigasi">
 
         {{-- Logo & Branding Jabatan --}}
         @php
@@ -502,7 +541,7 @@
     </aside>
 
     {{-- ── Kawasan Kandungan Utama ─────────────────────────────── --}}
-    <div class="flex-1 ml-[260px]">
+    <div class="flex-1 lg:ml-[260px]">
 
         {{-- Top bar --}}
         <header class="bg-white sticky top-0 z-20" role="banner" style="box-shadow:0 1px 0 #e5e7eb, 0 2px 8px rgba(0,0,0,0.04)">
@@ -522,17 +561,24 @@
             @endif
 
             {{-- Main header row --}}
-            <div class="px-6 py-3 flex items-center justify-between">
+            <div class="px-4 lg:px-6 py-3 flex items-center justify-between gap-3">
+
+            {{-- Hamburger button (mobile sahaja) --}}
+            <button type="button" id="btn-hamburger"
+                    class="lg:hidden flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors"
+                    aria-label="Buka menu navigasi" aria-expanded="false" aria-controls="sidebar-utama">
+                <i class="fa-solid fa-bars text-base" aria-hidden="true"></i>
+            </button>
 
             {{-- Carian Global --}}
-            <form method="GET" action="{{ route('carian') }}" role="search" aria-label="Carian sistem merentas semua modul">
+            <form method="GET" action="{{ route('carian') }}" role="search" aria-label="Carian sistem merentas semua modul" class="flex-1 lg:flex-none">
                 <div class="relative">
                     <label for="carian-global" class="sr-only">Cari tempahan, bilik atau pengguna</label>
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" aria-hidden="true"></i>
                     <input type="search" id="carian-global" name="q"
                         value="{{ request()->routeIs('carian') ? request('q') : '' }}"
                         placeholder="Cari semua modul…"
-                        class="pl-9 pr-16 py-2 bg-gray-100 rounded-lg text-sm w-72 focus:outline-none focus:bg-white focus:ring-2 focus:ring-amber-400 transition-all"
+                        class="pl-9 pr-16 py-2 bg-gray-100 rounded-lg text-sm w-full lg:w-72 focus:outline-none focus:bg-white focus:ring-2 focus:ring-amber-400 transition-all"
                         aria-label="Carian global — tekan / untuk fokus"
                         autocomplete="off">
                     {{-- Hint pintasan papan kekunci --}}
@@ -551,7 +597,7 @@
 
                 {{-- Maklumat pengguna + dropdown --}}
                 <div class="relative flex items-center gap-3" id="profil-dropdown-wrap">
-                    <div class="text-right" aria-hidden="true">
+                    <div class="text-right hidden lg:block" aria-hidden="true">
                         <div class="font-semibold text-sm text-gray-800">{{ auth()->user()->name }}</div>
                         <div class="text-xs text-gray-500">{{ auth()->user()->label_peranan }}</div>
                     </div>
@@ -592,7 +638,7 @@
         </header>
 
         {{-- Kandungan utama --}}
-        <main id="kandungan-utama" class="p-6" tabindex="-1">
+        <main id="kandungan-utama" class="p-4 lg:p-6" tabindex="-1">
 
             {{-- Alert mesej --}}
             @if(session('success'))
@@ -685,6 +731,49 @@ document.addEventListener('click', function(e) {
         e.target.closest('[role=alert]')?.remove();
     }
 });
+
+// ── Mobile Sidebar Toggle ────────────────────────────────
+(function () {
+    const btnHamburger = document.getElementById('btn-hamburger');
+    const sidebar      = document.getElementById('sidebar-utama');
+    const overlay      = document.getElementById('sidebar-overlay');
+    if (!btnHamburger || !sidebar || !overlay) return;
+
+    function bukaMenu() {
+        sidebar.classList.add('mobile-open');
+        overlay.classList.add('aktif');
+        btnHamburger.setAttribute('aria-expanded', 'true');
+        btnHamburger.innerHTML = '<i class="fa-solid fa-xmark text-base" aria-hidden="true"></i>';
+        document.body.style.overflow = 'hidden'; // Halang skrol latar
+    }
+
+    function tutupMenu() {
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('aktif');
+        btnHamburger.setAttribute('aria-expanded', 'false');
+        btnHamburger.innerHTML = '<i class="fa-solid fa-bars text-base" aria-hidden="true"></i>';
+        document.body.style.overflow = '';
+    }
+
+    btnHamburger.addEventListener('click', function () {
+        sidebar.classList.contains('mobile-open') ? tutupMenu() : bukaMenu();
+    });
+
+    // Tutup bila klik overlay
+    overlay.addEventListener('click', tutupMenu);
+
+    // Tutup bila tekan Esc
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && sidebar.classList.contains('mobile-open')) tutupMenu();
+    });
+
+    // Tutup bila klik link dalam sidebar (navigasi)
+    sidebar.querySelectorAll('.sidebar-link').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (window.innerWidth < 1024) tutupMenu();
+        });
+    });
+})();
 
 // Wire profil button (CSP-safe — tiada onclick di HTML)
 document.getElementById('profil-btn')?.addEventListener('click', function(e) {
