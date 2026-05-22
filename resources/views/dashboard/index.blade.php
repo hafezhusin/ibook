@@ -141,7 +141,7 @@
                 <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
                      style="background:rgba(255,255,255,0.07);color:#94a3b8">
                     <i class="fa-solid fa-moon text-blue-400 text-xs" aria-hidden="true"></i>
-                    Esok Ptng:
+                    Esok Petang:
                     <span class="ml-1 font-bold {{ $bilikKosongEsokPetang > 0 ? 'text-green-400' : 'text-red-400' }}">
                         {{ $bilikKosongEsokPetang }} kosong
                     </span>
