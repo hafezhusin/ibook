@@ -363,13 +363,16 @@ document.addEventListener('DOMContentLoaded', function() {
         events: fetchEvents,
         eventClick: function(info) {
             const p = info.event.extendedProps;
-            showPopup(info.jsEvent, p.bilik, p.sesi);
+            const sesiLabel = p.sesi_key === 'pagi' ? 'Sesi Pagi (9:00 - 13:00)' : 'Sesi Petang (14:00 - 18:00)';
+            showPopup(info.jsEvent, p.bilik, sesiLabel);
         },
         eventDidMount: function(info) {
+            const p = info.event.extendedProps;
+            const sesiLabel = p.sesi_key === 'pagi' ? 'Sesi Pagi (9:00 - 13:00)' : 'Sesi Petang (14:00 - 18:00)';
             info.el.style.borderRadius = '4px';
             info.el.style.fontSize = '11px';
-            info.el.title = info.event.extendedProps.bilik + ' — ' + info.event.extendedProps.sesi;
-            info.el.setAttribute('aria-label', info.event.extendedProps.bilik + ', ' + info.event.extendedProps.sesi);
+            info.el.title = (p.bilik || '') + ' — ' + sesiLabel;
+            info.el.setAttribute('aria-label', (p.bilik || '') + ', ' + sesiLabel);
         },
         height: 'auto',
         dayMaxEvents: 3,
