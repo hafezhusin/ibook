@@ -403,20 +403,37 @@ function updateStatusHariIni() {
         .then(r => r.json())
         .then(events => {
             const totalBilik = allBilik.length;
-            const bilikDitempah = [...new Set(events.map(e => e.extendedProps?.bilik))].filter(Boolean).length;
-            const tersedia = Math.max(0, totalBilik - bilikDitempah);
+
+            // Bilik unik yang ditempah mengikut sesi
+            const bilikPagi   = new Set(events.filter(e => e.extendedProps?.sesi_key === 'pagi')
+                                              .map(e => e.extendedProps?.bilik_id)).size;
+            const bilikPetang = new Set(events.filter(e => e.extendedProps?.sesi_key === 'petang')
+                                              .map(e => e.extendedProps?.bilik_id)).size;
+
+            const dot = (c) => `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${c};flex-shrink:0"></span>`;
+
             const el = document.getElementById('status-hari-ini');
             el.innerHTML = `
-                <div class="flex justify-between text-gray-600">
+                <div class="flex justify-between text-gray-600 pb-1.5 mb-1.5" style="border-bottom:1px solid #f3f4f6">
                     <span>Jumlah Bilik</span><span class="font-bold">${totalBilik}</span>
                 </div>
-                <div class="flex justify-between items-center">
-                    <span class="flex items-center gap-1"><span class="legend-dot" style="background:#dc2626;width:8px;height:8px" aria-hidden="true"></span>Ditempah</span>
-                    <span class="font-bold text-red-500">${bilikDitempah}</span>
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sesi Pagi</div>
+                <div class="flex justify-between items-center mb-0.5">
+                    <span class="flex items-center gap-1">${dot('#dc2626')} Ditempah</span>
+                    <span class="font-bold text-red-500">${bilikPagi}</span>
+                </div>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="flex items-center gap-1">${dot('#16a34a')} Tersedia</span>
+                    <span class="font-bold text-green-600">${Math.max(0, totalBilik - bilikPagi)}</span>
+                </div>
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Sesi Petang</div>
+                <div class="flex justify-between items-center mb-0.5">
+                    <span class="flex items-center gap-1">${dot('#dc2626')} Ditempah</span>
+                    <span class="font-bold text-red-500">${bilikPetang}</span>
                 </div>
                 <div class="flex justify-between items-center">
-                    <span class="flex items-center gap-1"><span class="legend-dot" style="background:#16a34a;width:8px;height:8px" aria-hidden="true"></span>Tersedia</span>
-                    <span class="font-bold text-green-600">${tersedia}</span>
+                    <span class="flex items-center gap-1">${dot('#16a34a')} Tersedia</span>
+                    <span class="font-bold text-green-600">${Math.max(0, totalBilik - bilikPetang)}</span>
                 </div>
             `;
         })
