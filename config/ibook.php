@@ -75,6 +75,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Tempahan Berulang
+    |--------------------------------------------------------------------------
+    */
+    'berulang' => [
+        'had_kejadian' => 12,   // Maksimum bilangan kejadian per kumpulan
+        'had_setiap_n' => 12,   // Maksimum nilai setiap_n (setiap N minggu/bulan)
+        'had_tahun'    => 2,    // Tarikh tamat maksimum dari hari ini (tahun)
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Versi Sistem
     |--------------------------------------------------------------------------
     */

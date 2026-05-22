@@ -10,6 +10,7 @@ use App\Http\Controllers\KetersediaanController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\PenggunaController;
 use App\Http\Controllers\ProfilController;
+use App\Http\Controllers\TempahanBerulangController;
 use App\Http\Controllers\TempahanController;
 use App\Http\Controllers\TetapanController;
 use Illuminate\Support\Facades\Route;
@@ -66,6 +67,17 @@ Route::middleware('auth.custom')->group(function () {
     Route::get('/tempahan/{tempahan}', [TempahanController::class, 'show'])->name('tempahan.show');
     Route::get('/tempahan/{tempahan}/edit', [TempahanController::class, 'edit'])->name('tempahan.edit');
     Route::put('/tempahan/{tempahan}', [TempahanController::class, 'update'])->name('tempahan.update');
+
+    // Tempahan Berulang
+    // Nota: 'pratonton' mesti sebelum '{kumpulan}' untuk elak routing conflict
+    Route::get('/tempahan-berulang/pratonton', [TempahanBerulangController::class, 'pratonton'])
+        ->name('tempahan-berulang.pratonton');
+    Route::post('/tempahan-berulang', [TempahanBerulangController::class, 'store'])
+        ->name('tempahan-berulang.store');
+    Route::put('/tempahan-berulang/{kumpulan}', [TempahanBerulangController::class, 'update'])
+        ->name('tempahan-berulang.update');
+    Route::delete('/tempahan/{tempahan}/padam-berulang', [TempahanBerulangController::class, 'destroy'])
+        ->name('tempahan-berulang.destroy');
 
     // Eksport — hanya Pentadbir Sistem & Urus Setia
     Route::middleware('role:pentadbir_sistem,urus_setia')->group(function () {

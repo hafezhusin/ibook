@@ -70,7 +70,7 @@
     </div>
     @endif
 
-    <form method="POST" action="{{ route('tempahan.store') }}" novalidate aria-label="Borang tempahan bilik mesyuarat baru">
+    <form id="borang-tempahan" method="POST" action="{{ route('tempahan.store') }}" novalidate aria-label="Borang tempahan bilik mesyuarat baru">
         @csrf
 
         {{-- ══ Bahagian 1: Maklumat Mesyuarat ══════════════════════ --}}
@@ -240,6 +240,96 @@
                 <p id="ralat-sesi" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
                 @enderror
             </fieldset>
+        </div>
+
+        {{-- ══ Bahagian 2.5: Ulang Tempahan (Opsional) ═══════════════ --}}
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <div class="flex items-center justify-between mb-1">
+                <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-[10px] font-bold flex-shrink-0" style="background:#8b5cf6" aria-hidden="true">↻</span>
+                    Ulang Tempahan
+                </h2>
+                <label class="flex items-center gap-2 cursor-pointer select-none" aria-label="Aktifkan tempahan berulang">
+                    <span class="text-xs text-gray-400">Aktifkan</span>
+                    <div class="relative">
+                        <input type="checkbox" id="toggle-berulang" class="sr-only peer" aria-controls="panel-berulang">
+                        <div class="w-10 h-5 bg-gray-200 rounded-full peer-checked:bg-violet-500 transition-colors"></div>
+                        <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform peer-checked:translate-x-5"></div>
+                    </div>
+                </label>
+            </div>
+            <p class="text-xs text-gray-400 mb-3">Hidupkan untuk membuat tempahan berulang secara automatik. Maksimum 12 kejadian.</p>
+
+            <div id="panel-berulang" class="hidden space-y-4 border-t pt-4 mt-2 border-gray-100">
+
+                {{-- Jenis & Selang --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="jenis" class="form-label">Jenis Ulangan <span class="text-red-500" aria-hidden="true">*</span></label>
+                        <select id="jenis" name="jenis" class="form-input" disabled>
+                            <option value="mingguan">Mingguan</option>
+                            <option value="bulanan">Bulanan (tarikh sama setiap bulan)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="setiap_n" class="form-label">Ulang Setiap</label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" id="setiap_n" name="setiap_n" value="1" min="1" max="12"
+                                class="form-input w-24" disabled aria-describedby="label-setiap-n">
+                            <span id="label-setiap-n" class="text-sm text-gray-500">minggu</span>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Hari dalam minggu (mingguan sahaja) --}}
+                <div id="panel-hari">
+                    <label class="form-label">Hari dalam Minggu <span class="text-red-500" aria-hidden="true">*</span></label>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                        @foreach(['Ahad'=>0,'Isnin'=>1,'Selasa'=>2,'Rabu'=>3,'Khamis'=>4,'Jumaat'=>5,'Sabtu'=>6] as $namaHari => $dow)
+                        <label class="hari-chip inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 border-gray-200 text-sm font-medium cursor-pointer transition-all select-none has-[:checked]:border-violet-500 has-[:checked]:bg-violet-50 has-[:checked]:text-violet-700">
+                            <input type="checkbox" name="hari_dalam_minggu[]" value="{{ $dow }}"
+                                class="hari-cb sr-only" disabled>
+                            {{ $namaHari }}
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Tarikh Mula & Tamat --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="tarikh_mula_berulang" class="form-label">Tarikh Mula <span class="text-red-500" aria-hidden="true">*</span></label>
+                        <input type="text" id="tarikh_mula_berulang" name="tarikh_mula"
+                            class="form-input" placeholder="YYYY-MM-DD" disabled readonly>
+                        <p class="text-xs text-gray-400 mt-1">Ikut tarikh yang dipilih di atas.</p>
+                    </div>
+                    <div>
+                        <label for="tarikh_tamat" class="form-label">Tarikh Tamat Ulangan <span class="text-red-500" aria-hidden="true">*</span></label>
+                        <input type="text" id="tarikh_tamat" name="tarikh_tamat"
+                            class="form-input" placeholder="YYYY-MM-DD" disabled>
+                        @error('tarikh_tamat')
+                        <p class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                {{-- Pratonton Tarikh --}}
+                <div id="panel-pratonton" class="hidden bg-violet-50 border border-violet-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-xs font-bold text-violet-700 uppercase tracking-wider">Pratonton Tarikh</h4>
+                        <span id="pratonton-jumlah" class="text-xs font-semibold text-violet-500"></span>
+                    </div>
+                    <ul id="pratonton-senarai" class="text-xs text-violet-800 space-y-0.5 max-h-36 overflow-y-auto list-disc list-inside"></ul>
+                    <p id="pratonton-had" class="hidden text-xs text-amber-600 mt-2 flex items-center gap-1">
+                        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                        Had 12 kejadian dicapai — tarikh selebihnya tidak akan dicipta.
+                    </p>
+                </div>
+
+                @error('tarikh_mula')
+                <p class="text-red-500 text-xs" role="alert">{{ $message }}</p>
+                @enderror
+            </div>
         </div>
 
         {{-- ══ Bahagian 3: Butiran Penganjur ════════════════════════ --}}
@@ -581,6 +671,128 @@ function toggleKategoriLain() {
     wrap.classList.toggle('hidden', !isLain);
     inp.required = isLain;
     if (!isLain) inp.value = '';
+}
+
+// ── Tempahan Berulang ──────────────────────────────────────────────
+const urlNormal   = "{{ route('tempahan.store') }}";
+const urlBerulang = "{{ route('tempahan-berulang.store') }}";
+const urlPratonton = "{{ route('tempahan-berulang.pratonton') }}";
+
+const toggleBerulang = document.getElementById('toggle-berulang');
+const panelBerulang  = document.getElementById('panel-berulang');
+const borang         = document.getElementById('borang-tempahan');
+const selectJenis    = document.getElementById('jenis');
+const inputSetiapN   = document.getElementById('setiap_n');
+const inputTamat     = document.getElementById('tarikh_tamat');
+const inputMulaBerulang = document.getElementById('tarikh_mula_berulang');
+const panelHari      = document.getElementById('panel-hari');
+
+function setBerulangFieldsDisabled(disabled) {
+    panelBerulang.querySelectorAll('input, select').forEach(el => {
+        el.disabled = disabled;
+    });
+}
+
+function toggleJenis() {
+    const isMingguan = selectJenis?.value === 'mingguan';
+    if (panelHari) panelHari.classList.toggle('hidden', !isMingguan);
+    if (document.getElementById('label-setiap-n')) {
+        document.getElementById('label-setiap-n').textContent = isMingguan ? 'minggu' : 'bulan';
+    }
+}
+
+toggleBerulang?.addEventListener('change', function() {
+    const aktif = this.checked;
+    panelBerulang.classList.toggle('hidden', !aktif);
+    borang.action = aktif ? urlBerulang : urlNormal;
+    setBerulangFieldsDisabled(!aktif);
+    // Sync tarikh mula berulang dengan tarikh biasa
+    if (aktif && tarikhInput.value) {
+        inputMulaBerulang.value = tarikhInput.value;
+    }
+    // Init flatpickr untuk tarikh_tamat
+    if (aktif && !inputTamat._flatpickr) {
+        flatpickr(inputTamat, {
+            locale: 'ms',
+            dateFormat: 'Y-m-d',
+            minDate: tarikhInput.value || 'today',
+            disableMobile: true,
+            allowInput: true,
+            onChange: muatPratonton,
+        });
+    }
+    if (!aktif) {
+        document.getElementById('panel-pratonton').classList.add('hidden');
+    }
+});
+
+selectJenis?.addEventListener('change', function() {
+    toggleJenis();
+    muatPratonton();
+});
+
+inputSetiapN?.addEventListener('input', muatPratonton);
+
+// Sync tarikh mula berulang apabila tarikh biasa berubah
+const _oriOnChange = tarikhInput._flatpickr?.config?.onChange;
+// Tambah listener tambahan pada tarikh picker
+tarikhInput.addEventListener('change', function() {
+    if (toggleBerulang?.checked) {
+        inputMulaBerulang.value = this.value;
+        if (inputTamat._flatpickr) {
+            inputTamat._flatpickr.set('minDate', this.value || 'today');
+        }
+        muatPratonton();
+    }
+});
+
+document.querySelectorAll('.hari-cb').forEach(cb => {
+    cb.addEventListener('change', muatPratonton);
+});
+
+// ── AJAX pratonton tarikh ──────────────────────────────────────────
+let pratononTimeout;
+function muatPratonton() {
+    if (!toggleBerulang?.checked) return;
+    clearTimeout(pratononTimeout);
+    pratononTimeout = setTimeout(() => {
+        const jenis  = selectJenis?.value;
+        const setiap = inputSetiapN?.value;
+        const mula   = tarikhInput?.value;
+        const tamat  = inputTamat?.value;
+        const hari   = [...document.querySelectorAll('.hari-cb:checked')].map(c => c.value);
+
+        if (!jenis || !mula || !tamat) return;
+        if (jenis === 'mingguan' && hari.length === 0) {
+            document.getElementById('panel-pratonton').classList.add('hidden');
+            return;
+        }
+
+        const params = new URLSearchParams({
+            jenis,
+            setiap_n: setiap,
+            tarikh_mula: mula,
+            tarikh_tamat: tamat,
+        });
+        if (jenis === 'mingguan') {
+            hari.forEach(h => params.append('hari_dalam_minggu[]', h));
+        }
+
+        fetch(urlPratonton + '?' + params)
+            .then(r => r.json())
+            .then(data => {
+                const panel = document.getElementById('panel-pratonton');
+                const list  = document.getElementById('pratonton-senarai');
+                const jumlah = document.getElementById('pratonton-jumlah');
+                const hadEl  = document.getElementById('pratonton-had');
+
+                list.innerHTML = data.tarikh.map(t => `<li>${t.label}</li>`).join('');
+                jumlah.textContent = data.jumlah + ' tarikh';
+                hadEl.classList.toggle('hidden', !data.tercapai_had);
+                panel.classList.remove('hidden');
+            })
+            .catch(() => {});
+    }, 400);
 }
 
 // ── Init: event listeners + semak kapasiti & ringkasan ───────────

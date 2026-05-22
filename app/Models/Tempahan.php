@@ -55,6 +55,7 @@ class Tempahan extends Model
 
     protected $fillable = [
         'ulid',
+        'tempahan_berulang_id',
         'nama_mesyuarat',
         'tarikh',
         'sesi',
@@ -98,6 +99,11 @@ class Tempahan extends Model
     public function pengubah()
     {
         return $this->belongsTo(User::class, 'dikemaskini_oleh');
+    }
+
+    public function kumpulanBerulang()
+    {
+        return $this->belongsTo(TempahanBerulang::class, 'tempahan_berulang_id');
     }
 
     /**

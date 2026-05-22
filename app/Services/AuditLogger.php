@@ -104,9 +104,12 @@ class AuditLogger
             'kemaskini_tetapan'     => "{$namaPengguna} mengemaskini tetapan sistem",
             'kemaskini_profil'      => "{$namaPengguna} mengemaskini profil sendiri",
             'bulk_aktifkan'         => "{$namaPengguna} mengaktifkan pelbagai pengguna",
-            'bulk_nyahaktifkan'     => "{$namaPengguna} menyahaktifkan pelbagai pengguna",
-            'akses_laporan'         => "{$namaPengguna} mengakses laporan sistem",
-            default                 => "{$namaPengguna} melaksanakan tindakan: {$tindakan}",
+            'bulk_nyahaktifkan'          => "{$namaPengguna} menyahaktifkan pelbagai pengguna",
+            'akses_laporan'              => "{$namaPengguna} mengakses laporan sistem",
+            'buat_tempahan_berulang'     => "{$namaPengguna} membuat tempahan berulang {$namaModel}",
+            'kemaskini_kumpulan_berulang'=> "{$namaPengguna} mengemaskini kumpulan tempahan berulang {$namaModel}",
+            'padam_tempahan'             => "{$namaPengguna} memadam tempahan {$namaModel}",
+            default                      => "{$namaPengguna} melaksanakan tindakan: {$tindakan}",
         };
     }
 }

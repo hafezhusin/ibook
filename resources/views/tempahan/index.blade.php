@@ -567,6 +567,19 @@
                                 <a href="{{ route('tempahan.create', ['duplikat_id' => $t->id]) }}" role="menuitem">
                                     <i class="fa-solid fa-copy w-4 text-gray-400" aria-hidden="true"></i> Salin Tempahan
                                 </a>
+                                @can('delete', $t)
+                                <div class="dd-divider" role="separator"></div>
+                                <button type="button"
+                                    data-padam-ulid="{{ $t->ulid }}"
+                                    data-padam-nama="{{ addslashes($t->nama_mesyuarat) }}"
+                                    data-padam-berulang="{{ $t->tempahan_berulang_id ? '1' : '0' }}"
+                                    data-padam-kumpulan-ulid="{{ $t->kumpulanBerulang?->ulid ?? '' }}"
+                                    data-padam-kumpulan-jumlah="{{ $t->kumpulanBerulang?->tempahanAktif()->count() ?? 0 }}"
+                                    class="text-red-500 hover:bg-red-50 w-full"
+                                    role="menuitem">
+                                    <i class="fa-solid fa-trash-can w-4" aria-hidden="true"></i> Padam
+                                </button>
+                                @endcan
                             </div>
                         </div>
                     </td>
@@ -613,6 +626,50 @@
         {{ $tempahan->withQueryString()->links() }}
     </nav>
     @endif
+</div>
+
+{{-- ══ Modal Padam Tempahan ══════════════════════════════════════════ --}}
+<div id="modal-padam"
+     class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+     role="dialog" aria-modal="true" aria-labelledby="padam-heading">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-trash-can text-red-500 text-lg" aria-hidden="true"></i>
+            <h2 id="padam-heading" class="font-bold text-red-700">Padam Tempahan</h2>
+        </div>
+        <p id="padam-teks" class="text-sm text-gray-600"></p>
+
+        {{-- Pilihan skop — hanya kelihatan jika berulang --}}
+        <div id="padam-skop-wrap" class="hidden space-y-2 bg-gray-50 rounded-lg p-3">
+            <p class="text-xs font-semibold text-gray-500 mb-2">Pilih skop pemadaman:</p>
+            <label class="flex items-start gap-2 cursor-pointer">
+                <input type="radio" name="skop_padam" value="ini" checked class="mt-0.5">
+                <span class="text-sm text-gray-700">Tempahan ini sahaja</span>
+            </label>
+            <label class="flex items-start gap-2 cursor-pointer">
+                <input type="radio" name="skop_padam" value="semua">
+                <span class="text-sm text-gray-700">
+                    Semua dalam kumpulan
+                    (<span id="padam-jumlah" class="font-semibold">0</span> tempahan)
+                </span>
+            </label>
+        </div>
+
+        <form id="form-padam" method="POST">
+            @csrf
+            @method('DELETE')
+            <input type="hidden" name="skop" id="input-skop-padam" value="ini">
+            <div class="flex gap-3 pt-1">
+                <button type="submit" class="btn-primary flex-1 justify-center" style="background:#dc2626;box-shadow:none">
+                    <i class="fa-solid fa-trash-can" aria-hidden="true"></i> Padam
+                </button>
+                <button type="button" id="btn-tutup-padam"
+                    class="btn-secondary flex-1 justify-center">
+                    Batal
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 {{-- ══ Modal Pindah Bilik ════════════════════════════════════════════ --}}
@@ -668,6 +725,17 @@ document.getElementById('btn-tutup-modal-pindah').addEventListener('click', func
     document.getElementById('modal-pindah').classList.add('hidden');
 });
 
+document.getElementById('btn-tutup-padam').addEventListener('click', function() {
+    document.getElementById('modal-padam').classList.add('hidden');
+});
+
+// Sync skop radio → hidden input
+document.querySelectorAll('input[name="skop_padam"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        document.getElementById('input-skop-padam').value = this.value;
+    });
+});
+
 // Event delegation for toggleDd buttons
 document.addEventListener('click', function(e) {
     const toggleBtn = e.target.closest('[data-toggle-dd]');
@@ -682,6 +750,19 @@ document.addEventListener('click', function(e) {
         const bilikId = pindahBtn.dataset.pindahBilik ? parseInt(pindahBtn.dataset.pindahBilik, 10) : null;
         bukaPindahBilik(id, nama, bilikId);
         closeDd(id);
+        return;
+    }
+    const padamBtn = e.target.closest('[data-padam-ulid]');
+    if (padamBtn) {
+        const ulid          = padamBtn.dataset.padamUlid;
+        const nama          = padamBtn.dataset.padamNama;
+        const berulang      = padamBtn.dataset.padamBerulang === '1';
+        const kumpulanUlid  = padamBtn.dataset.padamKumpulanUlid;
+        const kumpulanJumlah = parseInt(padamBtn.dataset.padamKumpulanJumlah, 10) || 0;
+        bukaModalPadam(ulid, nama, berulang, kumpulanUlid, kumpulanJumlah);
+        // Cari wrap ID dari parent
+        const wrap = padamBtn.closest('.action-wrap');
+        if (wrap) closeDd(wrap.id.replace('wrap-', ''));
     }
 });
 
@@ -728,6 +809,7 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         document.querySelectorAll('.action-dd').forEach(d => d.classList.add('hidden'));
         document.getElementById('modal-pindah')?.classList.add('hidden');
+        document.getElementById('modal-padam')?.classList.add('hidden');
     }
 });
 
@@ -744,5 +826,34 @@ function bukaPindahBilik(id, nama, bilikId) {
 document.getElementById('modal-pindah').addEventListener('click', function(e) {
     if (e.target === this) this.classList.add('hidden');
 });
+
+document.getElementById('modal-padam').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.add('hidden');
+});
+
+// ── Modal Padam ───────────────────────────────────────────────────
+function bukaModalPadam(ulid, nama, berulang, kumpulanUlid, kumpulanJumlah) {
+    const urlPadam = '/tempahan/' + ulid + '/padam-berulang';
+
+    document.getElementById('padam-teks').textContent =
+        berulang
+            ? 'Anda akan memadam "' + nama + '". Pilih skop pemadaman:'
+            : 'Anda pasti mahu memadam "' + nama + '"? Tindakan ini tidak boleh dibatalkan.';
+
+    const skopWrap = document.getElementById('padam-skop-wrap');
+    skopWrap.classList.toggle('hidden', !berulang);
+
+    if (berulang) {
+        document.getElementById('padam-jumlah').textContent = kumpulanJumlah;
+        // Reset ke 'ini'
+        document.querySelectorAll('input[name="skop_padam"]').forEach(r => {
+            r.checked = r.value === 'ini';
+        });
+        document.getElementById('input-skop-padam').value = 'ini';
+    }
+
+    document.getElementById('form-padam').action = urlPadam;
+    document.getElementById('modal-padam').classList.remove('hidden');
+}
 </script>
 @endpush

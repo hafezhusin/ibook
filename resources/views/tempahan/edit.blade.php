@@ -19,6 +19,45 @@
     <p class="text-gray-500 text-sm mt-1">Kemaskini maklumat tempahan di bawah</p>
 </div>
 
+{{-- ══ Modal Skop (hanya untuk tempahan berulang) ══════════════════ --}}
+@if($tempahan->kumpulanBerulang)
+@php
+    $kumpulan    = $tempahan->kumpulanBerulang;
+    $jumlahAktif = $kumpulan->tempahanAktif()->count();
+@endphp
+<div id="modal-skop"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+     role="dialog" aria-modal="true" aria-labelledby="skop-heading">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 p-6 space-y-4">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-arrows-rotate text-violet-500 text-lg" aria-hidden="true"></i>
+            <h2 id="skop-heading" class="font-bold text-gray-800">Edit Tempahan Berulang</h2>
+        </div>
+        <p class="text-sm text-gray-600">
+            Tempahan ini adalah sebahagian daripada kumpulan berulang
+            (<strong>{{ $jumlahAktif }} tempahan</strong> aktif).
+            Apa yang ingin anda kemaskini?
+        </p>
+        <div class="space-y-2">
+            <button id="btn-skop-ini" type="button"
+                class="btn-secondary w-full justify-center">
+                <i class="fa-solid fa-calendar-day" aria-hidden="true"></i>
+                Tempahan Ini Sahaja
+            </button>
+            <button id="btn-skop-semua" type="button"
+                class="btn-primary w-full justify-center">
+                <i class="fa-solid fa-calendar-days" aria-hidden="true"></i>
+                Semua dalam Kumpulan ({{ $jumlahAktif }})
+            </button>
+        </div>
+        <a href="{{ route('tempahan.index') }}"
+           class="flex justify-center text-sm text-gray-400 hover:text-gray-600">
+            Batal
+        </a>
+    </div>
+</div>
+@endif
+
 {{-- Info asal --}}
 <div class="bg-amber-50 border border-amber-200 rounded-xl px-5 py-3 mb-6 flex items-center gap-3 text-sm text-amber-800">
     <i class="fa-solid fa-circle-info text-amber-500 flex-shrink-0" aria-hidden="true"></i>
@@ -29,7 +68,8 @@
     </span>
 </div>
 
-<form method="POST" action="{{ route('tempahan.update', $tempahan) }}" novalidate>
+<form id="borang-edit" method="POST" action="{{ route('tempahan.update', $tempahan) }}" novalidate>
+    <input type="hidden" name="skop" id="input-skop-edit" value="ini">
     @csrf
     @method('PUT')
 
@@ -278,6 +318,40 @@ flatpickr('#tarikh', {
 
     sel.addEventListener('change', toggle);
     toggle(); // init
+})();
+
+// ── Modal Skop Berulang ────────────────────────────────────────────
+(function () {
+    const modal    = document.getElementById('modal-skop');
+    if (!modal) return; // bukan tempahan berulang
+
+    const borang   = document.getElementById('borang-edit');
+    const btnIni   = document.getElementById('btn-skop-ini');
+    const btnSemua = document.getElementById('btn-skop-semua');
+    const inputSkop = document.getElementById('input-skop-edit');
+
+    const urlIni   = borang.action; // route tempahan.update — skop ini
+    const urlSemua = "{{ $tempahan->kumpulanBerulang ? route('tempahan-berulang.update', $tempahan->kumpulanBerulang) : '' }}";
+
+    btnIni?.addEventListener('click', function () {
+        inputSkop.value = 'ini';
+        borang.action   = urlIni;
+        modal.classList.add('hidden');
+    });
+
+    btnSemua?.addEventListener('click', function () {
+        inputSkop.value  = 'semua';
+        borang.action    = urlSemua;
+        // Tukar method PUT — sudah ada @method('PUT') dalam borang
+        modal.classList.add('hidden');
+    });
+
+    // Tekan Esc untuk tutup (redirect ke index)
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+            window.location.href = "{{ route('tempahan.index') }}";
+        }
+    });
 })();
 </script>
 @endpush
