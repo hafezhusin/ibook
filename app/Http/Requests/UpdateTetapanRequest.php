@@ -23,7 +23,7 @@ class UpdateTetapanRequest extends FormRequest
         return [
             'nama_sistem'       => ['nullable', 'string', 'max:120'],
             'nama_jabatan'      => ['required', 'string', 'max:150'],
-            'logo_jabatan'      => ['nullable', 'string', 'max:255'],
+            'logo_jabatan'      => ['nullable', 'string', 'max:500', 'regex:/^https?:\/\/.+/i'],
             'emel_pentadbir'    => ['nullable', 'email:rfc', 'max:150'],
             'emel_notifikasi'   => ['nullable', 'email:rfc', 'max:150'],
             'notif_tempahan_baru'  => ['nullable', 'boolean'],
@@ -61,6 +61,7 @@ class UpdateTetapanRequest extends FormRequest
             'emel_notifikasi.email'   => 'Format emel notifikasi tidak sah. Contoh: notif@jabatan.gov.my',
             'emel_pentadbir.max'      => 'Emel paparan tidak boleh melebihi 150 aksara.',
             'emel_notifikasi.max'     => 'Emel notifikasi tidak boleh melebihi 150 aksara.',
+            'logo_jabatan.regex'      => 'URL logo mesti bermula dengan https:// atau http://',
         ];
     }
 }
