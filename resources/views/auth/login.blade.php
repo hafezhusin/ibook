@@ -298,11 +298,15 @@
 
 {{-- Popup Event --}}
 <div id="event-popup"
-    class="hidden fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-100 p-4 w-60 text-sm"
+    class="hidden fixed z-50 bg-white rounded-xl shadow-2xl border border-gray-100 p-4 w-64 text-sm"
     role="tooltip"
     aria-live="polite">
-    <div class="font-bold text-gray-800 mb-1" id="popup-bilik"></div>
+    <div class="font-bold text-gray-800 mb-1 leading-tight" id="popup-nama"></div>
     <div class="text-xs text-gray-500 space-y-1">
+        <div>
+            <i class="fa-solid fa-door-open text-amber-400 w-4" aria-hidden="true"></i>
+            <span id="popup-bilik"></span>
+        </div>
         <div>
             <i class="fa-solid fa-clock text-amber-400 w-4" aria-hidden="true"></i>
             <span id="popup-sesi"></span>
@@ -363,16 +367,18 @@ document.addEventListener('DOMContentLoaded', function() {
         events: fetchEvents,
         eventClick: function(info) {
             const p = info.event.extendedProps;
+            const nama = p.nama || info.event.title || '-';
             const sesiLabel = p.sesi_key === 'pagi' ? 'Sesi Pagi (9:00 - 13:00)' : 'Sesi Petang (14:00 - 18:00)';
-            showPopup(info.jsEvent, p.bilik, sesiLabel);
+            showPopup(info.jsEvent, nama, p.bilik, sesiLabel);
         },
         eventDidMount: function(info) {
             const p = info.event.extendedProps;
+            const nama = p.nama || info.event.title || '-';
             const sesiLabel = p.sesi_key === 'pagi' ? 'Sesi Pagi (9:00 - 13:00)' : 'Sesi Petang (14:00 - 18:00)';
             info.el.style.borderRadius = '4px';
             info.el.style.fontSize = '11px';
-            info.el.title = (p.bilik || '') + ' — ' + sesiLabel;
-            info.el.setAttribute('aria-label', (p.bilik || '') + ', ' + sesiLabel);
+            info.el.title = nama + ' — ' + (p.bilik || '') + ' — ' + sesiLabel;
+            info.el.setAttribute('aria-label', nama + ', ' + (p.bilik || '') + ', ' + sesiLabel);
         },
         height: 'auto',
         dayMaxEvents: 3,
@@ -445,7 +451,8 @@ function updateStatusHariIni() {
         });
 }
 
-function showPopup(mouseEvent, bilik, sesi) {
+function showPopup(mouseEvent, nama, bilik, sesi) {
+    document.getElementById('popup-nama').textContent = nama;
     document.getElementById('popup-bilik').textContent = bilik;
     document.getElementById('popup-sesi').textContent = sesi;
     const popup = document.getElementById('event-popup');

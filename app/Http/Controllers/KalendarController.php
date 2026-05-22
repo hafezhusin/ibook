@@ -119,6 +119,7 @@ class KalendarController extends Controller
                     'bilik_id',
                     'status',
                     'sesi',
+                    'nama_mesyuarat',
                 ])
                 ->with('bilik:id,nama,lokasi')
                 ->where('status', Tempahan::STATUS_DILULUSKAN);
@@ -156,13 +157,14 @@ class KalendarController extends Controller
 
                 return [
                     'id'    => $idAwam,
-                    'title' => '🔴 ' . ($t->bilik->nama ?? 'Ditempah'),
+                    'title' => $t->nama_mesyuarat,
                     'start' => $t->tarikh->format('Y-m-d') . 'T' . $t->masa_mula,
                     'end'   => $t->tarikh->format('Y-m-d') . 'T' . $t->masa_tamat,
                     'color' => '#dc2626',
                     // extendedProps awam: hanya maklumat minimum untuk paparan
                     // TIADA tempahan_id, TIADA nama pemohon, TIADA kategori
                     'extendedProps' => [
+                        'nama'     => $t->nama_mesyuarat,
                         'bilik'    => $t->bilik->nama ?? '-',
                         'bilik_id' => $t->bilik_id,
                         'sesi_key' => $t->sesi,
