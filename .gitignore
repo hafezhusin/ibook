@@ -24,3 +24,6 @@ yarn-error.log
 /bootstrap/cache/*.php
 
 public/deploy.php
+public/patch-*.php
+public/seeder-*.php
+SESSION_LOG.md
