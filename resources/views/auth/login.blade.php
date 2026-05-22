@@ -304,10 +304,6 @@
     <div class="font-bold text-gray-800 mb-1 leading-tight" id="popup-nama"></div>
     <div class="text-xs text-gray-500 space-y-1">
         <div>
-            <i class="fa-solid fa-door-open text-amber-400 w-4" aria-hidden="true"></i>
-            <span id="popup-bilik"></span>
-        </div>
-        <div>
             <i class="fa-solid fa-clock text-amber-400 w-4" aria-hidden="true"></i>
             <span id="popup-sesi"></span>
         </div>
