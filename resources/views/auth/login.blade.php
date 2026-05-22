@@ -373,8 +373,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const sesiLabel = p.sesi_key === 'pagi' ? 'Sesi Pagi (9:00 - 13:00)' : 'Sesi Petang (14:00 - 18:00)';
             info.el.style.borderRadius = '4px';
             info.el.style.fontSize = '11px';
-            info.el.title = nama + ' — ' + (p.bilik || '') + ' — ' + sesiLabel;
-            info.el.setAttribute('aria-label', nama + ', ' + (p.bilik || '') + ', ' + sesiLabel);
+            info.el.title = nama + ' — ' + sesiLabel;
+            info.el.setAttribute('aria-label', nama + ', ' + sesiLabel);
         },
         height: 'auto',
         dayMaxEvents: 3,
