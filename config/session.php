@@ -16,7 +16,7 @@ return [
     'path' => env('SESSION_PATH', '/'),
     'domain' => env('SESSION_DOMAIN'),
     // Auto-true bila APP_ENV=production (HTTPS wajib di hosting)
-    'secure' => env('SESSION_SECURE_COOKIE', app()->isProduction()),
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
     'http_only' => env('SESSION_HTTP_ONLY', true),
     'same_site' => env('SESSION_SAME_SITE', 'lax'),
     'partitioned' => env('SESSION_PARTITIONED_COOKIE', false),
