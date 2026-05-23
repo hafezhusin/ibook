@@ -790,6 +790,105 @@ document.addEventListener('click', function(e) {
         document.getElementById('profil-btn')?.setAttribute('aria-expanded', 'false');
     }
 });
+
+// ── Idle Session Timeout ─────────────────────────────────────────
+// Amaran selepas 25 minit tidak aktif, log keluar selepas 30 minit.
+(function () {
+    const IDLE_WARN_MS   = 25 * 60 * 1000; // 25 minit → tunjuk amaran
+    const IDLE_LOGOUT_MS = 30 * 60 * 1000; // 30 minit → log keluar
+    const LOGOUT_URL     = '{{ route("logout") }}';
+    const CSRF           = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    let warnTimer   = null;
+    let logoutTimer = null;
+    let warnShown   = false;
+
+    // Cipta modal amaran (dimasukkan sekali ke DOM)
+    const modalHtml = `
+    <div id="idle-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:center;justify-content:center">
+        <div style="background:#fff;border-radius:16px;padding:32px;max-width:380px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+            <div style="width:56px;height:56px;border-radius:50%;background:#fef3c7;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+                <i class="fa-solid fa-clock" style="font-size:24px;color:#f59e0b"></i>
+            </div>
+            <h3 style="font-weight:700;font-size:18px;color:#1f2937;margin:0 0 8px">Sesi Hampir Tamat</h3>
+            <p style="color:#6b7280;font-size:14px;margin:0 0 4px">Anda tidak aktif selama <strong>25 minit</strong>.</p>
+            <p id="idle-countdown" style="color:#dc2626;font-size:13px;font-weight:600;margin:0 0 24px">Log keluar dalam 5:00</p>
+            <button id="idle-teruskan"
+                style="background:#f59e0b;color:#1a1a2e;border:none;border-radius:8px;padding:10px 24px;font-weight:700;font-size:14px;cursor:pointer;width:100%">
+                Teruskan Sesi
+            </button>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    const modal     = document.getElementById('idle-modal');
+    const btnTerus  = document.getElementById('idle-teruskan');
+    const countEl   = document.getElementById('idle-countdown');
+
+    let countdownInterval = null;
+    let countdownSecs     = 300; // 5 minit
+
+    function mulaKira() {
+        countdownSecs = 300;
+        clearInterval(countdownInterval);
+        countdownInterval = setInterval(function () {
+            countdownSecs--;
+            const m = Math.floor(countdownSecs / 60);
+            const s = countdownSecs % 60;
+            if (countEl) countEl.textContent = 'Log keluar dalam ' + m + ':' + String(s).padStart(2, '0');
+        }, 1000);
+    }
+
+    function tunjukAmaran() {
+        warnShown = true;
+        modal.style.display = 'flex';
+        mulaKira();
+    }
+
+    function sembunyiAmaran() {
+        warnShown = false;
+        modal.style.display = 'none';
+        clearInterval(countdownInterval);
+    }
+
+    function logKeluar() {
+        // POST ke route logout (CSRF-safe)
+        const f = document.createElement('form');
+        f.method = 'POST';
+        f.action = LOGOUT_URL;
+        const t = document.createElement('input');
+        t.type = 'hidden'; t.name = '_token'; t.value = CSRF;
+        f.appendChild(t);
+        document.body.appendChild(f);
+        f.submit();
+    }
+
+    function resetTimer() {
+        if (warnShown) return; // jangan reset jika modal amaran sudah tunjuk
+        clearTimeout(warnTimer);
+        clearTimeout(logoutTimer);
+        warnTimer   = setTimeout(tunjukAmaran, IDLE_WARN_MS);
+        logoutTimer = setTimeout(logKeluar,    IDLE_LOGOUT_MS);
+    }
+
+    // Rekod aktiviti pengguna
+    ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'].forEach(function (ev) {
+        document.addEventListener(ev, resetTimer, { passive: true });
+    });
+
+    // Butang "Teruskan Sesi"
+    if (btnTerus) {
+        btnTerus.addEventListener('click', function () {
+            sembunyiAmaran();
+            resetTimer();
+            // Refresh CSRF token secara senyap (optional — elak token expire)
+            fetch('/sanctum/csrf-cookie', { credentials: 'same-origin' }).catch(() => {});
+        });
+    }
+
+    // Mulakan timer
+    resetTimer();
+})();
 </script>
 </body>
 </html>

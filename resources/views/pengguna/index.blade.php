@@ -405,10 +405,55 @@
                     <input type="password" id="reset-password-sahkan" name="password_confirmation"
                         class="form-input" autocomplete="new-password">
                 </div>
+                <div>
+                    <label for="reset-sebab" class="form-label">Sebab Penukaran <span class="text-red-500">*</span></label>
+                    <input type="text" id="reset-sebab" name="sebab"
+                        class="form-input" placeholder="cth: Pengguna terlupa kata laluan"
+                        required aria-required="true" maxlength="255">
+                </div>
             </div>
             <div class="flex gap-3 mt-6">
                 <button type="submit" class="btn-primary flex-1 justify-center py-2.5">Tukar</button>
                 <button type="button" id="btn-tutup-reset"
+                    class="btn-secondary flex-1 justify-center py-2.5">Batal</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- ─── Modal Nyahaktifkan ─── --}}
+<div id="modal-nyahaktifkan" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+    role="dialog" aria-modal="true" aria-labelledby="modal-nyahaktifkan-heading">
+    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center gap-3 mb-5">
+            <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-ban text-red-600 text-lg" aria-hidden="true"></i>
+            </div>
+            <div>
+                <h3 id="modal-nyahaktifkan-heading" class="font-bold text-gray-800 text-lg leading-tight">Nyahaktifkan Akaun</h3>
+                <p id="nyahaktifkan-nama" class="text-gray-500 text-sm"></p>
+            </div>
+        </div>
+        <form id="form-nyahaktifkan" method="POST">
+            @csrf
+            <div class="space-y-4">
+                <div>
+                    <label for="nyahaktifkan-sebab" class="form-label">Sebab Nyahaktifkan <span class="text-red-500">*</span></label>
+                    <input type="text" id="nyahaktifkan-sebab" name="sebab"
+                        class="form-input" placeholder="cth: Staf berpindah unit / berhenti kerja"
+                        required aria-required="true" maxlength="255">
+                </div>
+                <p class="text-xs text-gray-400">
+                    <i class="fa-solid fa-circle-info mr-1" aria-hidden="true"></i>
+                    Akaun boleh diaktifkan semula pada bila-bila masa.
+                </p>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button type="submit"
+                    class="flex-1 justify-center py-2.5 inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition text-sm">
+                    <i class="fa-solid fa-ban" aria-hidden="true"></i> Nyahaktifkan
+                </button>
+                <button type="button" id="btn-tutup-nyahaktifkan"
                     class="btn-secondary flex-1 justify-center py-2.5">Batal</button>
             </div>
         </form>
@@ -438,6 +483,9 @@ document.getElementById('btn-tutup-edit').addEventListener('click', function() {
 });
 document.getElementById('btn-tutup-reset').addEventListener('click', function() {
     document.getElementById('modal-reset').classList.add('hidden');
+});
+document.getElementById('btn-tutup-nyahaktifkan').addEventListener('click', function() {
+    document.getElementById('modal-nyahaktifkan').classList.add('hidden');
 });
 
 // Carian pengguna — tapis segera (visual) + hantar ke server selepas 650ms
@@ -507,6 +555,11 @@ document.addEventListener('click', function(e) {
     const resetBtn = e.target.closest('[data-open-reset]');
     if (resetBtn) {
         openReset(parseInt(resetBtn.dataset.openReset, 10), resetBtn.dataset.name);
+        return;
+    }
+    const nyahaktifBtn = e.target.closest('[data-open-nyahaktif]');
+    if (nyahaktifBtn) {
+        openNyahaktifkan(parseInt(nyahaktifBtn.dataset.openNyahaktif, 10), nyahaktifBtn.dataset.name);
         return;
     }
     const toggleAktifBtn = e.target.closest('[data-confirm-toggle]');
@@ -678,14 +731,24 @@ function openEdit(id, name, jabatan, peranan, aktif) {
 function openReset(id, name) {
     document.getElementById('reset-nama').textContent = name;
     document.getElementById('form-reset').action = '/pengguna/' + id + '/reset-password';
+    document.getElementById('reset-sebab').value = '';
     document.getElementById('modal-reset').classList.remove('hidden');
     setTimeout(() => document.getElementById('reset-password').focus(), 50);
+}
+
+// ── Modal Nyahaktifkan ──
+function openNyahaktifkan(id, name) {
+    document.getElementById('nyahaktifkan-nama').textContent = name;
+    document.getElementById('form-nyahaktifkan').action = '/pengguna/' + id + '/toggle-aktif';
+    document.getElementById('nyahaktifkan-sebab').value = '';
+    document.getElementById('modal-nyahaktifkan').classList.remove('hidden');
+    setTimeout(() => document.getElementById('nyahaktifkan-sebab').focus(), 50);
 }
 
 // ── Esc tutup modal ──
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-        ['modal-tambah','modal-edit','modal-reset'].forEach(id =>
+        ['modal-tambah','modal-edit','modal-reset','modal-nyahaktifkan'].forEach(id =>
             document.getElementById(id).classList.add('hidden'));
     }
 });

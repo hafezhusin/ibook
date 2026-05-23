@@ -87,20 +87,23 @@
         </button>
         @endif
         @if($p->id !== auth()->id() && auth()->user()->isPentadbir())
+        @if($isAktif)
+        <button type="button"
+            data-open-nyahaktif="{{ $p->id }}"
+            data-name="{{ addslashes($p->name) }}"
+            class="text-red-500 text-xs hover:underline"
+            aria-haspopup="dialog" aria-controls="modal-nyahaktifkan">
+            <i class="fa-solid fa-ban" aria-hidden="true"></i> Nyahaktifkan
+        </button>
+        @else
         <form method="POST" action="{{ route('pengguna.toggle-aktif', $p) }}" class="inline">
             @csrf
-            @if($isAktif)
-            <button type="submit" class="text-red-500 text-xs hover:underline"
-                data-confirm-toggle="Nyahaktifkan akaun {{ addslashes($p->name) }}?">
-                <i class="fa-solid fa-ban" aria-hidden="true"></i> Nyahaktifkan
-            </button>
-            @else
             <button type="submit" class="text-green-600 text-xs hover:underline"
                 data-confirm-toggle="Aktifkan semula akaun {{ addslashes($p->name) }}?">
                 <i class="fa-solid fa-circle-check" aria-hidden="true"></i> Aktifkan
             </button>
-            @endif
         </form>
+        @endif
         @endif
     </div>
 </div>

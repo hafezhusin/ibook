@@ -81,6 +81,17 @@ class Tempahan extends Model
         'dikemaskini_pada'=> 'datetime',
     ];
 
+    /**
+     * Pastikan route() helper Jana URL dengan ULID, bukan ID integer.
+     * Contoh: route('tempahan.show', $model) → /tempahan/01HZ...
+     * Route::bind('tempahan', ...) dalam AppServiceProvider mengendalikan
+     * resolusi ULID → model.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'ulid';
+    }
+
     public function bilik()
     {
         return $this->belongsTo(BilikMesyuarat::class, 'bilik_id');

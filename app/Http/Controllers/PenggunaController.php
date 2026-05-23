@@ -89,33 +89,49 @@ class PenggunaController extends Controller
                     ->numbers()
                     ->symbols(),
             ],
+            'sebab' => 'required|string|max:255',
         ], [
             'password.required'  => 'Sila masukkan kata laluan baru.',
             'password.confirmed' => 'Pengesahan kata laluan tidak sepadan.',
             'password.min'       => 'Kata laluan mestilah sekurang-kurangnya 8 aksara.',
+            'sebab.required'     => 'Sila berikan sebab penukaran kata laluan.',
         ]);
 
         $pengguna->update([
             'password' => Hash::make($request->password),
         ]);
 
-        AuditLogger::catat('reset_kata_laluan', $pengguna);
+        AuditLogger::catat('reset_kata_laluan', $pengguna, [
+            'sebab' => $request->sebab,
+        ]);
 
         return back()->with('success', 'Kata laluan pengguna berjaya ditukar semula.');
     }
 
     // ── Toggle aktif/nyahaktif satu pengguna ──
-    public function toggleAktif(User $pengguna)
+    public function toggleAktif(Request $request, User $pengguna)
     {
         if ($pengguna->id === auth()->id()) {
             return back()->with('error', 'Anda tidak boleh menyahaktifkan akaun anda sendiri.');
         }
 
+        // Jika sedang nyahaktifkan, sebab wajib diisi
+        $sebab = '';
+        if ($pengguna->aktif) {
+            $request->validate([
+                'sebab' => 'required|string|max:255',
+            ], [
+                'sebab.required' => 'Sila berikan sebab nyahaktifkan akaun ini.',
+            ]);
+            $sebab = $request->sebab;
+        }
+
         $pengguna->update(['aktif' => !$pengguna->aktif]);
 
-        $kodTindakan = $pengguna->aktif ? 'aktifkan_pengguna' : 'nyahaktifkan_pengguna';
+        $kodTindakan   = $pengguna->aktif ? 'aktifkan_pengguna' : 'nyahaktifkan_pengguna';
         $labelTindakan = $pengguna->aktif ? 'diaktifkan' : 'dinyahaktifkan';
-        AuditLogger::catat($kodTindakan, $pengguna);
+        $butiran       = $sebab !== '' ? ['sebab' => $sebab] : [];
+        AuditLogger::catat($kodTindakan, $pengguna, $butiran);
 
         return back()->with('success', "Akaun {$pengguna->name} berjaya {$labelTindakan}.");
     }

@@ -133,8 +133,7 @@
                 {{-- Emel Paparan (footer) --}}
                 <div>
                     <label for="emel_pentadbir" class="form-label">
-                        <i class="fa-solid fa-eye text-gray-400 mr-1" aria-hidden="true"></i>
-                        Emel Paparan Footer
+                        <i class="fa-solid fa-eye text-gray-400 mr-1" aria-hidden="true"></i>Emel Paparan Footer
                     </label>
                     <input type="email" id="emel_pentadbir" name="emel_pentadbir"
                         value="{{ old('emel_pentadbir', $tetapan['emel_pentadbir'] ?? '') }}"
@@ -151,8 +150,7 @@
                 {{-- Emel Notifikasi (penerima sistem) --}}
                 <div>
                     <label for="emel_notifikasi" class="form-label">
-                        <i class="fa-solid fa-bell text-gray-400 mr-1" aria-hidden="true"></i>
-                        Emel Penerima Notifikasi Sistem
+                        <i class="fa-solid fa-bell text-gray-400 mr-1" aria-hidden="true"></i>Emel Penerima Notifikasi Sistem
                     </label>
                     <input type="email" id="emel_notifikasi" name="emel_notifikasi"
                         value="{{ old('emel_notifikasi', $tetapan['emel_notifikasi'] ?? '') }}"
@@ -241,8 +239,9 @@
     </form>
 
     {{-- ════════════════════════════ --}}
-    {{-- PANEL MAKLUMAT PERSEKITARAN (Item 7 — read-only) --}}
+    {{-- PANEL MAKLUMAT PERSEKITARAN — Pentadbir Sistem sahaja --}}
     {{-- ════════════════════════════ --}}
+    @if(auth()->user()->isPentadbir())
     <section class="bg-white rounded-xl shadow-sm overflow-hidden" aria-labelledby="heading-env">
         <div class="flex items-center gap-2 px-6 pt-5 pb-4 border-b border-gray-100">
             <i class="fa-solid fa-server text-gray-400" aria-hidden="true"></i>
@@ -318,6 +317,7 @@
             @endif
         </div>
     </section>
+    @endif {{-- isPentadbir — Maklumat Persekitaran --}}
 
     {{-- ════════════════════════════ --}}
     {{-- LOG PERUBAHAN TERKINI --}}
