@@ -45,6 +45,7 @@ class TempahanController extends Controller
         $query = $this->unitQuery()
             ->select([
                 'id',
+                'ulid',            // diperlukan oleh getRouteKeyName() untuk jana URL
                 'nama_mesyuarat',
                 'tarikh',
                 'masa_mula',
