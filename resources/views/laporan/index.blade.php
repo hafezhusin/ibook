@@ -117,19 +117,21 @@
             <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
         </a>
         @endif
-        {{-- Eksport --}}
+        {{-- Eksport laporan (hanya Pentadbir & Urus Setia) --}}
+        @unless($isStaf ?? false)
         <div class="flex gap-1.5 ml-2">
-            <a href="{{ route('tempahan.pdf', ['tarikh_dari' => $tahun.'-01-01', 'tarikh_hingga' => $tahun.'-12-31'] + (($bilikFilter ?? null) ? ['bilik_id' => $bilikFilter] : [])) }}"
+            <a href="{{ route('laporan.pdf', ['tahun' => $tahun] + (($bilikFilter ?? null) ? ['bilik_id' => $bilikFilter] : [])) }}"
                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white transition"
-               style="background:#dc2626" title="Eksport PDF — data tahun {{ $tahun }}">
+               style="background:#dc2626" title="Eksport laporan statistik PDF — tahun {{ $tahun }}">
                 <i class="fa-solid fa-file-pdf" aria-hidden="true"></i> PDF
             </a>
-            <a href="{{ route('tempahan.excel', ['tarikh_dari' => $tahun.'-01-01', 'tarikh_hingga' => $tahun.'-12-31'] + (($bilikFilter ?? null) ? ['bilik_id' => $bilikFilter] : [])) }}"
+            <a href="{{ route('laporan.excel', ['tahun' => $tahun] + (($bilikFilter ?? null) ? ['bilik_id' => $bilikFilter] : [])) }}"
                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-white transition"
-               style="background:#16a34a" title="Eksport Excel — data tahun {{ $tahun }}">
+               style="background:#16a34a" title="Eksport laporan statistik Excel — tahun {{ $tahun }}">
                 <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Excel
             </a>
         </div>
+        @endunless
     </form>
 </div>
 

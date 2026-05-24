@@ -92,6 +92,8 @@ class AuditLogger
             'kemaskini_tempahan'    => "{$namaPengguna} mengemaskini tempahan {$namaModel}",
             'eksport_pdf'           => "{$namaPengguna} mengeksport senarai tempahan (PDF)",
             'eksport_excel'         => "{$namaPengguna} mengeksport senarai tempahan (Excel)",
+            'eksport_laporan_pdf'   => "{$namaPengguna} mengeksport laporan statistik (PDF)",
+            'eksport_laporan_excel' => "{$namaPengguna} mengeksport laporan statistik (Excel)",
             'tambah_pengguna'       => "{$namaPengguna} menambah pengguna baru {$namaModel}",
             'kemaskini_pengguna'    => "{$namaPengguna} mengemaskini maklumat pengguna {$namaModel}",
             'reset_kata_laluan'     => "{$namaPengguna} menetapkan semula kata laluan pengguna {$namaModel}",

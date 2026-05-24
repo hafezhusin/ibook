@@ -88,6 +88,10 @@ Route::middleware('auth.custom')->group(function () {
 
     // Laporan
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
+    Route::middleware('role:pentadbir_sistem,urus_setia')->group(function () {
+        Route::get('/laporan/eksport/pdf',   [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
+        Route::get('/laporan/eksport/excel', [LaporanController::class, 'exportExcel'])->name('laporan.excel');
+    });
 
     // Pentadbir Sistem & Urus Setia — lihat pengguna & reset password
     Route::middleware('role:pentadbir_sistem,urus_setia')->group(function () {

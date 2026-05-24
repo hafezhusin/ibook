@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\LaporanExport;
 use App\Models\BilikMesyuarat;
 use App\Models\Tempahan;
 use App\Services\AuditLogger;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LaporanController extends Controller
 {
@@ -80,6 +83,44 @@ class LaporanController extends Controller
         $data['bilikFilter']  = $bilikFilter;
 
         return view('laporan.index', $data);
+    }
+
+    public function exportPdf(Request $request): \Symfony\Component\HttpFoundation\Response
+    {
+        $tahun       = (int) $request->get('tahun', now()->year);
+        $bilikFilter = $request->filled('bilik_id') ? (int) $request->bilik_id : null;
+
+        $data          = $this->kiraLaporanAdmin($tahun, $bilikFilter);
+        $data['tahun'] = $tahun;
+
+        AuditLogger::catat('eksport_laporan_pdf', null, ['tahun' => $tahun]);
+
+        $pdf = Pdf::loadView('laporan.pdf', $data)
+            ->setPaper('a4', 'portrait')
+            ->setOption([
+                'defaultFont'          => 'DejaVu Sans',
+                'isRemoteEnabled'      => false,
+                'isHtml5ParserEnabled' => true,
+                'chroot'               => public_path(),
+                'dpi'                  => 96,
+            ]);
+
+        return $pdf->download("Laporan_Statistik_iBook_{$tahun}.pdf");
+    }
+
+    public function exportExcel(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $tahun       = (int) $request->get('tahun', now()->year);
+        $bilikFilter = $request->filled('bilik_id') ? (int) $request->bilik_id : null;
+
+        $data = $this->kiraLaporanAdmin($tahun, $bilikFilter);
+
+        AuditLogger::catat('eksport_laporan_excel', null, ['tahun' => $tahun]);
+
+        return Excel::download(
+            new LaporanExport($data, $tahun),
+            "Laporan_Statistik_iBook_{$tahun}.xlsx"
+        );
     }
 
     // ─────────────────────────────────────────────────────────
