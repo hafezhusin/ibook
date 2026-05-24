@@ -18,6 +18,7 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+/public/docs/screenshots/
 /.fleet
 /.idea
 /.vscode
