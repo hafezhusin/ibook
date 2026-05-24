@@ -444,7 +444,7 @@ class TempahanController extends Controller
                     pemohonNama:      $user->name,
                     pemohonEmail:     $user->email,
                 ));
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Log::warning('E-mel pengesahan tempahan gagal dihantar: ' . $e->getMessage());
             }
         }
@@ -465,7 +465,7 @@ class TempahanController extends Controller
                         berulang:       false,
                         jumlahSesi:     count($tempahanDibuat),
                     ));
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     Log::warning('E-mel notifikasi Urus Setia gagal dihantar: ' . $e->getMessage());
                 }
             }
@@ -480,3 +480,4 @@ class TempahanController extends Controller
         Cache::increment('kalendar:public-events:version');
     }
 }
+

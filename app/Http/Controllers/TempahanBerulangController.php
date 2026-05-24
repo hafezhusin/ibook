@@ -300,7 +300,7 @@ class TempahanBerulangController extends Controller
                     jumlahTarikh:    $jumlahTarikh,
                     jumlahSesi:      $jumlahSesi,
                 ));
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 Log::warning('E-mel pengesahan tempahan berulang gagal: ' . $e->getMessage());
             }
         }
@@ -321,7 +321,7 @@ class TempahanBerulangController extends Controller
                         berulang:       true,
                         jumlahSesi:     $jumlahSesi,
                     ));
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     Log::warning('E-mel notifikasi berulang Urus Setia gagal: ' . $e->getMessage());
                 }
             }
