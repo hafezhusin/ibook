@@ -105,7 +105,7 @@
                         &middot; {{ $mesyuaratSeterusnya->masa_label }}
                     </p>
                 </div>
-                <a href="{{ route('tempahan.show', $mesyuaratSeterusnya) }}"
+                <a href="{{ $mesyuaratSeterusnya->ulid ? route('tempahan.show', $mesyuaratSeterusnya) : '#' }}"
                    class="text-amber-400 hover:text-amber-300 text-xs font-semibold flex-shrink-0 flex items-center gap-1 mt-0.5 transition-colors">
                     Lihat <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
                 </a>

@@ -84,7 +84,7 @@
                         @endif
                     </td>
                     <td>
-                        <a href="{{ route('tempahan.show', $t) }}"
+                        <a href="{{ $t->ulid ? route('tempahan.show', $t) : '#' }}"
                            class="text-amber-500 hover:text-amber-600 text-sm font-medium"
                            aria-label="Lihat butiran tempahan {{ $t->nama_mesyuarat }}">
                             Lihat &rarr;

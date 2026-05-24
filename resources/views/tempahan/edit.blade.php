@@ -282,7 +282,7 @@
                    class="btn-secondary w-full justify-center">
                     Batal
                 </a>
-                <a href="{{ route('tempahan.show', $tempahan) }}"
+                <a href="{{ $tempahan->ulid ? route('tempahan.show', $tempahan) : route('tempahan.index') }}"
                    class="flex items-center justify-center gap-1 text-sm text-gray-400 hover:text-gray-600 pt-1">
                     <i class="fa-solid fa-eye" aria-hidden="true"></i> Lihat Butiran Asal
                 </a>

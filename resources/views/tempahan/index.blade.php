@@ -548,11 +548,11 @@
                                 Tindakan <i class="fa-solid fa-chevron-down text-xs" aria-hidden="true"></i>
                             </button>
                             <div id="dd-{{ $t->id }}" class="action-dd hidden" role="menu">
-                                <a href="{{ route('tempahan.show', $t) }}" role="menuitem">
+                                <a href="{{ $t->ulid ? route('tempahan.show', $t) : '#' }}" role="menuitem">
                                     <i class="fa-solid fa-eye w-4 text-amber-500" aria-hidden="true"></i> Lihat Butiran
                                 </a>
                                 @if($t->bolehDiEditOleh(auth()->user()))
-                                <a href="{{ route('tempahan.edit', $t) }}" role="menuitem">
+                                <a href="{{ $t->ulid ? route('tempahan.edit', $t) : '#' }}" role="menuitem">
                                     <i class="fa-solid fa-pen w-4 text-blue-500" aria-hidden="true"></i> Edit
                                 </a>
                                 <button type="button"
