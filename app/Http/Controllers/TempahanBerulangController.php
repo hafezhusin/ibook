@@ -3,14 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTempahanBerulangRequest;
+use App\Mail\NotifikasiTempahanBaharu;
+use App\Mail\PengesahanTempahanBerulang;
 use App\Models\BilikMesyuarat;
 use App\Models\Tempahan;
 use App\Models\TempahanBerulang;
+use App\Models\Tetapan;
 use App\Services\AuditLogger;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class TempahanBerulangController extends Controller
 {
@@ -139,6 +145,8 @@ class TempahanBerulangController extends Controller
 
         $this->bumpKalendarCache();
 
+        $jumlahSesi = $semuaTarikh->count() * count($validated['sesi']);
+
         AuditLogger::catat('buat_tempahan_berulang', null, [
             'nama_mesyuarat' => $validated['nama_mesyuarat'],
             'jenis'          => $validated['jenis'],
@@ -149,7 +157,9 @@ class TempahanBerulangController extends Controller
             'jumlah_sesi'    => count($validated['sesi']),
         ]);
 
-        $jumlahSesi = $semuaTarikh->count() * count($validated['sesi']);
+        // Hantar e-mel — kegagalan tidak patut halang aliran tempahan
+        $this->hantarEmelBerulang($validated, $bilik, $semuaTarikh->count(), $jumlahSesi);
+
         return redirect()->route('tempahan.index', ['tarikh_filter' => 'akan_datang'])
             ->with('success', "Tempahan berulang berjaya dibuat — {$jumlahSesi} sesi dijadualkan.");
     }
@@ -262,6 +272,61 @@ class TempahanBerulangController extends Controller
     }
 
     // ── Helper ───────────────────────────────────────────────────────
+
+    private function hantarEmelBerulang(array $validated, BilikMesyuarat $bilik, int $jumlahTarikh, int $jumlahSesi): void
+    {
+        $user          = Auth::user();
+        $jenisLabel    = $validated['jenis'] === 'mingguan' ? 'Mingguan' : 'Bulanan';
+        $mulaLabel     = Carbon::parse($validated['tarikh_mula'])->locale('ms')->isoFormat('D MMMM YYYY');
+        $tamatLabel    = Carbon::parse($validated['tarikh_tamat'])->locale('ms')->isoFormat('D MMMM YYYY');
+        $kategoriLabel = \App\Models\Tempahan::KATEGORI[$validated['kategori']] ?? $validated['kategori'];
+        $tarikhLabel   = $mulaLabel . ' — ' . $tamatLabel;
+
+        // 1. Pengesahan kepada pemohon
+        if (Tetapan::get('notif_kelulusan', '1') === '1' && $user->email) {
+            try {
+                Mail::to($user->email)->send(new PengesahanTempahanBerulang(
+                    namaMesyuarat:   $validated['nama_mesyuarat'],
+                    jenisLabel:      $jenisLabel,
+                    tarikhMulaLabel: $mulaLabel,
+                    tarikhTamatLabel: $tamatLabel,
+                    semuaSesi:       $validated['sesi'],
+                    bilikNama:       $bilik->nama,
+                    bilanganPeserta: $validated['bilangan_peserta'],
+                    kategoriLabel:   $kategoriLabel,
+                    namaPengerusi:   $validated['nama_pengerusi'],
+                    pemohonNama:     $user->name,
+                    pemohonEmail:    $user->email,
+                    jumlahTarikh:    $jumlahTarikh,
+                    jumlahSesi:      $jumlahSesi,
+                ));
+            } catch (\Exception $e) {
+                Log::warning('E-mel pengesahan tempahan berulang gagal: ' . $e->getMessage());
+            }
+        }
+
+        // 2. Notifikasi kepada Urus Setia
+        if (Tetapan::get('notif_tempahan_baru', '1') === '1') {
+            $emelNotifikasi = Tetapan::get('emel_notifikasi');
+            if ($emelNotifikasi) {
+                try {
+                    Mail::to($emelNotifikasi)->send(new NotifikasiTempahanBaharu(
+                        namaMesyuarat:  $validated['nama_mesyuarat'],
+                        tarikhLabel:    $tarikhLabel,
+                        semuaSesi:      $validated['sesi'],
+                        bilikNama:      $bilik->nama,
+                        pemohonNama:    $user->name,
+                        pemohonJabatan: $user->jabatan ?? '',
+                        noRujukan:      strtoupper($validated['jenis']) . ' / ' . $mulaLabel,
+                        berulang:       true,
+                        jumlahSesi:     $jumlahSesi,
+                    ));
+                } catch (\Exception $e) {
+                    Log::warning('E-mel notifikasi berulang Urus Setia gagal: ' . $e->getMessage());
+                }
+            }
+        }
+    }
 
     private function bumpKalendarCache(): void
     {
