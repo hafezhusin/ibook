@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\BilikController;
@@ -96,6 +97,9 @@ Route::middleware('auth.custom')->group(function () {
 
     // Hanya Pentadbir Sistem
     Route::middleware('role:pentadbir_sistem')->group(function () {
+        // Log Audit
+        Route::get('/log-audit', [AuditLogController::class, 'index'])->name('audit.index');
+
         // Bilik Mesyuarat
         Route::get('/bilik-mesyuarat', [BilikController::class, 'index'])->name('bilik.index');
         Route::get('/bilik-mesyuarat/tambah', [BilikController::class, 'create'])->name('bilik.create');

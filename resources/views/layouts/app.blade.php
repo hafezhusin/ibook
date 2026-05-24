@@ -529,6 +529,14 @@
                 </li>
                 @if(auth()->user()->isPentadbir())
                 <li>
+                    <a href="{{ route('audit.index') }}"
+                       class="sidebar-link"
+                       {{ request()->routeIs('audit*') ? 'aria-current=page' : '' }}>
+                        <i class="fa-solid fa-shield-halved w-5" aria-hidden="true"></i>
+                        <span>Log Audit</span>
+                    </a>
+                </li>
+                <li>
                     <a href="{{ route('tetapan.index') }}"
                        class="sidebar-link"
                        {{ request()->routeIs('tetapan*') ? 'aria-current=page' : '' }}>
