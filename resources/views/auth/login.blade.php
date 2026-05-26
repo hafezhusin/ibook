@@ -104,122 +104,117 @@
         </div>
 
         <h1 class="text-white font-bold mb-1" style="font-size:1.6rem; letter-spacing:-0.02em">Selamat Datang</h1>
-        <p class="text-slate-400 text-sm mb-8">Log masuk untuk membuat tempahan bilik mesyuarat</p>
+        <p class="text-slate-400 text-sm mb-6">Log masuk menggunakan akaun Google Workspace BPTM</p>
 
-        {{-- Mesej berjaya set semula kata laluan --}}
+        {{-- Flash messages --}}
         @if(session('success_reset'))
         <div role="alert" aria-live="polite"
-            class="bg-green-900/40 border border-green-500/40 text-green-300 rounded-lg p-3 mb-5 text-sm flex items-center gap-2">
-            <i class="fa-solid fa-circle-check text-green-400" aria-hidden="true"></i>
+            class="bg-green-900/40 border border-green-500/40 text-green-300 rounded-lg p-3 mb-4 text-sm flex items-start gap-2">
+            <i class="fa-solid fa-circle-check text-green-400 mt-0.5 flex-shrink-0" aria-hidden="true"></i>
             <span>{{ session('success_reset') }}</span>
         </div>
         @endif
-
-        {{-- Mesej ralat --}}
+        @if(session('warning'))
+        <div role="alert" aria-live="polite"
+            class="rounded-lg p-3 mb-4 text-sm flex items-start gap-2"
+            style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.3); color:#fde68a">
+            <i class="fa-solid fa-clock text-amber-400 mt-0.5 flex-shrink-0" aria-hidden="true"></i>
+            <span>{{ session('warning') }}</span>
+        </div>
+        @endif
         @if($errors->any())
         <div role="alert" aria-live="assertive"
-            class="bg-red-900/40 border border-red-500/40 text-red-300 rounded-lg p-3 mb-5 text-sm flex items-center gap-2"
+            class="bg-red-900/40 border border-red-500/40 text-red-300 rounded-lg p-3 mb-4 text-sm flex items-start gap-2"
             id="ralat-log-masuk">
-            <i class="fa-solid fa-circle-xmark text-red-400" aria-hidden="true"></i>
+            <i class="fa-solid fa-circle-xmark text-red-400 mt-0.5 flex-shrink-0" aria-hidden="true"></i>
             <span>{{ $errors->first() }}</span>
         </div>
         @endif
         @if(session('error'))
         <div role="alert" aria-live="assertive"
-            class="bg-red-900/40 border border-red-500/40 text-red-300 rounded-lg p-3 mb-5 text-sm">
-            {{ session('error') }}
+            class="bg-red-900/40 border border-red-500/40 text-red-300 rounded-lg p-3 mb-4 text-sm flex items-start gap-2">
+            <i class="fa-solid fa-circle-xmark text-red-400 mt-0.5 flex-shrink-0" aria-hidden="true"></i>
+            <span>{{ session('error') }}</span>
         </div>
         @endif
 
-        {{-- Form --}}
-        <form method="POST" action="{{ route('login.post') }}" novalidate>
-            @csrf
-
-            {{-- Emel --}}
-            <div class="mb-4">
-                <label for="emel" class="block text-sm font-semibold text-slate-300 mb-2">
-                    <i class="fa-solid fa-envelope text-amber-400 mr-1" aria-hidden="true"></i>
-                    Emel
-                </label>
-                <input type="email" id="emel" name="email"
-                    value="{{ old('email') }}"
-                    required
-                    aria-required="true"
-                    autocomplete="email"
-                    @if($errors->has('email')) aria-invalid="true" aria-describedby="ralat-log-masuk" @endif
-                    class="form-input"
-                    placeholder="nama@jabatan.gov.my">
-            </div>
-
-            {{-- Kata Laluan --}}
-            <div class="mb-5">
-                <label for="kata-laluan" class="block text-sm font-semibold text-slate-300 mb-2">
-                    <i class="fa-solid fa-lock text-amber-400 mr-1" aria-hidden="true"></i>
-                    Kata Laluan
-                </label>
-                <div class="relative">
-                    <input type="password" id="kata-laluan" name="password"
-                        required
-                        aria-required="true"
-                        autocomplete="current-password"
-                        class="form-input pr-10"
-                        placeholder="••••••••">
-                    <button type="button"
-                        aria-label="Tunjuk atau sembunyikan kata laluan"
-                        aria-pressed="false"
-                        id="btn-toggle-pwd"
-                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">
-                        <i class="fa-solid fa-eye" id="eye-icon" aria-hidden="true"></i>
-                    </button>
-                </div>
-            </div>
-
-            {{-- Ingat saya + Lupa kata laluan --}}
-            <div class="flex items-center justify-between mb-6">
-                <label class="flex items-center gap-2 text-sm text-slate-400 cursor-pointer" for="ingat-saya">
-                    <input type="checkbox" id="ingat-saya" name="remember" style="accent-color:#f59e0b">
-                    Ingat saya
-                </label>
-                <a href="{{ route('password.request') }}" class="text-xs text-slate-400 hover:text-amber-400 transition-colors">
-                    Lupa kata laluan?
-                </a>
-            </div>
-
-            <button type="submit"
-                class="w-full font-bold py-3 rounded-lg transition-all text-white shadow-lg"
-                style="background:#f59e0b"
-                onmouseover="this.style.background='#d97706'"
-                onmouseout="this.style.background='#f59e0b'">
-                <i class="fa-solid fa-right-to-bracket mr-2" aria-hidden="true"></i>
-                Log Masuk
-            </button>
-        </form>
-
-        {{-- Pemisah --}}
-        <div class="flex items-center gap-3 my-5">
-            <div class="flex-1 h-px" style="background:rgba(255,255,255,0.1)"></div>
-            <span class="text-xs text-slate-500 font-medium">atau</span>
-            <div class="flex-1 h-px" style="background:rgba(255,255,255,0.1)"></div>
-        </div>
-
-        {{-- Log Masuk Google --}}
+        {{-- ═══ PRIMARY: Google SSO ═══ --}}
         <a href="{{ route('auth.google') }}"
-           class="flex items-center justify-center gap-3 w-full py-3 rounded-lg font-semibold text-sm transition-all"
-           style="background:rgba(255,255,255,0.08); border:1.5px solid rgba(255,255,255,0.15); color:#e2e8f0"
-           onmouseover="this.style.background='rgba(255,255,255,0.14)'; this.style.borderColor='rgba(255,255,255,0.3)'"
-           onmouseout="this.style.background='rgba(255,255,255,0.08)'; this.style.borderColor='rgba(255,255,255,0.15)'">
-            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-                <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
-                <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
-                <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
-                <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+           class="flex items-center justify-center gap-3 w-full py-3.5 rounded-xl font-bold text-sm transition-all shadow-lg mb-2"
+           style="background:#f59e0b; color:#1a1a2e;"
+           onmouseover="this.style.background='#d97706'"
+           onmouseout="this.style.background='#f59e0b'">
+            <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+                <path fill="#1a1a2e" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+                <path fill="#1a1a2e" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+                <path fill="#1a1a2e" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+                <path fill="#1a1a2e" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
             </svg>
             Log Masuk dengan Google Workspace
         </a>
-        <p class="text-center text-xs text-slate-600 mt-2">Hanya akaun <span class="text-slate-400">@anm.gov.my</span> dibenarkan</p>
+        <p class="text-center text-xs text-slate-500 mb-6">
+            <i class="fa-solid fa-shield-halved text-amber-500 mr-1" aria-hidden="true"></i>
+            Hanya akaun <span class="text-slate-400 font-medium">@anm.gov.my</span> BPTM dibenarkan
+        </p>
+
+        {{-- ═══ FALLBACK: Email + Kata Laluan (collapsed) ═══ --}}
+        <div class="border-t mt-1 mb-4" style="border-color:rgba(255,255,255,0.08)"></div>
+
+        <button type="button" id="btn-toggle-email-form"
+            class="flex items-center justify-center gap-2 w-full text-xs text-slate-500 hover:text-slate-300 transition-colors py-1"
+            aria-expanded="false" aria-controls="email-form-section">
+            <i class="fa-solid fa-chevron-down text-slate-600 transition-transform" id="chevron-email" aria-hidden="true"></i>
+            Log masuk dengan emel & kata laluan
+            <span class="text-slate-600 text-[10px]">(pentadbir sahaja)</span>
+        </button>
+
+        <div id="email-form-section" class="hidden mt-4" aria-hidden="true">
+            <form method="POST" action="{{ route('login.post') }}" novalidate>
+                @csrf
+                <div class="mb-4">
+                    <label for="emel" class="block text-sm font-semibold text-slate-300 mb-2">
+                        <i class="fa-solid fa-envelope text-amber-400 mr-1" aria-hidden="true"></i>Emel
+                    </label>
+                    <input type="email" id="emel" name="email"
+                        value="{{ old('email') }}" autocomplete="email"
+                        @if($errors->has('email')) aria-invalid="true" aria-describedby="ralat-log-masuk" @endif
+                        class="form-input" placeholder="nama@jabatan.gov.my">
+                </div>
+                <div class="mb-5">
+                    <label for="kata-laluan" class="block text-sm font-semibold text-slate-300 mb-2">
+                        <i class="fa-solid fa-lock text-amber-400 mr-1" aria-hidden="true"></i>Kata Laluan
+                    </label>
+                    <div class="relative">
+                        <input type="password" id="kata-laluan" name="password"
+                            autocomplete="current-password" class="form-input pr-10" placeholder="••••••••">
+                        <button type="button" aria-label="Tunjuk atau sembunyikan kata laluan" aria-pressed="false"
+                            id="btn-toggle-pwd"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded">
+                            <i class="fa-solid fa-eye" id="eye-icon" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between mb-5">
+                    <label class="flex items-center gap-2 text-sm text-slate-400 cursor-pointer" for="ingat-saya">
+                        <input type="checkbox" id="ingat-saya" name="remember" style="accent-color:#f59e0b">
+                        Ingat saya
+                    </label>
+                    <a href="{{ route('password.request') }}" class="text-xs text-slate-500 hover:text-amber-400 transition-colors">
+                        Lupa kata laluan?
+                    </a>
+                </div>
+                <button type="submit"
+                    class="w-full font-bold py-3 rounded-lg transition-all text-white shadow-lg"
+                    style="background:rgba(245,158,11,0.7)"
+                    onmouseover="this.style.background='#f59e0b'"
+                    onmouseout="this.style.background='rgba(245,158,11,0.7)'">
+                    <i class="fa-solid fa-right-to-bracket mr-2" aria-hidden="true"></i>Log Masuk
+                </button>
+            </form>
+        </div>
 
         {{-- Info --}}
-        <aside class="mt-8 p-4 rounded-xl" style="background:rgba(255,255,255,0.06)" aria-label="Maklumat tambahan">
+        <aside class="mt-6 p-4 rounded-xl" style="background:rgba(255,255,255,0.06)" aria-label="Maklumat tambahan">
             <p class="text-xs text-slate-400 mb-2 font-semibold uppercase tracking-wider">
                 <i class="fa-solid fa-circle-info text-amber-400 mr-1" aria-hidden="true"></i>
                 Maklumat
@@ -486,6 +481,36 @@ document.getElementById('btn-semua-awam')?.addEventListener('click', function() 
     filterBilik(null, this);
 });
 document.getElementById('btn-toggle-pwd')?.addEventListener('click', togglePwd);
+
+// Email form collapse/expand
+(function() {
+    const btn = document.getElementById('btn-toggle-email-form');
+    const section = document.getElementById('email-form-section');
+    const chevron = document.getElementById('chevron-email');
+    if (!btn || !section) return;
+
+    // Auto-expand if there were email form errors (e.g. wrong password)
+    const hasErrors = {{ ($errors->any() || session('error')) ? 'true' : 'false' }};
+    const isEmailError = {{ ($errors->has('email') || $errors->has('password')) ? 'true' : 'false' }};
+    if (isEmailError) { expand(); }
+
+    btn.addEventListener('click', function() {
+        if (section.classList.contains('hidden')) { expand(); } else { collapse(); }
+    });
+
+    function expand() {
+        section.classList.remove('hidden');
+        section.removeAttribute('aria-hidden');
+        btn.setAttribute('aria-expanded', 'true');
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
+    }
+    function collapse() {
+        section.classList.add('hidden');
+        section.setAttribute('aria-hidden', 'true');
+        btn.setAttribute('aria-expanded', 'false');
+        if (chevron) chevron.style.transform = '';
+    }
+})();
 
 function togglePwd() {
     const pwd = document.getElementById('kata-laluan');

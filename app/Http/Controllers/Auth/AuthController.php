@@ -87,19 +87,49 @@ class AuthController extends Controller
 
             // Semak akaun aktif
             if (!$user->aktif) {
-                return redirect()->route('login')
-                    ->with('error', 'Akaun anda telah dinyahaktifkan. Sila hubungi pentadbir.');
+                // Bezakan: belum pernah login = menunggu kelulusan, pernah login = dinyahaktifkan
+                $msg = is_null($user->last_login_at)
+                    ? 'Akaun Google anda sedang menunggu kelulusan pentadbir BPTM. Sila hubungi pentadbir untuk mengaktifkan akaun.'
+                    : 'Akaun anda telah dinyahaktifkan. Sila hubungi pentadbir BPTM.';
+
+                AuditLogger::catat('percubaan_akaun_nyahaktif', null, [
+                    'email_dicuba' => $googleUser->email,
+                    'user_agent'   => substr($request->userAgent() ?? '', 0, 200),
+                ], "Percubaan SSO akaun tidak aktif — {$googleUser->email}");
+
+                return redirect()->route('login')->with('error', $msg);
             }
         } else {
-            // Cipta akaun baharu dengan peranan Staf
+            // Pengguna baharu — cipta akaun dengan aktif=false (menunggu kelulusan pentadbir)
             $user = User::create([
                 'name'      => $googleUser->name,
                 'email'     => $googleUser->email,
                 'google_id' => $googleUser->id,
                 'password'  => Hash::make(Str::random(32)),
                 'peranan'   => PerananPengguna::Staf->value,
-                'aktif'     => true,
+                'aktif'     => false,
             ]);
+
+            AuditLogger::catat('pendaftaran_sso_baharu', null, [
+                'email'      => $googleUser->email,
+                'name'       => $googleUser->name,
+                'user_agent' => substr($request->userAgent() ?? '', 0, 200),
+            ], "Pendaftaran SSO baharu menunggu kelulusan — {$googleUser->email}");
+
+            // Hantar notifikasi kepada pentadbir
+            try {
+                $emelAdmin = \App\Models\Tetapan::get('emel_notifikasi');
+                if ($emelAdmin) {
+                    Mail::to($emelAdmin)->send(
+                        new \App\Mail\NotifikasiPendaftaranSSO($googleUser->name, $googleUser->email)
+                    );
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Gagal hantar notifikasi pendaftaran SSO: ' . $e->getMessage());
+            }
+
+            return redirect()->route('login')
+                ->with('warning', "Akaun Google anda ({$googleUser->email}) telah didaftarkan dan sedang menunggu kelulusan pentadbir BPTM. Anda akan dimaklumkan selepas akaun diaktifkan.");
         }
         // ─────────────────────────────────────────────────────────────
 
