@@ -37,3 +37,7 @@ setup-*.php
 diag*.php
 chk-*.php
 SESSION_LOG.md
+
+public/test.php
+test.php
+update-headers.ps1
