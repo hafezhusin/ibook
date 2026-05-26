@@ -461,9 +461,20 @@ function renderHasil(data) {
 
         const sesiParam  = sesiKeys.length === 1 ? `&sesi[]=${sesiKeys[0]}` : '';
         const urlTempah  = `{{ route('tempahan.create') }}?bilik_id=${b.id}&tarikh=${tarikh}${sesiParam}`;
-        const gambarHTML = b.gambar
-            ? `<img src="/storage/${b.gambar}" alt="Gambar ${b.nama}" class="w-full h-36 object-cover">`
-            : `<div class="w-full h-36 flex items-center justify-center" style="background:#f8fafc"><i class="fa-solid fa-building text-4xl text-gray-200" aria-hidden="true"></i></div>`;
+        // Fallback: gambar generik berdasarkan nama & kapasiti bilik
+        const nm = (b.nama || '').toLowerCase();
+        let fallbackGambar = '{{ asset("images/bilik/meeting-standard-1.jpg") }}';
+        if (nm.includes('lab') || nm.includes('ict') || nm.includes('komputer'))
+            fallbackGambar = '{{ asset("images/bilik/lab-ict.jpg") }}';
+        else if (b.kapasiti >= 50 || nm.includes('utama') || nm.includes('dewan') || nm.includes('auditorium'))
+            fallbackGambar = '{{ asset("images/bilik/meeting-besar.jpg") }}';
+        else if (b.kapasiti <= 20 || nm.includes('perbincangan') || nm.includes('kecil'))
+            fallbackGambar = '{{ asset("images/bilik/meeting-kecil.jpg") }}';
+        else
+            fallbackGambar = (b.id % 2 === 0) ? '{{ asset("images/bilik/meeting-standard-1.jpg") }}' : '{{ asset("images/bilik/meeting-standard-2.jpg") }}';
+
+        const imgSrc = b.gambar || fallbackGambar;
+        const gambarHTML = `<img src="${imgSrc}" alt="Gambar ${b.nama}" class="w-full h-36 object-cover" loading="lazy" onerror="this.src='${fallbackGambar}'">`;
         const lokasi = b.lokasi
             ? `<p class="text-xs text-gray-400 mt-1 flex items-center gap-1"><i class="fa-solid fa-location-dot text-amber-400" aria-hidden="true"></i> ${b.lokasi}</p>` : '';
         const moreKemudahan = (b.kemudahan||[]).length > 5
