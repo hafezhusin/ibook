@@ -111,6 +111,12 @@ class AuditLogger
             'buat_tempahan_berulang'     => "{$namaPengguna} membuat tempahan berulang {$namaModel}",
             'kemaskini_kumpulan_berulang'=> "{$namaPengguna} mengemaskini kumpulan tempahan berulang {$namaModel}",
             'padam_tempahan'             => "{$namaPengguna} memadam tempahan {$namaModel}",
+            'log_masuk_berjaya'          => "{$namaPengguna} log masuk ke sistem",
+            'log_masuk_gagal'            => "Percubaan log masuk gagal",
+            'percubaan_akaun_nyahaktif'  => "Percubaan log masuk pada akaun yang dinyahaktifkan",
+            'log_keluar'                 => "{$namaPengguna} log keluar dari sistem",
+            'aktifkan_2fa'               => "{$namaPengguna} mengaktifkan pengesahan dua faktor",
+            'nyahaktifkan_2fa'           => "{$namaPengguna} menyahaktifkan pengesahan dua faktor",
             default                      => "{$namaPengguna} melaksanakan tindakan: {$tindakan}",
         };
     }

@@ -346,9 +346,8 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('ev-modal-heading').textContent = info.event.title;
 
             const kategoriMap = {
-                'pengurusan':'Pengurusan','teknikal':'Teknikal',
-                'latihan':'Latihan / Bengkel','perbincangan':'Perbincangan',
-                'taklimat':'Taklimat','lain-lain':'Lain-lain','mesyuarat':'Mesyuarat'
+                'mesyuarat':'Mesyuarat','perbincangan':'Perbincangan',
+                'taklimat':'Taklimat','bengkel':'Bengkel/Workshop','latihan':'Latihan/Kursus'
             };
             document.getElementById('ev-kategori').textContent = kategoriMap[p.kategori] || p.kategori || 'Mesyuarat';
             document.getElementById('ev-bilik').textContent   = p.bilik;

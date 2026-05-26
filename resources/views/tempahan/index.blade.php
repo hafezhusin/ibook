@@ -78,6 +78,37 @@
 .action-dd a:hover, .action-dd button:hover { background:#f9fafb; }
 .action-dd .dd-divider { height:1px; background:#f3f4f6; margin:3px 0; }
 
+/* ── Panel carian gelap ──────────────────────────────────── */
+.panel-cari {
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+    border-radius: 16px;
+    padding: 20px 24px;
+}
+.panel-cari-title {
+    color: #f59e0b;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.panel-cari label,
+.panel-cari .text-xs,
+.panel-cari .text-gray-500 { color: #94a3b8 !important; }
+.panel-cari .btn-secondary {
+    background: rgba(255,255,255,0.08) !important;
+    color: #e2e8f0 !important;
+    border-color: rgba(255,255,255,0.15) !important;
+}
+.panel-cari .btn-secondary:hover { background: rgba(255,255,255,0.14) !important; }
+.panel-cari #btn-lanjutan { color: #94a3b8 !important; }
+.panel-cari #btn-lanjutan:hover { color: #f59e0b !important; }
+.panel-cari .border-t { border-color: rgba(255,255,255,0.1) !important; }
+.panel-cari .text-amber-400 { color: #fbbf24 !important; }
+.panel-cari .text-amber-500 { color: #f59e0b !important; }
+
 /* ── Relative time ───────────────────────────────────────── */
 .rel-time { font-size:11px; color:#9ca3af; }
 .rel-edit  { font-size:10px; color:#d97706; }
@@ -239,7 +270,11 @@
 @endif
 
 {{-- ══ Bar Tapis ════════════════════════════════════════════════════ --}}
-<section class="bg-white rounded-xl shadow-sm p-4 mb-5" aria-labelledby="heading-filter">
+<section class="panel-cari mb-5" aria-labelledby="heading-filter">
+    <div class="panel-cari-title">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        CARI &amp; TAPIS TEMPAHAN
+    </div>
     <h2 id="heading-filter" class="sr-only">Tapis Senarai Tempahan</h2>
 
     <form method="GET" role="search" aria-label="Cari dan tapis tempahan">

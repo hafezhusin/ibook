@@ -26,12 +26,6 @@ class TempahanBerulangController extends Controller
     {
         $validated = $request->validated();
 
-        // Normalise kategori_lain
-        if (($validated['kategori'] ?? '') === 'lain' && !empty($validated['kategori_lain'])) {
-            $validated['kategori'] = trim($validated['kategori_lain']);
-        }
-        unset($validated['kategori_lain']);
-
         // Semak kapasiti bilik
         $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
         if ($validated['bilangan_peserta'] > $bilik->kapasiti) {

@@ -73,4 +73,28 @@ class ProfilController extends Controller
 
         return back()->with('success_password', 'Kata laluan berjaya ditukar.');
     }
+
+    /**
+     * Toggle pengesahan dua faktor (2FA) untuk pengguna semasa.
+     */
+    public function toggle2fa(Request $request)
+    {
+        $user  = Auth::user();
+        $aktif = !$user->dua_faktor_aktif;
+
+        $user->update(['dua_faktor_aktif' => $aktif]);
+
+        AuditLogger::catat(
+            $aktif ? 'aktifkan_2fa' : 'nyahaktifkan_2fa',
+            $user,
+            [],
+            $user->name . ($aktif ? ' mengaktifkan' : ' menyahaktifkan') . ' pengesahan dua faktor'
+        );
+
+        $mesej = $aktif
+            ? 'Pengesahan dua faktor (2FA) berjaya diaktifkan. Kod akan dihantar ke emel anda setiap kali log masuk.'
+            : 'Pengesahan dua faktor (2FA) berjaya dinyahaktifkan.';
+
+        return back()->with('success', $mesej);
+    }
 }

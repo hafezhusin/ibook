@@ -51,6 +51,7 @@ class User extends Authenticatable
         'peranan',
         'aktif',
         'last_login_at',
+        'dua_faktor_aktif',
     ];
 
     protected $hidden = [
@@ -64,6 +65,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
             'aktif'             => 'boolean',
+            'dua_faktor_aktif'  => 'boolean',
             'last_login_at'     => 'datetime',
         ];
     }

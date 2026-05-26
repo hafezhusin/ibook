@@ -30,7 +30,6 @@ class UpdateTempahanRequest extends FormRequest
             'sesi'             => ['required', 'in:' . SesiTempahan::validasiIn()],
             'bilangan_peserta' => ['required', 'integer', 'min:1'],
             'kategori'         => ['required', 'string', 'in:' . implode(',', array_keys(config('ibook.kategori_mesyuarat', [])))],
-            'kategori_lain'    => ['nullable', 'required_if:kategori,lain', 'string', 'max:100'],
             'nama_pengerusi'   => ['required', 'string', 'max:255'],
             'tujuan'           => ['nullable', 'string', 'max:1000'],
         ];
@@ -50,8 +49,6 @@ class UpdateTempahanRequest extends FormRequest
             'bilangan_peserta.min'      => 'Bilangan peserta mestilah sekurang-kurangnya 1 orang.',
             'kategori.required'         => 'Sila pilih kategori mesyuarat.',
             'kategori.in'               => 'Kategori yang dipilih tidak sah.',
-            'kategori_lain.required_if' => 'Sila nyatakan kategori mesyuarat.',
-            'kategori_lain.max'         => 'Kategori tidak boleh melebihi 100 aksara.',
             'nama_pengerusi.required'   => 'Sila masukkan nama pengerusi.',
         ];
     }

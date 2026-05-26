@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatePenggunaRequest;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
@@ -68,6 +69,11 @@ class PenggunaController extends Controller
 
         $pengguna->update($validated);
 
+        // Paksa log keluar sesi aktif jika peranan atau status aktif berubah
+        if ($pengguna->wasChanged(['peranan', 'aktif'])) {
+            Cache::put("paksa_log_keluar_{$pengguna->id}", true, now()->addHours(24));
+        }
+
         AuditLogger::catat('kemaskini_pengguna', $pengguna, [
             'peranan' => $pengguna->peranan,
             'aktif'   => $pengguna->aktif,
@@ -101,6 +107,9 @@ class PenggunaController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        // Paksa log keluar sesi aktif pengguna selepas reset kata laluan
+        Cache::put("paksa_log_keluar_{$pengguna->id}", true, now()->addHours(24));
+
         AuditLogger::catat('reset_kata_laluan', $pengguna, [
             'sebab' => $request->sebab,
         ]);
@@ -127,6 +136,9 @@ class PenggunaController extends Controller
         }
 
         $pengguna->update(['aktif' => !$pengguna->aktif]);
+
+        // Paksa log keluar sesi aktif pengguna (terutama bila dinyahaktifkan)
+        Cache::put("paksa_log_keluar_{$pengguna->id}", true, now()->addHours(24));
 
         $kodTindakan   = $pengguna->aktif ? 'aktifkan_pengguna' : 'nyahaktifkan_pengguna';
         $labelTindakan = $pengguna->aktif ? 'diaktifkan' : 'dinyahaktifkan';
@@ -162,6 +174,11 @@ class PenggunaController extends Controller
         $kodTindakan   = $nilaiAktif ? 'bulk_aktifkan' : 'bulk_nyahaktifkan';
 
         User::whereIn('id', $ids)->update(['aktif' => $nilaiAktif]);
+
+        // Paksa log keluar sesi aktif semua pengguna yang terkesan
+        foreach ($ids as $id) {
+            Cache::put("paksa_log_keluar_{$id}", true, now()->addHours(24));
+        }
 
         AuditLogger::catat($kodTindakan, null, ['jumlah' => $jumlah, 'ids' => array_values($ids)]);
 

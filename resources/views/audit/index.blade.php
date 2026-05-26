@@ -18,6 +18,41 @@
     </div>
 </div>
 
+{{-- ── Banner Amaran Keselamatan ──────────────────────────────────────── --}}
+@if($amalanBahaya > 0)
+<div class="mb-5 bg-red-50 border border-red-200 rounded-xl overflow-hidden" role="alert" aria-live="polite">
+    <div class="flex items-start gap-4 p-4">
+        <div class="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+            <i class="fa-solid fa-triangle-exclamation text-red-500 text-lg" aria-hidden="true"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="font-bold text-red-700 text-sm">
+                {{ $amalanBahaya }} percubaan log masuk mencurigai dalam 24 jam terakhir
+            </p>
+            <p class="text-red-500 text-xs mt-0.5">
+                Terdapat aktiviti log masuk gagal yang luar biasa. Semak rekod di bawah dan ambil tindakan jika perlu.
+            </p>
+            @if($ipMencurigai->isNotEmpty())
+            <div class="mt-2 flex flex-wrap gap-2">
+                @foreach($ipMencurigai as $ipRow)
+                <a href="{{ route('audit.index', ['tindakan' => 'log_masuk_gagal', 'carian' => $ipRow->ip_address]) }}"
+                   class="inline-flex items-center gap-1 text-xs font-mono font-semibold bg-red-100 text-red-700 border border-red-200 rounded px-2 py-0.5 hover:bg-red-200 transition-colors">
+                    <i class="fa-solid fa-wifi text-red-400" aria-hidden="true"></i>
+                    {{ $ipRow->ip_address }}
+                    <span class="bg-red-200 text-red-800 rounded px-1">{{ $ipRow->kiraan }}×</span>
+                </a>
+                @endforeach
+            </div>
+            @endif
+        </div>
+        <a href="{{ route('audit.index', ['tindakan' => 'log_masuk_gagal']) }}"
+           class="flex-shrink-0 text-xs font-semibold text-red-600 hover:text-red-800 underline whitespace-nowrap">
+            Lihat Semua →
+        </a>
+    </div>
+</div>
+@endif
+
 {{-- ── Filter Panel ──────────────────────────────────────────── --}}
 <form method="GET" action="{{ route('audit.index') }}" class="bg-white rounded-xl shadow-sm p-4 mb-5" aria-label="Tapis log audit">
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -127,10 +162,16 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
         @foreach($logs as $log)
-        <tr class="hover:bg-gray-50 transition-colors" id="log-{{ $log->id }}">
+        @php
+            $isBahaya = in_array($log->tindakan, ['log_masuk_gagal', 'percubaan_akaun_nyahaktif']);
+        @endphp
+        <tr class="hover:bg-gray-50 transition-colors {{ $isBahaya ? 'bg-red-50/60' : '' }}" id="log-{{ $log->id }}">
 
             {{-- Masa --}}
             <td class="px-4 py-3 text-gray-500 whitespace-nowrap align-top">
+                @if($isBahaya)
+                <i class="fa-solid fa-shield-exclamation text-red-400 text-xs mr-1" aria-hidden="true" title="Peristiwa keselamatan"></i>
+                @endif
                 <div class="font-mono text-xs">{{ $log->dicipta_pada->format('d/m/Y') }}</div>
                 <div class="font-mono text-xs text-gray-400">{{ $log->dicipta_pada->format('H:i:s') }}</div>
             </td>
@@ -139,6 +180,9 @@
             <td class="px-4 py-3 align-top">
                 @if($log->pengguna)
                 <div class="font-medium text-gray-800 text-xs">{{ $log->pengguna->name }}</div>
+                @elseif($isBahaya && isset($log->butiran['email_dicuba']))
+                <div class="font-mono text-xs text-red-500">{{ $log->butiran['email_dicuba'] }}</div>
+                <div class="text-xs text-gray-400 italic">(tidak berdaftar)</div>
                 @else
                 <span class="text-gray-400 text-xs italic">Sistem</span>
                 @endif
@@ -148,14 +192,18 @@
             <td class="px-4 py-3 align-top whitespace-nowrap">
                 @php
                     $badgeColor = match(true) {
-                        str_starts_with($log->tindakan, 'buat_')     => 'bg-green-50 text-green-700',
-                        str_starts_with($log->tindakan, 'kemaskini_') => 'bg-blue-50 text-blue-700',
-                        str_starts_with($log->tindakan, 'padam_')    => 'bg-red-50 text-red-700',
-                        str_starts_with($log->tindakan, 'eksport_')  => 'bg-purple-50 text-purple-700',
-                        str_contains($log->tindakan, 'nyahaktifkan') => 'bg-orange-50 text-orange-700',
-                        str_contains($log->tindakan, 'aktifkan')     => 'bg-teal-50 text-teal-700',
-                        str_contains($log->tindakan, 'reset')        => 'bg-amber-50 text-amber-700',
-                        default                                       => 'bg-gray-100 text-gray-600',
+                        $log->tindakan === 'log_masuk_gagal'           => 'bg-red-100 text-red-700 border border-red-200',
+                        $log->tindakan === 'percubaan_akaun_nyahaktif' => 'bg-red-100 text-red-700 border border-red-200',
+                        $log->tindakan === 'log_masuk_berjaya'         => 'bg-emerald-50 text-emerald-700',
+                        $log->tindakan === 'log_keluar'                => 'bg-slate-100 text-slate-600',
+                        str_starts_with($log->tindakan, 'buat_')       => 'bg-green-50 text-green-700',
+                        str_starts_with($log->tindakan, 'kemaskini_')  => 'bg-blue-50 text-blue-700',
+                        str_starts_with($log->tindakan, 'padam_')      => 'bg-red-50 text-red-700',
+                        str_starts_with($log->tindakan, 'eksport_')    => 'bg-purple-50 text-purple-700',
+                        str_contains($log->tindakan, 'nyahaktifkan')   => 'bg-orange-50 text-orange-700',
+                        str_contains($log->tindakan, 'aktifkan')       => 'bg-teal-50 text-teal-700',
+                        str_contains($log->tindakan, 'reset')          => 'bg-amber-50 text-amber-700',
+                        default                                         => 'bg-gray-100 text-gray-600',
                     };
                 @endphp
                 <span class="inline-block {{ $badgeColor }} text-xs font-semibold px-2 py-0.5 rounded-md font-mono">
@@ -201,8 +249,8 @@
 
         {{-- Butiran expandable row --}}
         @if($log->butiran)
-        <tr id="butiran-{{ $log->id }}" class="hidden bg-amber-50/50" aria-hidden="true">
-            <td colspan="7" class="px-6 py-3 border-b border-amber-100">
+        <tr id="butiran-{{ $log->id }}" class="hidden {{ $isBahaya ? 'bg-red-50/80' : 'bg-amber-50/50' }}" aria-hidden="true">
+            <td colspan="7" class="px-6 py-3 border-b {{ $isBahaya ? 'border-red-100' : 'border-amber-100' }}">
                 <pre class="text-xs text-gray-700 bg-white border border-gray-200 rounded-lg p-3 overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap">{{ json_encode($log->butiran, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
                 @if($log->record_hash)
                 <p class="text-xs text-gray-400 mt-2 font-mono">

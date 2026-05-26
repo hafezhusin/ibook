@@ -24,12 +24,11 @@ class Tempahan extends Model
     ];
 
     const KATEGORI = [
-        'pengurusan' => 'Mesyuarat Pengurusan',
-        'teknikal'   => 'Mesyuarat Teknikal',
-        'taklimat'   => 'Taklimat',
-        'bengkel'    => 'Bengkel / Workshop',
-        'latihan'    => 'Latihan',
-        'lain'       => 'Lain-lain',
+        'mesyuarat'    => 'Mesyuarat',
+        'perbincangan' => 'Perbincangan',
+        'taklimat'     => 'Taklimat',
+        'bengkel'      => 'Bengkel/Workshop',
+        'latihan'      => 'Latihan/Kursus',
     ];
 
     /**

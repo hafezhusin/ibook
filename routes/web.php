@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Auth\DuaFaktorController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\BilikController;
 use App\Http\Controllers\CarianController;
@@ -30,6 +31,14 @@ Route::middleware('throttle:5,1')->group(function () {
 });
 Route::get('/reset-kata-laluan/{token}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
 
+// Pengesahan Dua Faktor — selepas lulus kata laluan, sebelum log masuk penuh
+// throttle:20,1 = lebih ketat (20 req/minit) kerana ini endpoint sensitif
+Route::middleware('throttle:20,1')->group(function () {
+    Route::get('/dua-faktor', [DuaFaktorController::class, 'show'])->name('dua-faktor.show');
+    Route::post('/dua-faktor', [DuaFaktorController::class, 'verify'])->name('dua-faktor.verify');
+    Route::post('/dua-faktor/hantar-semula', [DuaFaktorController::class, 'hantarSemula'])->name('dua-faktor.hantar-semula');
+});
+
 // Route awam - boleh akses tanpa log masuk
 // throttle:60,1 = maksimum 60 request per minit per IP
 // Mencegah scraping, enumeration, dan DDoS pada endpoint terbuka
@@ -48,6 +57,7 @@ Route::middleware('auth.custom')->group(function () {
     Route::get('/profil', [ProfilController::class, 'show'])->name('profil');
     Route::post('/profil/kemaskini', [ProfilController::class, 'update'])->name('profil.update');
     Route::post('/profil/kata-laluan', [ProfilController::class, 'updatePassword'])->name('profil.password');
+    Route::post('/profil/2fa-toggle', [ProfilController::class, 'toggle2fa'])->name('profil.2fa-toggle');
 
     // Kalendar
     Route::get('/kalendar', [KalendarController::class, 'index'])->name('kalendar');
@@ -59,6 +69,7 @@ Route::middleware('auth.custom')->group(function () {
     // Semak Ketersediaan Bilik
     Route::get('/semak-bilik', [KetersediaanController::class, 'index'])->name('ketersediaan');
     Route::get('/semak-bilik/cek', [KetersediaanController::class, 'cek'])->name('ketersediaan.cek');
+    Route::get('/semak-bilik/minggu', [KetersediaanController::class, 'minggu'])->name('ketersediaan.minggu');
 
     // Tempahan
     Route::get('/tempahan', [TempahanController::class, 'index'])->name('tempahan.index');
