@@ -6,6 +6,8 @@
  * Hak cipta terpelihara. Dilarang meniru, menyalin, mengubah suai, atau
  * mengedar perisian ini tanpa kebenaran bertulis daripada pemilik hak cipta.
  *
+ * Pembangun : Mohd Hafez bin Husin (Unit Aplikasi Gunasama)
+ *
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
