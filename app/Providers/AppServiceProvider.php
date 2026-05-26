@@ -31,7 +31,11 @@ class AppServiceProvider extends ServiceProvider
         // Perisian ini berlesen hanya untuk domain yang didaftarkan.
         // runningInConsole() = false semasa artisan migrate, queue, dll — jangan blok CLI.
         if (app()->environment('production') && !app()->runningInConsole()) {
-            $domainDibenar = ['ibookbptm.great-site.net'];
+            $domainDibenar = [
+                'ibookbptm.great-site.net', // production
+                'localhost',                // development lokal
+                '127.0.0.1',               // development lokal (IP)
+            ];
             $domainSemasa  = request()->getHost();
             if (!in_array($domainSemasa, $domainDibenar, true)) {
                 abort(403, 'Perisian iBook tidak berlesen untuk domain ini. '

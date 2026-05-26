@@ -45,7 +45,7 @@ class AuthController extends Controller
      */
     public function redirectGoogle()
     {
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')->stateless()->redirect();
     }
 
     /**
@@ -56,12 +56,14 @@ class AuthController extends Controller
      */
     public function callbackGoogle(Request $request)
     {
+        Log::info('CALLBACK_GOOGLE_HIT params=' . json_encode($request->only(['code','error','state'])));
         try {
-            $googleUser = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')->stateless()->user();
+            Log::info('CALLBACK_GOOGLE_USER email=' . $googleUser->email);
         } catch (\Throwable $e) {
-            Log::warning('Google SSO callback gagal: ' . $e->getMessage());
+            Log::warning('Google SSO callback gagal: [' . get_class($e) . '] ' . $e->getMessage() . ' | ' . $e->getFile() . ':' . $e->getLine());
             return redirect()->route('login')
-                ->with('error', 'Log masuk Google gagal. Sila cuba lagi.');
+                ->with('error', 'Log masuk Google gagal: ' . $e->getMessage());
         }
 
         // ── Semak domain @anm.gov.my ──────────────────────────────────
@@ -110,7 +112,7 @@ class AuthController extends Controller
             'user_agent' => substr($request->userAgent() ?? '', 0, 200),
         ], $user->name . ' log masuk melalui Google SSO');
 
-        return redirect()->intended(route('dashboard'));
+        return redirect()->route('dashboard');
     }
 
     public function showLogin()
