@@ -34,13 +34,22 @@ class ProfilController extends Controller
     {
         $user = Auth::user();
 
-        $validated = $request->validate([
-            'name'    => 'required|string|max:255',
-            'jabatan' => ['nullable', 'string', 'in:' . implode(',', User::SENARAI_UNIT)],
-        ], [
-            'name.required'  => 'Sila masukkan nama penuh anda.',
-            'jabatan.in'     => 'Sila pilih unit yang sah dari senarai.',
+        // Staf tidak dibenarkan ubah unit — hanya pentadbir & urus setia
+        $rehat = ['name' => 'required|string|max:255'];
+        if (!$user->isStaf()) {
+            $rehat['jabatan'] = ['nullable', 'string', 'in:' . implode(',', User::SENARAI_UNIT)];
+        }
+
+        $validated = $request->validate($rehat, [
+            'name.required' => 'Sila masukkan nama penuh anda.',
+            'jabatan.in'    => 'Sila pilih unit yang sah dari senarai.',
         ]);
+
+        // Buang jabatan daripada data kemaskini jika pengguna adalah staf
+        // (cegah bypass melalui request terus walaupun field tiada dalam UI)
+        if ($user->isStaf()) {
+            unset($validated['jabatan']);
+        }
 
         $user->update($validated);
         AuditLogger::catat('kemaskini_profil', $user);

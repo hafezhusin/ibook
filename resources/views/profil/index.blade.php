@@ -95,6 +95,20 @@
                     </div>
 
                     {{-- Unit --}}
+                    @if(auth()->user()->isStaf())
+                    {{-- Staf: Unit adalah readonly — hanya pentadbir & urus setia boleh ubah --}}
+                    <div style="opacity:0.55">
+                        <label class="form-label">Unit</label>
+                        <div class="form-input cursor-not-allowed bg-gray-50 text-gray-500 select-none">
+                            {{ $user->jabatan ?: '— Tiada unit ditetapkan —' }}
+                        </div>
+                        <p class="form-hint">
+                            <i class="fa-solid fa-lock text-[10px] mr-1" aria-hidden="true"></i>
+                            Unit tidak boleh diubah sendiri. Hubungi pentadbir atau urus setia untuk kemaskini.
+                        </p>
+                    </div>
+                    @else
+                    {{-- Pentadbir & Urus Setia: boleh ubah unit --}}
                     <div>
                         <label for="jabatan" class="form-label">Unit</label>
                         <select id="jabatan" name="jabatan"
@@ -112,6 +126,7 @@
                         <p id="ralat-jabatan" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
                         @enderror
                     </div>
+                    @endif
 
                 </div>
 
