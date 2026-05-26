@@ -27,9 +27,10 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // ── Domain Lock — hanya aktif dalam persekitaran production ──────────
+        // ── Domain Lock — hanya aktif dalam HTTP request production ──────────
         // Perisian ini berlesen hanya untuk domain yang didaftarkan.
-        if (app()->environment('production')) {
+        // runningInConsole() = false semasa artisan migrate, queue, dll — jangan blok CLI.
+        if (app()->environment('production') && !app()->runningInConsole()) {
             $domainDibenar = ['ibookbptm.great-site.net'];
             $domainSemasa  = request()->getHost();
             if (!in_array($domainSemasa, $domainDibenar, true)) {
