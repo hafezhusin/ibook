@@ -143,7 +143,7 @@ class Tempahan extends Model
         $year   = $this->tarikh?->year ?? $this->created_at?->year ?? now()->year;
         $suffix = $this->ulid
             ? strtoupper(substr($this->ulid, -8))
-            : strtoupper(substr(md5($this->id . 'ibook_ref'), 0, 8));
+            : strtoupper(substr(hash('sha256', $this->id . 'ibook_ref'), 0, 8));
         return 'TMP-' . $year . '-' . $suffix;
     }
 

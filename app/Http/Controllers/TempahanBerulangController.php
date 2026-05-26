@@ -174,6 +174,14 @@ class TempahanBerulangController extends Controller
             'tujuan'           => ['nullable', 'string', 'max:1000'],
         ]);
 
+        // Semak kapasiti bilik — bilangan peserta tidak boleh melebihi kapasiti
+        $bilik = $kumpulan->bilik;
+        if ($bilik && $validated['bilangan_peserta'] > $bilik->kapasiti) {
+            return back()->withErrors([
+                'bilangan_peserta' => "Bilangan peserta ({$validated['bilangan_peserta']}) melebihi kapasiti bilik {$bilik->nama} ({$bilik->kapasiti} orang).",
+            ])->withInput();
+        }
+
         DB::transaction(function () use ($kumpulan, $validated) {
             $kumpulan->update($validated);
             $kumpulan->tempahan()

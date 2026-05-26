@@ -109,8 +109,8 @@ class BilikController extends Controller
             }
         }
 
-        // Buat nama fail unik
-        $namaFail   = uniqid('bilik_', true) . '.jpg';
+        // Buat nama fail unik menggunakan ULID (lebih selamat dari uniqid)
+        $namaFail   = \Illuminate\Support\Str::ulid() . '.jpg';
         $targetPath = $dir . '/' . $namaFail;
 
         // Load imej sumber mengikut MIME
