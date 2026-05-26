@@ -21,48 +21,32 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class PengesahanTempahan extends Mailable
+class AmaranKeselamatan extends Mailable
 {
     use Queueable, SerializesModels;
 
     /**
-     * @param string $noRujukan     e.g. TMP-2026-A3F9B2C1
-     * @param string $namaMesyuarat
-     * @param string $tarikhLabel   formatted date string
-     * @param array  $semuaSesi     ['pagi'] or ['pagi','petang']
-     * @param string $bilikNama
-     * @param int    $bilanganPeserta
-     * @param string $kategoriLabel
-     * @param string $namaPengerusi
-     * @param string $tujuan
-     * @param string $pemohonNama
-     * @param string $pemohonEmail
+     * @param string   $ip          Alamat IP penyerang
+     * @param int      $kiraan      Bilangan percubaan gagal dalam 1 jam
+     * @param string[] $emelDicuba  Senarai emel yang dicuba (max 5)
      */
     public function __construct(
-        public string $noRujukan,
-        public string $namaMesyuarat,
-        public string $tarikhLabel,
-        public array  $semuaSesi,
-        public string $bilikNama,
-        public int    $bilanganPeserta,
-        public string $kategoriLabel,
-        public string $namaPengerusi,
-        public string $tujuan,
-        public string $pemohonNama,
-        public string $pemohonEmail,
+        public string $ip,
+        public int    $kiraan,
+        public array  $emelDicuba = [],
     ) {}
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '[iBook] Pengesahan Tempahan — ' . $this->noRujukan,
+            subject: '[iBook] ⚠️ Amaran Keselamatan: ' . $this->kiraan . ' percubaan log masuk dari ' . $this->ip,
         );
     }
 
     public function content(): Content
     {
         return new Content(
-            view: 'emails.pengesahan-tempahan',
+            view: 'emails.amaran-keselamatan',
             with: ['tetapan' => Tetapan::getAll()],
         );
     }

@@ -51,6 +51,48 @@
         padding: 24px 28px;
         margin-bottom: 24px;
     }
+
+    /* Tab Dashboard */
+    .tab-bar {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 20px;
+        background: #fff;
+        border-radius: 12px;
+        padding: 6px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.08);
+    }
+    .tab-btn {
+        flex: 1;
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #6b7280;
+        cursor: pointer;
+        transition: all .15s;
+        border: none;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+    .tab-btn.aktif-tab {
+        color: #1a1a2e;
+        background: #f59e0b;
+        box-shadow: 0 2px 8px rgba(245,158,11,.3);
+    }
+    .tab-btn:hover:not(.aktif-tab) {
+        background: #fef3c7;
+        color: #92400e;
+    }
+    @media (prefers-color-scheme: dark) {
+        .tab-bar { background: #1e293b !important; }
+        .tab-btn { color: #94a3b8 !important; }
+        .tab-btn:hover:not(.aktif-tab) { background: #334155 !important; color: #e2e8f0 !important; }
+    }
 </style>
 @endpush
 
@@ -105,7 +147,7 @@
                         &middot; {{ $mesyuaratSeterusnya->masa_label }}
                     </p>
                 </div>
-                <a href="{{ route('tempahan.show', $mesyuaratSeterusnya) }}"
+                <a href="{{ $mesyuaratSeterusnya->ulid ? route('tempahan.show', $mesyuaratSeterusnya) : '#' }}"
                    class="text-amber-400 hover:text-amber-300 text-xs font-semibold flex-shrink-0 flex items-center gap-1 mt-0.5 transition-colors">
                     Lihat <i class="fa-solid fa-arrow-right text-xs" aria-hidden="true"></i>
                 </a>
@@ -155,6 +197,30 @@
     </div>
 </div>
 
+{{-- ══ Tab Bar ══════════════════════════════════════════════════════ --}}
+<div class="tab-bar" role="tablist" aria-label="Pandangan papan pemuka">
+    <button class="tab-btn" data-tab="ringkasan" role="tab" aria-selected="true" aria-controls="tab-ringkasan"
+            id="tabBtn-ringkasan">
+        <i class="fa-solid fa-gauge-high text-xs" aria-hidden="true"></i>
+        Ringkasan
+    </button>
+    <button class="tab-btn" data-tab="operasi" role="tab" aria-selected="false" aria-controls="tab-operasi"
+            id="tabBtn-operasi">
+        <i class="fa-solid fa-list-check text-xs" aria-hidden="true"></i>
+        Operasi
+    </button>
+    @if(auth()->user()->isPentadbir() || auth()->user()->isUrusSetia())
+    <button class="tab-btn" data-tab="analitik" role="tab" aria-selected="false" aria-controls="tab-analitik"
+            id="tabBtn-analitik">
+        <i class="fa-solid fa-chart-line text-xs" aria-hidden="true"></i>
+        Analitik
+    </button>
+    @endif
+</div>
+
+{{-- ══ Tab: Ringkasan ══════════════════════════════════════════════ --}}
+<div id="tab-ringkasan" class="tab-kandungan" role="tabpanel" aria-labelledby="tabBtn-ringkasan">
+
 {{-- ══ Kad Statistik ══════════════════════════════════════════════ --}}
 <section aria-labelledby="heading-statistik" class="mb-6">
     <h2 id="heading-statistik" class="sr-only">Statistik</h2>
@@ -188,6 +254,20 @@
                     </span>
                     @endif
                 </div>
+                @if($jumlahTempahanLepas > 0 || $jumlahTempahan > 0)
+                @php
+                    $konteksTrend = $trendNaik
+                        ? ($kadarPenggunaan >= 80 ? 'Permintaan tinggi — pertimbang tambah kapasiti bilik'
+                                                  : 'Aktiviti meningkat berbanding bulan lepas')
+                        : ($kadarPenggunaan < 30   ? 'Penggunaan rendah — galakkan tempahan dalaman'
+                                                  : 'Lebih banyak bilik tersedia berbanding bulan lepas');
+                @endphp
+                <div class="mt-1 text-[11px] font-medium flex items-center gap-1"
+                     style="color:{{ $trendNaik ? '#15803d' : '#6b7280' }}">
+                    <i class="fa-solid fa-circle-info opacity-60" aria-hidden="true"></i>
+                    {{ $konteksTrend }}
+                </div>
+                @endif
             </div>
             <div class="stat-action" style="color:#d97706">
                 <i class="fa-solid fa-list text-xs" aria-hidden="true"></i> Lihat Semua Tempahan
@@ -278,6 +358,11 @@
 
     </div>
 </section>
+
+</div>{{-- /tab-ringkasan --}}
+
+{{-- ══ Tab: Operasi ════════════════════════════════════════════════ --}}
+<div id="tab-operasi" class="tab-kandungan hidden" role="tabpanel" aria-labelledby="tabBtn-operasi">
 
 {{-- ══ Widget Semak Bilik Pantas ══════════════════════════════════ --}}
 <div class="quick-check-panel mb-6">
@@ -534,6 +619,19 @@
 
 </div>
 
+</div>{{-- /tab-operasi --}}
+
+{{-- ══ Tab: Analitik ════════════════════════════════════════════ --}}
+@if(auth()->user()->isPentadbir() || auth()->user()->isUrusSetia())
+<div id="tab-analitik" class="tab-kandungan hidden" role="tabpanel" aria-labelledby="tabBtn-analitik">
+@else
+<div id="tab-analitik" class="tab-kandungan hidden" role="tabpanel" aria-labelledby="tabBtn-analitik">
+<div class="bg-amber-50 border border-amber-200 rounded-xl p-8 text-center">
+    <i class="fa-solid fa-lock text-amber-400 text-3xl mb-3" aria-hidden="true"></i>
+    <p class="font-bold text-amber-800">Analitik hanya untuk Pentadbir &amp; Urus Setia</p>
+</div>
+@endif
+
 {{-- ══ Grafik Statistik ════════════════════════════════════════ --}}
 @php
     $labelKategoriWarna = [
@@ -643,18 +741,23 @@
     </div>
 </section>
 
+</div>{{-- /tab-analitik --}}
+
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script nonce="{{ $cspNonce }}">
-flatpickr('#quick-tarikh', {
-    locale: 'ms',
-    dateFormat: 'Y-m-d',
-    minDate: 'today',
-    disableMobile: true,
-    defaultDate: new Date()
-});
+// Flatpickr — inisialisasi selepas DOM sedia (elemen mungkin dalam tab tersembunyi)
+if (document.getElementById('quick-tarikh')) {
+    flatpickr('#quick-tarikh', {
+        locale: 'ms',
+        dateFormat: 'Y-m-d',
+        minDate: 'today',
+        disableMobile: true,
+        defaultDate: new Date()
+    });
+}
 
 // Toggle "+X mesyuarat lagi"
 const btnBaki = document.getElementById('btn-tunjuk-baki');
@@ -666,11 +769,58 @@ if (btnBaki) {
     });
 }
 
+// ── Tab Dashboard ─────────────────────────────────────────────
+(function () {
+    const KUNCI = 'dashboard_tab';
+    const tabs  = document.querySelectorAll('.tab-kandungan');
+    const btns  = document.querySelectorAll('.tab-btn');
+
+    function tukarTab(id) {
+        tabs.forEach(t => {
+            t.classList.add('hidden');
+            t.setAttribute('aria-hidden', 'true');
+        });
+        btns.forEach(b => {
+            const aktif = b.dataset.tab === id;
+            b.classList.toggle('aktif-tab', aktif);
+            b.setAttribute('aria-selected', aktif ? 'true' : 'false');
+        });
+        const panel = document.getElementById('tab-' + id);
+        if (panel) {
+            panel.classList.remove('hidden');
+            panel.setAttribute('aria-hidden', 'false');
+        }
+        // Resize charts jika tab analitik dibuka
+        if (id === 'analitik') {
+            setTimeout(function () {
+                window._chartTrend?.resize();
+                window._chartKategori?.resize();
+            }, 50);
+        }
+        try { localStorage.setItem(KUNCI, id); } catch (e) {}
+    }
+
+    btns.forEach(btn => {
+        btn.addEventListener('click', function () { tukarTab(this.dataset.tab); });
+    });
+
+    // Pulihkan tab terakhir atau guna 'ringkasan' sebagai lalai
+    let tabAwal = 'ringkasan';
+    try { tabAwal = localStorage.getItem(KUNCI) || 'ringkasan'; } catch (e) {}
+    // Pastikan tab yang disimpan masih wujud (cth. analitik dihapus untuk staf)
+    if (!document.getElementById('tab-' + tabAwal) ||
+        (tabAwal === 'analitik' && !document.getElementById('tabBtn-analitik'))) {
+        tabAwal = 'ringkasan';
+    }
+    tukarTab(tabAwal);
+    window._tukarTab = tukarTab;
+})();
+
 // ── Chart.js — Trend 6 Bulan ──────────────────────────────────
 const trendData = @json($trendBulanan);
 const ctxTrend  = document.getElementById('chart-trend');
 if (ctxTrend && trendData.length) {
-    new Chart(ctxTrend, {
+    window._chartTrend = new Chart(ctxTrend, {
         type: 'bar',
         data: {
             labels:   trendData.map(d => d.label),
@@ -717,7 +867,7 @@ const kategoriData   = @json($statistikKategori);
 const kategoriWarna  = ['#f59e0b','#2563eb','#16a34a','#dc2626','#7c3aed','#0891b2','#ea580c','#be185d'];
 const ctxKategori    = document.getElementById('chart-kategori');
 if (ctxKategori && kategoriData.length) {
-    new Chart(ctxKategori, {
+    window._chartKategori = new Chart(ctxKategori, {
         type: 'doughnut',
         data: {
             labels:   kategoriData.map(d => d.label),

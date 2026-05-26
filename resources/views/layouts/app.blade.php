@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{-- Cegah FOUC: pakai tema tersimpan sebelum CSS dimuatkan --}}
+    <script nonce="{{ $cspNonce ?? '' }}">
+    (function(){try{var t=localStorage.getItem('ibook-theme');if(t==='dark'||t==='light')document.documentElement.classList.add(t);}catch(e){}})();
+    </script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="{{ $tetapan['nama_sistem'] ?? 'iBook 2.0' }} — Sistem Tempahan Bilik Mesyuarat">
     <title>@yield('title', $tetapan['nama_sistem'] ?? 'iBook 2.0') — {{ $tetapan['nama_jabatan'] ?? 'Sistem Tempahan Bilik Mesyuarat' }}</title>
@@ -382,7 +386,223 @@
             .fc-daygrid-more-link { color: #f59e0b !important; }
             .fc-popover { background: #1e293b !important; border-color: #334155 !important; }
             .fc-popover-header { background: #0f172a !important; color: #f1f5f9 !important; }
+
+            /* ── Paksa light mode walaupun OS dalam dark mode ──────── */
+            html.light body { background: #f3f4f6 !important; color: #1f2937 !important; }
+            html.light header[role="banner"] { background: #ffffff !important; box-shadow: 0 1px 0 #e5e7eb, 0 2px 8px rgba(0,0,0,0.04) !important; }
+            html.light .bg-white { background: #ffffff !important; }
+            html.light .bg-gray-50 { background: #f9fafb !important; }
+            html.light .bg-gray-100 { background: #f3f4f6 !important; }
+            html.light .text-gray-800, html.light .text-gray-900 { color: #1f2937 !important; }
+            html.light .text-gray-700 { color: #374151 !important; }
+            html.light .text-gray-600 { color: #4b5563 !important; }
+            html.light .text-gray-500 { color: #6b7280 !important; }
+            html.light .text-gray-400 { color: #9ca3af !important; }
+            html.light .border-gray-100 { border-color: #f3f4f6 !important; }
+            html.light .border-gray-200 { border-color: #e5e7eb !important; }
+            html.light .border-b, html.light .border-t { border-color: #e5e7eb !important; }
+            html.light .divide-y > * + * { border-color: #e5e7eb !important; }
+            html.light .form-input { background: #ffffff !important; border-color: #d1d5db !important; color: #1f2937 !important; }
+            html.light .form-input::placeholder { color: #9ca3af !important; }
+            html.light .form-label { color: #374151 !important; }
+            html.light .form-hint { color: #6b7280 !important; }
+            html.light .form-error { color: #dc2626 !important; }
+            html.light select.form-input option { background: #ffffff; color: #1f2937; }
+            html.light .table-header { background: #f9fafb !important; }
+            html.light .table th { color: #374151 !important; border-bottom-color: #e5e7eb !important; }
+            html.light .table td { color: #1f2937 !important; border-bottom-color: #f3f4f6 !important; }
+            html.light .table tr:hover td { background: #f9fafb !important; }
+            html.light .hover\:bg-gray-50:hover { background: #f9fafb !important; }
+            html.light .hover\:bg-amber-50:hover { background: #fffbeb !important; }
+            html.light .btn-secondary { background: #ffffff !important; color: #374151 !important; border-color: #d1d5db !important; }
+            html.light .stat-card { background: #ffffff !important; }
+            html.light .stat-card-v2 { background: #ffffff !important; }
+            html.light .stat-action { border-top-color: #f3f4f6 !important; }
+            html.light .stat-action:hover { background: #f9fafb !important; }
+            html.light .progress-bar { background: #e5e7eb !important; }
+            html.light .badge-lulus { background: #d1fae5 !important; color: #065f46 !important; }
+            html.light .badge-tolak { background: #fee2e2 !important; color: #991b1b !important; }
+            html.light .alert-success { background: #f0fdf4 !important; border-color: #86efac !important; color: #166534 !important; }
+            html.light .alert-error { background: #fef2f2 !important; border-color: #fca5a5 !important; color: #991b1b !important; }
+            html.light #event-modal > div { background: #ffffff !important; }
+            html.light .bilik-btn { background: #ffffff !important; border-color: #e5e7eb !important; color: #374151 !important; }
+            html.light .bilik-card { background: #ffffff !important; }
+            html.light .kemudahan-tag { background: #f3f4f6 !important; color: #374151 !important; }
+            html.light .flatpickr-calendar { background: #ffffff !important; box-shadow: 0 4px 20px rgba(0,0,0,.1) !important; }
+            html.light .flatpickr-day { color: #1f2937 !important; }
+            html.light .flatpickr-day:hover { background: #f3f4f6 !important; }
+            html.light .flatpickr-months .flatpickr-month,
+            html.light .flatpickr-weekdays,
+            html.light span.flatpickr-weekday { background: #f9fafb !important; color: #374151 !important; fill: #374151 !important; }
+            html.light .flatpickr-current-month input,
+            html.light .flatpickr-current-month .numInputWrapper { color: #1f2937 !important; }
+            html.light footer[role="contentinfo"] { background: #f9fafb !important; border-color: #e5e7eb !important; color: #6b7280 !important; }
+            html.light .fc { color: #1f2937 !important; }
+            html.light .fc-scrollgrid { border-color: #e5e7eb !important; }
+            html.light .fc-scrollgrid-sync-table td, html.light .fc-scrollgrid-sync-table th { border-color: #e5e7eb !important; }
+            html.light .fc-col-header-cell { background: #f9fafb !important; }
+            html.light .fc-col-header-cell-cushion { color: #374151 !important; }
+            html.light .fc-daygrid-day { background: #ffffff !important; }
+            html.light .fc-daygrid-day-number { color: #374151 !important; }
+            html.light .fc-day-today { background: #fef3c7 !important; }
+            html.light .fc-button { background: #f3f4f6 !important; border-color: #d1d5db !important; color: #374151 !important; }
+            html.light .fc-toolbar-title { color: #111827 !important; }
+            html.light .fc-popover { background: #ffffff !important; border-color: #e5e7eb !important; }
+            html.light .fc-popover-header { background: #f9fafb !important; color: #111827 !important; }
         }
+
+        /* ══════════════════════════════════════════════════════════
+           DARK MODE MANUAL — html.dark class (override OS setting)
+           ══════════════════════════════════════════════════════════ */
+        html.dark body { background: #0f172a !important; color: #e2e8f0 !important; }
+        html.dark header[role="banner"] { background: #1e293b !important; box-shadow: 0 1px 3px rgba(0,0,0,.4) !important; }
+        html.dark header[role="banner"] input[type="search"] { background: #334155 !important; color: #f1f5f9 !important; }
+        html.dark header[role="banner"] input[type="search"]::placeholder { color: #64748b !important; }
+        html.dark .bg-white { background: #1e293b !important; }
+        html.dark .bg-gray-50 { background: #0f172a !important; }
+        html.dark .bg-gray-100 { background: #334155 !important; }
+        html.dark .shadow-sm { box-shadow: 0 1px 4px rgba(0,0,0,.35) !important; }
+        html.dark .rounded-xl.shadow-sm, html.dark .rounded-xl.shadow { box-shadow: 0 2px 8px rgba(0,0,0,.4) !important; }
+        html.dark .text-gray-800, html.dark .text-gray-900 { color: #f1f5f9 !important; }
+        html.dark .text-gray-700 { color: #e2e8f0 !important; }
+        html.dark .text-gray-600 { color: #cbd5e1 !important; }
+        html.dark .text-gray-500 { color: #94a3b8 !important; }
+        html.dark .text-gray-400 { color: #64748b !important; }
+        html.dark .text-gray-300 { color: #475569 !important; }
+        html.dark .border-gray-100 { border-color: #334155 !important; }
+        html.dark .border-gray-200 { border-color: #475569 !important; }
+        html.dark .border-b, html.dark .border-t { border-color: #334155 !important; }
+        html.dark .divide-gray-50 > * + * { border-color: #334155 !important; }
+        html.dark .divide-y > * + * { border-color: #334155 !important; }
+        html.dark .form-input { background: #0f172a !important; border-color: #475569 !important; color: #f1f5f9 !important; }
+        html.dark .form-input:focus { border-color: #f59e0b !important; }
+        html.dark .form-input::placeholder { color: #64748b !important; }
+        html.dark .form-label { color: #e2e8f0 !important; }
+        html.dark .form-hint { color: #94a3b8 !important; }
+        html.dark .form-error { color: #f87171 !important; }
+        html.dark select.form-input option { background: #1e293b; color: #f1f5f9; }
+        html.dark .table-header { background: #0f172a !important; }
+        html.dark .table th { color: #cbd5e1 !important; border-bottom-color: #334155 !important; }
+        html.dark .table td { color: #e2e8f0 !important; border-bottom-color: #1e293b !important; }
+        html.dark .table tr:hover td { background: #273447 !important; }
+        html.dark .hover\:bg-gray-50:hover { background: #273447 !important; }
+        html.dark .hover\:bg-amber-50:hover { background: #1c1200 !important; }
+        html.dark .btn-secondary { background: #334155 !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+        html.dark .btn-secondary:hover { background: #475569 !important; }
+        html.dark .stat-card { background: #1e293b !important; }
+        html.dark .stat-card-v2 { background: #1e293b !important; }
+        html.dark .stat-action { border-top-color: #334155 !important; }
+        html.dark .stat-action:hover { background: #273447 !important; }
+        html.dark .progress-bar { background: #334155 !important; }
+        html.dark .badge-lulus { background: #14532d !important; color: #86efac !important; }
+        html.dark .badge-tolak { background: #7f1d1d !important; color: #fca5a5 !important; }
+        html.dark .alert-success { background: #052e16 !important; border-color: #166534 !important; color: #86efac !important; }
+        html.dark .alert-error { background: #450a0a !important; border-color: #991b1b !important; color: #fca5a5 !important; }
+        html.dark #event-modal > div { background: #1e293b !important; }
+        html.dark #event-modal dl { background: #1e293b !important; }
+        html.dark #event-modal .px-6.py-4 { background: #1e293b !important; }
+        html.dark .sidebar-link:hover { background: rgba(245,158,11,.2) !important; }
+        html.dark .bilik-btn { background: #1e293b !important; border-color: #334155 !important; color: #e2e8f0 !important; }
+        html.dark .bilik-btn:hover { background: #1c1a00 !important; border-color: #f59e0b !important; color: #f59e0b !important; }
+        html.dark .bilik-btn.aktif { background: #1c1a00 !important; border-color: #f59e0b !important; color: #f59e0b !important; }
+        html.dark .bilik-btn .text-gray-800 { color: #f1f5f9 !important; }
+        html.dark .bilik-btn .text-gray-400 { color: #94a3b8 !important; }
+        html.dark .bilik-card { background: #1e293b !important; }
+        html.dark .kemudahan-tag { background: #334155 !important; color: #e2e8f0 !important; }
+        html.dark .flatpickr-calendar { background: #1e293b !important; box-shadow: 0 4px 20px rgba(0,0,0,.5) !important; }
+        html.dark .flatpickr-day { color: #e2e8f0 !important; }
+        html.dark .flatpickr-day:hover { background: #334155 !important; }
+        html.dark .flatpickr-day.selected, html.dark .flatpickr-day.selected:hover { background: #f59e0b !important; border-color: #f59e0b !important; color: #1a1a2e !important; }
+        html.dark .flatpickr-day.today { border-color: #f59e0b !important; }
+        html.dark .flatpickr-day.disabled { color: #475569 !important; }
+        html.dark .flatpickr-months .flatpickr-month,
+        html.dark .flatpickr-weekdays,
+        html.dark span.flatpickr-weekday { background: #0f172a !important; color: #94a3b8 !important; fill: #94a3b8 !important; }
+        html.dark .flatpickr-current-month input,
+        html.dark .flatpickr-current-month .numInputWrapper,
+        html.dark .flatpickr-current-month span.arrowUp,
+        html.dark .flatpickr-current-month span.arrowDown { color: #f1f5f9 !important; }
+        html.dark .numInputWrapper:hover { background: #334155 !important; }
+        html.dark .flatpickr-prev-month svg, html.dark .flatpickr-next-month svg { fill: #94a3b8 !important; }
+        html.dark .flatpickr-prev-month:hover svg, html.dark .flatpickr-next-month:hover svg { fill: #f59e0b !important; }
+        html.dark footer[role="contentinfo"] { background: #0f172a !important; border-color: #1e293b !important; color: #475569 !important; }
+        html.dark footer[role="contentinfo"] a:hover { color: #f59e0b !important; }
+        html.dark .fc { color: #e2e8f0 !important; }
+        html.dark .fc-scrollgrid { border-color: #334155 !important; }
+        html.dark .fc-scrollgrid-sync-table td, html.dark .fc-scrollgrid-sync-table th { border-color: #334155 !important; }
+        html.dark .fc-col-header-cell { background: #0f172a !important; }
+        html.dark .fc-col-header-cell-cushion { color: #94a3b8 !important; }
+        html.dark .fc-daygrid-day { background: #1e293b !important; }
+        html.dark .fc-daygrid-day:hover { background: #273447 !important; }
+        html.dark .fc-daygrid-day-number { color: #cbd5e1 !important; }
+        html.dark .fc-day-today { background: #1a2a1a !important; }
+        html.dark .fc-day-today .fc-daygrid-day-number { color: #f59e0b !important; font-weight: 800; }
+        html.dark .fc-button { background: #334155 !important; border-color: #475569 !important; color: #e2e8f0 !important; }
+        html.dark .fc-button:hover { background: #475569 !important; }
+        html.dark .fc-button-primary:not(:disabled).fc-button-active { background: #f59e0b !important; border-color: #f59e0b !important; color: #1a1a2e !important; }
+        html.dark .fc-toolbar-title { color: #f1f5f9 !important; }
+        html.dark .fc-daygrid-more-link { color: #f59e0b !important; }
+        html.dark .fc-popover { background: #1e293b !important; border-color: #334155 !important; }
+        html.dark .fc-popover-header { background: #0f172a !important; color: #f1f5f9 !important; }
+
+        /* ══════════════════════════════════════════════════════════
+           LIGHT MODE SIDEBAR — html.light class
+           ══════════════════════════════════════════════════════════ */
+        html.light .sidebar { background: #f8fafc !important; border-right: 1px solid #e2e8f0 !important; }
+        html.light .sidebar-link { color: #374151 !important; }
+        html.light .sidebar-link:hover { background: rgba(245,158,11,.12) !important; color: #b45309 !important; }
+        html.light .sidebar-link[aria-current="page"] { background: rgba(245,158,11,.18) !important; color: #b45309 !important; border-right-color: #f59e0b !important; }
+        html.light #sidebar-utama .text-white { color: #1e293b !important; }
+        html.light #sidebar-utama .text-slate-300 { color: #475569 !important; }
+        html.light #sidebar-utama .text-slate-400 { color: #64748b !important; }
+        html.light #sidebar-utama .text-slate-500 { color: #6b7280 !important; }
+        html.light #sidebar-utama .border-b { border-color: #e2e8f0 !important; }
+
+        /* ══════════════════════════════════════════════════════════
+           LIGHT MODE — Halaman spesifik (ketersediaan, pengguna)
+           ══════════════════════════════════════════════════════════ */
+
+        /* ── Ketersediaan: Panel carian ─────────────────────────── */
+        html.light #panel-carian { background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%) !important; }
+        html.light #panel-carian .form-label { color: #94a3b8 !important; }
+        html.light #panel-carian .form-hint { color: #64748b !important; }
+
+        /* ── Ketersediaan: Navigasi minggu ──────────────────────── */
+        html.light .nav-btn-minggu { background: #f3f4f6 !important; border-color: #d1d5db !important; color: #374151 !important; }
+        html.light .nav-btn-minggu:hover { background: #e5e7eb !important; border-color: #9ca3af !important; color: #111827 !important; }
+        html.light .nav-btn-minggu.ini { background: #fef3c7 !important; border-color: #f59e0b !important; color: #b45309 !important; }
+
+        /* ── Ketersediaan: Jadual minggu ────────────────────────── */
+        html.light .bilik-header { background: #eef2f7 !important; color: #374151 !important; }
+        html.light .bilik-subheader { background: #eef2f7 !important; }
+        html.light .bilik-nama-cell { background: #ffffff !important; color: #1e293b !important; border-right-color: #e2e8f0 !important; }
+        html.light .row-alt .bilik-nama-cell { background: #f8fafc !important; color: #1e293b !important; }
+        html.light .slot-cell { background: #ffffff !important; }
+        html.light .row-alt .slot-cell { background: #f8fafc !important; }
+        html.light .hari-header { background: #e2e8f0 !important; }
+        html.light .hari-nama { color: #1e293b !important; }
+        html.light .hari-tarikh { color: #64748b !important; }
+        html.light .hari-header.hari-ini { background: #dbeafe !important; }
+        html.light .hari-header.hari-ini .hari-nama { color: #1d4ed8 !important; }
+        html.light .hari-header.hari-ini .hari-tarikh { color: #3b82f6 !important; }
+        html.light .sesi-subheader { background: #e8edf5 !important; color: #64748b !important; }
+        html.light .sehari-subheader { background: #e8edf5 !important; color: #94a3b8 !important; border-left-color: #bfdbfe !important; }
+        html.light .slot-cell.sehari-col { border-left-color: #bfdbfe !important; }
+        html.light #tbl-minggu th,
+        html.light #tbl-minggu td { border-color: #e2e8f0 !important; }
+
+        /* ── Ketersediaan: Slot chips ────────────────────────────── */
+        html.light .slot-chip.kosong { background: #dcfce7 !important; color: #16a34a !important; border-color: #86efac !important; }
+        html.light .slot-chip.kosong:hover { background: #16a34a !important; color: #fff !important; }
+        html.light .slot-chip.penuh { background: #fee2e2 !important; color: #dc2626 !important; border-color: #fca5a5 !important; }
+        html.light .slot-chip.tiada { background: #f1f5f9 !important; color: #9ca3af !important; border-color: #e2e8f0 !important; }
+        html.light .slot-chip.sehari { background: #dbeafe !important; color: #1d4ed8 !important; border-color: #93c5fd !important; }
+        html.light .slot-chip.sehari:hover { background: #2563eb !important; color: #fff !important; }
+        html.light .slot-chip.sehari-off { background: #f1f5f9 !important; color: #cbd5e1 !important; border-color: #e2e8f0 !important; }
+
+        /* ── Pengguna: Tab aktif ─────────────────────────────────── */
+        html.light .tab-btn.aktif-tab { background: #1e293b !important; color: #f8fafc !important; }
+        html.light .tab-btn:hover:not(.aktif-tab) { background: #f3f4f6 !important; color: #374151 !important; }
     </style>
 </head>
 <body>
@@ -604,6 +824,12 @@
             {{-- Profil & tindakan --}}
             <div class="flex items-center gap-4">
 
+                {{-- Toggle Tema: Light / Dark --}}
+                <button type="button" id="btn-toggle-tema"
+                    class="w-9 h-9 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-400"
+                    aria-label="Tukar tema cerah/gelap" title="Tukar tema">
+                    <i id="icon-tema" class="fa-solid fa-circle-half-stroke text-sm" aria-hidden="true"></i>
+                </button>
 
                 {{-- Maklumat pengguna + dropdown --}}
                 <div class="relative flex items-center gap-3" id="profil-dropdown-wrap">
@@ -896,6 +1122,46 @@ document.addEventListener('click', function(e) {
 
     // Mulakan timer
     resetTimer();
+})();
+
+// ── Toggle Tema: Light / Dark ─────────────────────────────────────
+(function () {
+    const html = document.documentElement;
+    const btn  = document.getElementById('btn-toggle-tema');
+    const icon = document.getElementById('icon-tema');
+    const mq   = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function isDarkActive() {
+        return html.classList.contains('dark') ||
+            (!html.classList.contains('light') && mq.matches);
+    }
+
+    function updateIcon() {
+        if (!icon) return;
+        // Tunjuk ikon bertentangan dengan mod semasa
+        icon.className = isDarkActive()
+            ? 'fa-solid fa-sun text-sm'    // kini gelap → tunjuk matahari (tukar ke terang)
+            : 'fa-solid fa-moon text-sm';  // kini terang → tunjuk bulan (tukar ke gelap)
+    }
+
+    function toggleTema() {
+        if (isDarkActive()) {
+            html.classList.remove('dark');
+            html.classList.add('light');
+            try { localStorage.setItem('ibook-theme', 'light'); } catch(e) {}
+        } else {
+            html.classList.remove('light');
+            html.classList.add('dark');
+            try { localStorage.setItem('ibook-theme', 'dark'); } catch(e) {}
+        }
+        updateIcon();
+    }
+
+    if (btn) btn.addEventListener('click', toggleTema);
+    updateIcon();
+
+    // Kemaskini ikon bila OS tukar tema (jika pengguna ikut auto)
+    mq.addEventListener('change', updateIcon);
 })();
 </script>
 </body>

@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * iBook — Sistem Pengurusan Bilik Mesyuarat
+ * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
+ * Hak cipta terpelihara. Dilarang meniru, menyalin, mengubah suai, atau
+ * mengedar perisian ini tanpa kebenaran bertulis daripada pemilik hak cipta.
+ *
+ * Pembangun : Mohd Hafez bin Husin (Unit Aplikasi Gunasama)
+ *
+ * Unauthorized copying, modification, distribution, or use of this software,
+ * via any medium, is strictly prohibited. Proprietary and confidential.
+ */
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -24,12 +36,11 @@ class Tempahan extends Model
     ];
 
     const KATEGORI = [
-        'pengurusan' => 'Mesyuarat Pengurusan',
-        'teknikal'   => 'Mesyuarat Teknikal',
-        'taklimat'   => 'Taklimat',
-        'bengkel'    => 'Bengkel / Workshop',
-        'latihan'    => 'Latihan',
-        'lain'       => 'Lain-lain',
+        'mesyuarat'    => 'Mesyuarat',
+        'perbincangan' => 'Perbincangan',
+        'taklimat'     => 'Taklimat',
+        'bengkel'      => 'Bengkel/Workshop',
+        'latihan'      => 'Latihan/Kursus',
     ];
 
     /**
@@ -144,7 +155,7 @@ class Tempahan extends Model
         $year   = $this->tarikh?->year ?? $this->created_at?->year ?? now()->year;
         $suffix = $this->ulid
             ? strtoupper(substr($this->ulid, -8))
-            : strtoupper(substr(md5($this->id . 'ibook_ref'), 0, 8));
+            : strtoupper(substr(hash('sha256', $this->id . 'ibook_ref'), 0, 8));
         return 'TMP-' . $year . '-' . $suffix;
     }
 

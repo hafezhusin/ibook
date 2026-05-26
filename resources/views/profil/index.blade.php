@@ -95,6 +95,20 @@
                     </div>
 
                     {{-- Unit --}}
+                    @if(auth()->user()->isStaf())
+                    {{-- Staf: Unit adalah readonly — hanya pentadbir & urus setia boleh ubah --}}
+                    <div style="opacity:0.55">
+                        <label class="form-label">Unit</label>
+                        <div class="form-input cursor-not-allowed bg-gray-50 text-gray-500 select-none">
+                            {{ $user->jabatan ?: '— Tiada unit ditetapkan —' }}
+                        </div>
+                        <p class="form-hint">
+                            <i class="fa-solid fa-lock text-[10px] mr-1" aria-hidden="true"></i>
+                            Unit tidak boleh diubah sendiri. Hubungi pentadbir atau urus setia untuk kemaskini.
+                        </p>
+                    </div>
+                    @else
+                    {{-- Pentadbir & Urus Setia: boleh ubah unit --}}
                     <div>
                         <label for="jabatan" class="form-label">Unit</label>
                         <select id="jabatan" name="jabatan"
@@ -112,6 +126,7 @@
                         <p id="ralat-jabatan" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
                         @enderror
                     </div>
+                    @endif
 
                 </div>
 
@@ -230,6 +245,54 @@
                         <i class="fa-solid fa-key" aria-hidden="true"></i> Tukar Kata Laluan
                     </button>
                 </div>
+            </form>
+        </section>
+
+        {{-- ── Pengesahan Dua Faktor (2FA) ── --}}
+        <section class="bg-white rounded-xl shadow-sm p-6" aria-labelledby="heading-2fa">
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-4">
+                <h2 id="heading-2fa" class="font-bold text-gray-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-shield-check text-amber-500" aria-hidden="true"></i>
+                    Pengesahan Dua Faktor
+                </h2>
+                @if($user->dua_faktor_aktif)
+                <span class="inline-flex items-center gap-1.5 text-xs font-bold text-green-700 bg-green-100 px-3 py-1 rounded-full">
+                    <span class="w-2 h-2 bg-green-500 rounded-full inline-block animate-pulse" aria-hidden="true"></span>
+                    Aktif
+                </span>
+                @else
+                <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                    <span class="w-2 h-2 bg-gray-400 rounded-full inline-block" aria-hidden="true"></span>
+                    Tidak Aktif
+                </span>
+                @endif
+            </div>
+
+            <p class="text-sm text-gray-600 mb-1 leading-relaxed">
+                @if($user->dua_faktor_aktif)
+                    2FA <strong>sedang aktif</strong>. Setiap log masuk memerlukan kod 6 digit yang dihantar ke emel
+                    <span class="font-mono text-amber-600 font-semibold">{{ $user->masked_email }}</span>.
+                @else
+                    Tambah lapisan keselamatan pada akaun anda. Apabila diaktifkan, setiap log masuk akan memerlukan
+                    kod 6 digit yang dihantar ke emel anda selain kata laluan.
+                @endif
+            </p>
+            <p class="text-xs text-gray-400 mb-5">Anda boleh aktifkan atau nyahaktifkan pada bila-bila masa.</p>
+
+            <form method="POST" action="{{ route('profil.2fa-toggle') }}">
+                @csrf
+                @if($user->dua_faktor_aktif)
+                <button type="submit"
+                    class="inline-flex items-center gap-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg px-4 py-2.5 transition-colors"
+                    onclick="return confirm('Nyahaktifkan pengesahan dua faktor? Akaun anda akan kurang selamat.')">
+                    <i class="fa-solid fa-shield-xmark" aria-hidden="true"></i> Nyahaktifkan 2FA
+                </button>
+                @else
+                <button type="submit"
+                    class="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg px-4 py-2.5 transition-colors">
+                    <i class="fa-solid fa-shield-check" aria-hidden="true"></i> Aktifkan 2FA
+                </button>
+                @endif
             </form>
         </section>
 

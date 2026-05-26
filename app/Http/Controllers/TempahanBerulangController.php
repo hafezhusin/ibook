@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * iBook — Sistem Pengurusan Bilik Mesyuarat
+ * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
+ * Hak cipta terpelihara. Dilarang meniru, menyalin, mengubah suai, atau
+ * mengedar perisian ini tanpa kebenaran bertulis daripada pemilik hak cipta.
+ *
+ * Pembangun : Mohd Hafez bin Husin (Unit Aplikasi Gunasama)
+ *
+ * Unauthorized copying, modification, distribution, or use of this software,
+ * via any medium, is strictly prohibited. Proprietary and confidential.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTempahanBerulangRequest;
@@ -25,12 +37,6 @@ class TempahanBerulangController extends Controller
     public function store(StoreTempahanBerulangRequest $request)
     {
         $validated = $request->validated();
-
-        // Normalise kategori_lain
-        if (($validated['kategori'] ?? '') === 'lain' && !empty($validated['kategori_lain'])) {
-            $validated['kategori'] = trim($validated['kategori_lain']);
-        }
-        unset($validated['kategori_lain']);
 
         // Semak kapasiti bilik
         $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
@@ -179,6 +185,14 @@ class TempahanBerulangController extends Controller
             'nama_pengerusi'   => ['required', 'string', 'max:255'],
             'tujuan'           => ['nullable', 'string', 'max:1000'],
         ]);
+
+        // Semak kapasiti bilik — bilangan peserta tidak boleh melebihi kapasiti
+        $bilik = $kumpulan->bilik;
+        if ($bilik && $validated['bilangan_peserta'] > $bilik->kapasiti) {
+            return back()->withErrors([
+                'bilangan_peserta' => "Bilangan peserta ({$validated['bilangan_peserta']}) melebihi kapasiti bilik {$bilik->nama} ({$bilik->kapasiti} orang).",
+            ])->withInput();
+        }
 
         DB::transaction(function () use ($kumpulan, $validated) {
             $kumpulan->update($validated);

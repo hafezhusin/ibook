@@ -566,8 +566,13 @@
 
 @push('scripts')
 <script nonce="{{ $cspNonce }}">
-const bulanLabel = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'];
-const dataBulan  = @json($dataBulan);
+const bulanLabel  = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'];
+const dataBulan   = @json($dataBulan);
+const _html = document.documentElement;
+const isDarkMode = _html.classList.contains('dark') ||
+    (!_html.classList.contains('light') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+const legendColor = isDarkMode ? '#e2e8f0' : '#374151';
+const gridColor   = isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)';
 
 new Chart(document.getElementById('chartBulan'), {
     type: 'bar',
@@ -585,15 +590,23 @@ new Chart(document.getElementById('chartBulan'), {
     options: {
         responsive: true,
         plugins: { legend: { display: false }, tooltip: { enabled: true } },
-        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+        scales: {
+            y: { beginAtZero: true, ticks: { precision: 0, color: legendColor }, grid: { color: gridColor } },
+            x: { ticks: { color: legendColor }, grid: { color: gridColor } }
+        }
     }
 });
 
 @if(!$mengikutKategori->isEmpty())
+@php
+    $kategoriMap    = \App\Models\Tempahan::KATEGORI;
+    $kategoriLabels = $mengikutKategori->pluck('kategori')
+        ->map(fn($k) => $kategoriMap[$k] ?? ucfirst($k));
+@endphp
 new Chart(document.getElementById('chartKategori'), {
     type: 'doughnut',
     data: {
-        labels: @json($mengikutKategori->pluck('kategori')),
+        labels: @json($kategoriLabels->values()),
         datasets: [{
             data: @json($mengikutKategori->pluck('jumlah')),
             backgroundColor: ['#f59e0b','#3b82f6','#10b981','#8b5cf6','#ef4444','#06b6d4'],
@@ -603,7 +616,19 @@ new Chart(document.getElementById('chartKategori'), {
     },
     options: {
         responsive: true,
-        plugins: { legend: { position: 'bottom' }, tooltip: { enabled: true } }
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    color: legendColor,
+                    font: { size: 13 },
+                    padding: 16,
+                    usePointStyle: true,
+                    pointStyleWidth: 12
+                }
+            },
+            tooltip: { enabled: true }
+        }
     }
 });
 @endif
@@ -649,8 +674,8 @@ new Chart(document.getElementById('chartSesi'), {
             }
         },
         scales: {
-            x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
-            y: { stacked: true, beginAtZero: true, ticks: { precision: 0, font: { size: 11 } }, grid: { color: '#f3f4f6' } }
+            x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 }, color: legendColor } },
+            y: { stacked: true, beginAtZero: true, ticks: { precision: 0, font: { size: 11 }, color: legendColor }, grid: { color: gridColor } }
         }
     }
 });

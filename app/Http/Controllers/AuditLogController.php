@@ -1,4 +1,16 @@
 <?php
+/**
+ * iBook --- Sistem Pengurusan Bilik Mesyuarat
+ * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
+ * Hak cipta terpelihara. Dilarang meniru, menyalin, mengubah suai, atau
+ * mengedar perisian ini tanpa kebenaran bertulis daripada pemilik hak cipta.
+ *
+ * Pembangun : Mohd Hafez bin Husin (Unit Aplikasi Gunasama)
+ *
+ * Unauthorized copying, modification, distribution, or use of this software,
+ * via any medium, is strictly prohibited. Proprietary and confidential.
+ */
+
 
 namespace App\Http\Controllers;
 
@@ -51,6 +63,33 @@ class AuditLogController extends Controller
 
         $jumlahKeseluruhan = ActivityLog::count();
 
-        return view('audit.index', compact('logs', 'senaraiTindakan', 'senaraiPengguna', 'jumlahKeseluruhan'));
+        // Kiraan peristiwa keselamatan dalam 24 jam — untuk banner amaran
+        $amalanBahaya = ActivityLog::whereIn('tindakan', [
+                'log_masuk_gagal',
+                'percubaan_akaun_nyahaktif',
+            ])
+            ->where('dicipta_pada', '>=', now()->subHours(24))
+            ->count();
+
+        // Top 5 IP dengan paling banyak log masuk gagal dalam 24 jam (untuk paparan)
+        $ipMencurigai = ActivityLog::select('ip_address')
+            ->selectRaw('COUNT(*) as kiraan')
+            ->where('tindakan', 'log_masuk_gagal')
+            ->where('dicipta_pada', '>=', now()->subHours(24))
+            ->whereNotNull('ip_address')
+            ->groupBy('ip_address')
+            ->orderByDesc('kiraan')
+            ->having('kiraan', '>=', 3)
+            ->limit(5)
+            ->get();
+
+        return view('audit.index', compact(
+            'logs',
+            'senaraiTindakan',
+            'senaraiPengguna',
+            'jumlahKeseluruhan',
+            'amalanBahaya',
+            'ipMencurigai',
+        ));
     }
 }

@@ -1,4 +1,16 @@
 <?php
+/**
+ * iBook --- Sistem Pengurusan Bilik Mesyuarat
+ * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
+ * Hak cipta terpelihara. Dilarang meniru, menyalin, mengubah suai, atau
+ * mengedar perisian ini tanpa kebenaran bertulis daripada pemilik hak cipta.
+ *
+ * Pembangun : Mohd Hafez bin Husin (Unit Aplikasi Gunasama)
+ *
+ * Unauthorized copying, modification, distribution, or use of this software,
+ * via any medium, is strictly prohibited. Proprietary and confidential.
+ */
+
 
 namespace App\Http\Controllers;
 
@@ -52,6 +64,7 @@ class TempahanController extends Controller
             ->select([
                 'id',
                 'ulid',            // diperlukan oleh getRouteKeyName() untuk jana URL
+                'tempahan_berulang_id', // untuk scope modal padam berulang
                 'nama_mesyuarat',
                 'tarikh',
                 'masa_mula',
@@ -70,6 +83,7 @@ class TempahanController extends Controller
                 'bilik:id,nama',
                 'pengguna:id,name',
                 'pengubah:id,name',
+                'kumpulanBerulang:id,ulid', // untuk data-padam-kumpulan-ulid dalam modal
             ]);
 
         $this->terapiFilters($query, $request);
@@ -135,6 +149,13 @@ class TempahanController extends Controller
                     'tujuan'           => $asal->tujuan,
                 ];
             }
+        } elseif ($request->hasAny(['bilik_id', 'tarikh'])) {
+            // Pre-isi dari pautan luar (cth: klik slot kosong dalam Jadual Minggu)
+            $duplikat = [
+                'bilik_id' => $request->bilik_id,
+                'tarikh'   => $request->tarikh,
+                'sesi'     => array_values(array_filter((array) $request->input('sesi', []))),
+            ];
         }
 
         return view('tempahan.create', compact('bilik', 'kategori', 'sesi', 'duplikat'));
@@ -143,12 +164,6 @@ class TempahanController extends Controller
     public function store(StoreTempahanRequest $request)
     {
         $validated = $request->validated();
-
-        // Gantikan 'lain' dengan teks kategori yang dimasukkan pengguna
-        if ($validated['kategori'] === 'lain' && !empty($validated['kategori_lain'])) {
-            $validated['kategori'] = trim($validated['kategori_lain']);
-        }
-        unset($validated['kategori_lain']);
 
         $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
         if ($validated['bilangan_peserta'] > $bilik->kapasiti) {
@@ -252,12 +267,6 @@ class TempahanController extends Controller
         // Autoriti dikendalikan oleh UpdateTempahanRequest::authorize()
         $user      = Auth::user();
         $validated = $request->validated();
-
-        // Gantikan 'lain' dengan teks kategori yang dimasukkan pengguna
-        if ($validated['kategori'] === 'lain' && !empty($validated['kategori_lain'])) {
-            $validated['kategori'] = trim($validated['kategori_lain']);
-        }
-        unset($validated['kategori_lain']);
 
         $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
         if ($validated['bilangan_peserta'] > $bilik->kapasiti) {

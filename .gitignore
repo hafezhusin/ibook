@@ -24,7 +24,16 @@ yarn-error.log
 /.vscode
 /bootstrap/cache/*.php
 
+# ── Patcher / deployment tools — jangan commit ke git ────────
 public/deploy.php
 public/patch-*.php
 public/seeder-*.php
+public/fix-*.php
+public/migrate-*.php
+public/diag-*.php
+fix-*.php
+deploy-*.php
+setup-*.php
+diag*.php
+chk-*.php
 SESSION_LOG.md

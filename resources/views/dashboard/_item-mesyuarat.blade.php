@@ -24,7 +24,7 @@
     {{-- Tindakan --}}
     <div class="flex flex-col items-end justify-center gap-1.5 flex-shrink-0">
         <span class="badge-lulus text-xs">Disahkan</span>
-        <a href="{{ route('tempahan.show', $m) }}"
+        <a href="{{ $m->ulid ? route('tempahan.show', $m) : '#' }}"
            class="text-xs text-gray-400 hover:text-amber-500 transition-colors"
            aria-label="Butiran: {{ $m->nama_mesyuarat }}">
             Butiran →

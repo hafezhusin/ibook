@@ -1,4 +1,16 @@
 <?php
+/**
+ * iBook --- Sistem Pengurusan Bilik Mesyuarat
+ * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
+ * Hak cipta terpelihara. Dilarang meniru, menyalin, mengubah suai, atau
+ * mengedar perisian ini tanpa kebenaran bertulis daripada pemilik hak cipta.
+ *
+ * Pembangun : Mohd Hafez bin Husin (Unit Aplikasi Gunasama)
+ *
+ * Unauthorized copying, modification, distribution, or use of this software,
+ * via any medium, is strictly prohibited. Proprietary and confidential.
+ */
+
 
 namespace App\Models;
 
@@ -51,6 +63,7 @@ class User extends Authenticatable
         'peranan',
         'aktif',
         'last_login_at',
+        'dua_faktor_aktif',
     ];
 
     protected $hidden = [
@@ -64,6 +77,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password'          => 'hashed',
             'aktif'             => 'boolean',
+            'dua_faktor_aktif'  => 'boolean',
             'last_login_at'     => 'datetime',
         ];
     }

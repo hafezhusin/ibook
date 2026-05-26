@@ -1,5 +1,17 @@
 <?php
 
+/**
+ * iBook — Sistem Pengurusan Bilik Mesyuarat
+ * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
+ * Hak cipta terpelihara. Dilarang meniru, menyalin, mengubah suai, atau
+ * mengedar perisian ini tanpa kebenaran bertulis daripada pemilik hak cipta.
+ *
+ * Pembangun : Mohd Hafez bin Husin (Unit Aplikasi Gunasama)
+ *
+ * Unauthorized copying, modification, distribution, or use of this software,
+ * via any medium, is strictly prohibited. Proprietary and confidential.
+ */
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreBilikRequest;
@@ -109,8 +121,8 @@ class BilikController extends Controller
             }
         }
 
-        // Buat nama fail unik
-        $namaFail   = uniqid('bilik_', true) . '.jpg';
+        // Buat nama fail unik menggunakan ULID (lebih selamat dari uniqid)
+        $namaFail   = \Illuminate\Support\Str::ulid() . '.jpg';
         $targetPath = $dir . '/' . $namaFail;
 
         // Load imej sumber mengikut MIME

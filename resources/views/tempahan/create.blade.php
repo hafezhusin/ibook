@@ -117,20 +117,6 @@
                 @error('kategori')
                 <p id="ralat-kategori" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
                 @enderror
-
-                {{-- Input Lain-lain — muncul apabila "Lain-lain" dipilih --}}
-                <div id="kategori-lain-wrap" class="{{ old('kategori') === 'lain' ? '' : 'hidden' }} mt-2">
-                    <label for="kategori-lain-input" class="sr-only">Nyatakan kategori</label>
-                    <input type="text" id="kategori-lain-input" name="kategori_lain"
-                        value="{{ old('kategori_lain') }}"
-                        class="form-input @error('kategori_lain') border-red-400 @enderror"
-                        placeholder="Nyatakan kategori mesyuarat..."
-                        maxlength="100"
-                        @error('kategori_lain') aria-invalid="true" aria-describedby="ralat-kategori-lain" @enderror>
-                    @error('kategori_lain')
-                    <p id="ralat-kategori-lain" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
-                    @enderror
-                </div>
             </div>
         </div>
 
@@ -152,7 +138,7 @@
                     <div class="relative">
                         <i class="fa-solid fa-calendar-days absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden="true"></i>
                         <input type="text" id="tarikh" name="tarikh"
-                            value="{{ old('tarikh') }}"
+                            value="{{ old('tarikh', $duplikat['tarikh'] ?? '') }}"
                             required
                             aria-required="true"
                             placeholder="YYYY-MM-DD atau pilih dari kalendar"
@@ -199,7 +185,10 @@
                 <p class="text-xs text-gray-400 mb-3">Boleh pilih satu atau kedua-dua sesi.</p>
                 <div class="space-y-3">
                     @foreach($sesi as $key => $s)
-                    @php $checked = is_array(old('sesi')) ? in_array($key, old('sesi')) : false; @endphp
+                    @php
+                        $sesiPrefill = old('sesi') ?? ($duplikat['sesi'] ?? []);
+                        $checked = is_array($sesiPrefill) && in_array($key, $sesiPrefill);
+                    @endphp
                     <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all
                         {{ $checked ? 'border-amber-400 bg-amber-50' : 'border-gray-200 hover:border-amber-300' }}"
                         id="label-sesi-{{ $key }}">
@@ -644,6 +633,8 @@ function kemaskiniRingkasan() {
 }
 
 // ── Pastikan sekurang-kurangnya 1 sesi dipilih sebelum hantar ─────
+const btnHantar = document.querySelector('#borang-tempahan button[type="submit"]');
+
 document.querySelector('form').addEventListener('submit', function(e) {
     const dipilih = document.querySelectorAll('input[name="sesi[]"]:checked');
     if (dipilih.length === 0) {
@@ -658,20 +649,21 @@ document.querySelector('form').addEventListener('submit', function(e) {
         }
         ralat.textContent = 'Sila pilih sekurang-kurangnya satu sesi mesyuarat.';
         document.querySelector('fieldset').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return; // jangan tunjuk loading state — form tak dihantar
     }
-});
 
-// ── Kategori Lain-lain: tunjuk/sembunyi text field ────────────────
-function toggleKategoriLain() {
-    const sel  = document.getElementById('kategori');
-    const wrap = document.getElementById('kategori-lain-wrap');
-    const inp  = document.getElementById('kategori-lain-input');
-    if (!sel || !wrap || !inp) return;
-    const isLain = sel.value === 'lain';
-    wrap.classList.toggle('hidden', !isLain);
-    inp.required = isLain;
-    if (!isLain) inp.value = '';
-}
+    // Form dihantar — tahan sebentar untuk repaint spinner, kemudian submit
+    e.preventDefault();
+    const form = this;
+    if (btnHantar) {
+        btnHantar.disabled = true;
+        btnHantar.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i> Menghantar...';
+        btnHantar.style.opacity = '0.75';
+        btnHantar.style.cursor = 'not-allowed';
+    }
+    // 80ms: cukup untuk browser repaint spinner sebelum navigasi berlaku
+    setTimeout(() => form.submit(), 80);
+});
 
 // ── Tempahan Berulang ──────────────────────────────────────────────
 const urlNormal   = "{{ route('tempahan.store') }}";
@@ -797,13 +789,6 @@ function muatPratonton() {
 
 // ── Init: event listeners + semak kapasiti & ringkasan ───────────
 document.addEventListener('DOMContentLoaded', function() {
-    // Kategori Lain-lain
-    const selectKategori = document.getElementById('kategori');
-    if (selectKategori) {
-        selectKategori.addEventListener('change', toggleKategoriLain);
-        toggleKategoriLain(); // init — tunjuk jika old('kategori') === 'lain'
-    }
-
     // Sesi checkbox — guna 'change' event (CSP-safe, tiada onclick di HTML)
     ['pagi', 'petang'].forEach(function(key) {
         const cb = document.getElementById('sesi-' + key);
