@@ -14,20 +14,24 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\PerananPengguna;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Auth\DuaFaktorController;
 use App\Mail\AmaranKeselamatan;
 use App\Mail\KodOTP;
 use App\Models\ActivityLog;
 use App\Models\Tetapan;
+use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Laravel\Socialite\Facades\Socialite;
 
 class AuthController extends Controller
 {
@@ -35,6 +39,79 @@ class AuthController extends Controller
     protected int $maxAttempts = 5;
     // Tempoh kunci (minit)
     protected int $decayMinutes = 15;
+
+    /**
+     * Redirect pengguna ke Google untuk pengesahan OAuth.
+     */
+    public function redirectGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    /**
+     * Terima callback dari Google selepas pengesahan berjaya.
+     * - Hanya domain @anm.gov.my dibenarkan
+     * - Match akaun sedia ada via email, atau cipta akaun baharu (Staf)
+     * - Pengguna Google terus log masuk — tiada 2FA (Google sudah uruskan)
+     */
+    public function callbackGoogle(Request $request)
+    {
+        try {
+            $googleUser = Socialite::driver('google')->user();
+        } catch (\Throwable $e) {
+            Log::warning('Google SSO callback gagal: ' . $e->getMessage());
+            return redirect()->route('login')
+                ->with('error', 'Log masuk Google gagal. Sila cuba lagi.');
+        }
+
+        // ── Semak domain @anm.gov.my ──────────────────────────────────
+        $domain = Str::after($googleUser->email, '@');
+        if ($domain !== 'anm.gov.my') {
+            return redirect()->route('login')
+                ->with('error', 'Hanya akaun rasmi @anm.gov.my dibenarkan log masuk melalui Google.');
+        }
+        // ─────────────────────────────────────────────────────────────
+
+        // ── Cari atau cipta pengguna ──────────────────────────────────
+        $user = User::where('google_id', $googleUser->id)
+                    ->orWhere('email', $googleUser->email)
+                    ->first();
+
+        if ($user) {
+            // Kemas kini google_id jika belum ada (akaun lama sebelum SSO)
+            if (!$user->google_id) {
+                $user->update(['google_id' => $googleUser->id]);
+            }
+
+            // Semak akaun aktif
+            if (!$user->aktif) {
+                return redirect()->route('login')
+                    ->with('error', 'Akaun anda telah dinyahaktifkan. Sila hubungi pentadbir.');
+            }
+        } else {
+            // Cipta akaun baharu dengan peranan Staf
+            $user = User::create([
+                'name'      => $googleUser->name,
+                'email'     => $googleUser->email,
+                'google_id' => $googleUser->id,
+                'password'  => Hash::make(Str::random(32)),
+                'peranan'   => PerananPengguna::Staf->value,
+                'aktif'     => true,
+            ]);
+        }
+        // ─────────────────────────────────────────────────────────────
+
+        Auth::login($user, remember: true);
+        $request->session()->regenerate();
+
+        $user->update(['last_login_at' => now()]);
+
+        AuditLogger::catat('log_masuk_google', null, [
+            'user_agent' => substr($request->userAgent() ?? '', 0, 200),
+        ], $user->name . ' log masuk melalui Google SSO');
+
+        return redirect()->intended(route('dashboard'));
+    }
 
     public function showLogin()
     {

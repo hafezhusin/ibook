@@ -22,6 +22,10 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Google SSO
+Route::get('/auth/google', [AuthController::class, 'redirectGoogle'])->name('auth.google');
+Route::get('/auth/google/callback', [AuthController::class, 'callbackGoogle'])->name('auth.google.callback');
+
 // Lupa & set semula kata laluan
 // throttle:5,1 = maksimum 5 percubaan per minit per IP — cegah spam emel & brute force token
 Route::get('/lupa-kata-laluan', [ForgotPasswordController::class, 'showLinkForm'])->name('password.request');
