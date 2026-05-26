@@ -31,7 +31,7 @@
         <td style="padding:32px;">
           <p style="margin:0 0 16px;font-size:15px;">Salam pentadbir,</p>
           <p style="margin:0 0 20px;font-size:15px;">
-            Seorang pengguna baharu telah mendaftar melalui <strong>MyGouvUC SSO</strong> dan sedang menunggu kelulusan anda:
+            Seorang pengguna baharu telah mendaftar melalui <strong>MyGovUC SSO</strong> dan sedang menunggu kelulusan anda:
           </p>
 
           <table width="100%" cellpadding="10" cellspacing="0" style="background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:24px;">
