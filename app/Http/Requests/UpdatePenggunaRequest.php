@@ -26,8 +26,9 @@ class UpdatePenggunaRequest extends FormRequest
 
     public function rules(): array
     {
+        // Nama optional — diabaikan pada server jika pengguna ada google_id (SSO)
         return [
-            'name'    => ['required', 'string', 'max:255'],
+            'name'    => ['sometimes', 'string', 'max:255'],
             'jabatan' => ['nullable', 'string', 'max:255'],
             'peranan' => ['required', 'in:' . PerananPengguna::validasiIn()],
             'aktif'   => ['boolean'],

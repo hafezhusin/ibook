@@ -91,6 +91,11 @@ class PenggunaController extends Controller
             return back()->with('error', 'Anda tidak boleh menyahaktifkan akaun anda sendiri.');
         }
 
+        // Nama dari MyGovUC — tidak boleh diubah oleh admin (walaupun form dimanipulasi)
+        if ($pengguna->google_id) {
+            unset($validated['name']);
+        }
+
         $pengguna->update($validated);
 
         // Paksa log keluar sesi aktif jika peranan atau status aktif berubah
