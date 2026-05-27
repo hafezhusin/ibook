@@ -104,10 +104,25 @@ class DashboardService
             ->count();
 
         // Statistik bilik
-        $bilik              = BilikMesyuarat::where('status', 'aktif')->get();
-        $bilikDitempahPagi  = Tempahan::whereDate('tarikh', today())->where('sesi', 'pagi')->where('status', Tempahan::STATUS_DILULUSKAN)->pluck('bilik_id');
-        $bilikDitempahPetang = Tempahan::whereDate('tarikh', today())->where('sesi', 'petang')->where('status', Tempahan::STATUS_DILULUSKAN)->pluck('bilik_id');
-        $bilikPenuh         = $bilikDitempahPagi->intersect($bilikDitempahPetang);
+        $bilik = BilikMesyuarat::where('status', 'aktif')->get();
+        $esok  = today()->addDay();
+
+        // Satu query untuk semua slot hari ini + esok — ganti 4 query berasingan
+        $slotDitempah = Tempahan::whereIn('tarikh', [today(), $esok])
+            ->where('status', Tempahan::STATUS_DILULUSKAN)
+            ->select('tarikh', 'sesi', 'bilik_id')
+            ->get()
+            ->groupBy(fn ($r) => $r->tarikh->toDateString() . '|' . $r->sesi);
+
+        $ambilSlot = fn ($hari, $sesi) => $slotDitempah
+            ->get($hari->toDateString() . '|' . $sesi, collect())
+            ->pluck('bilik_id');
+
+        $bilikDitempahPagi       = $ambilSlot(today(), 'pagi');
+        $bilikDitempahPetang     = $ambilSlot(today(), 'petang');
+        $bilikDitempahPagiEsok   = $ambilSlot($esok, 'pagi');
+        $bilikDitempahPetangEsok = $ambilSlot($esok, 'petang');
+        $bilikPenuh              = $bilikDitempahPagi->intersect($bilikDitempahPetang);
 
         $jumlahBilikAktif    = $bilik->count();
         $jumlahBilikTersedia = max(0, $jumlahBilikAktif - $bilikPenuh->count());
@@ -166,12 +181,9 @@ class DashboardService
             ->orderBy('masa_mula')
             ->first();
 
-        // Ketersediaan esok (2 query ringan, guna koleksi $bilik yang dah diload)
-        $esok = today()->addDay();
-        $bilikDitempahPagiEsok   = Tempahan::whereDate('tarikh', $esok)->where('sesi', 'pagi')->where('status', Tempahan::STATUS_DILULUSKAN)->pluck('bilik_id');
-        $bilikDitempahPetangEsok = Tempahan::whereDate('tarikh', $esok)->where('sesi', 'petang')->where('status', Tempahan::STATUS_DILULUSKAN)->pluck('bilik_id');
-        $bilikKosongEsokPagi     = $bilik->filter(fn ($b) => !$bilikDitempahPagiEsok->contains($b->id))->count();
-        $bilikKosongEsokPetang   = $bilik->filter(fn ($b) => !$bilikDitempahPetangEsok->contains($b->id))->count();
+        // Ketersediaan esok — data sudah ada dari query konsolidasi di atas
+        $bilikKosongEsokPagi   = $bilik->filter(fn ($b) => !$bilikDitempahPagiEsok->contains($b->id))->count();
+        $bilikKosongEsokPetang = $bilik->filter(fn ($b) => !$bilikDitempahPetangEsok->contains($b->id))->count();
 
         // ── Trend 6 bulan ─────────────────────────────────────────────
         $trendBulanan = $this->kiraTrendBulanan($query, 6);

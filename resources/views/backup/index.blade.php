@@ -191,6 +191,7 @@
                     <th class="px-6 py-3">Fail</th>
                     <th class="px-4 py-3">Jenis</th>
                     <th class="px-4 py-3">Saiz</th>
+                    <th class="px-4 py-3">Checksum</th>
                     <th class="px-4 py-3">Dibuat Oleh</th>
                     <th class="px-4 py-3">Tarikh</th>
                     <th class="px-4 py-3 text-right">Tindakan</th>
@@ -216,6 +217,17 @@
                     </td>
                     <td class="px-4 py-3 text-gray-500 text-xs font-mono">
                         {{ $log->saiz_format }}
+                    </td>
+                    <td class="px-4 py-3">
+                        @if($log->checksum)
+                        <span class="inline-flex items-center gap-1 text-xs font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded"
+                              title="SHA-256: {{ $log->checksum }}">
+                            <i class="fa-solid fa-shield-halved text-emerald-500 text-[10px]" aria-hidden="true"></i>
+                            {{ substr($log->checksum, 0, 8) }}…
+                        </span>
+                        @else
+                        <span class="text-gray-300 text-xs">—</span>
+                        @endif
                     </td>
                     <td class="px-4 py-3 text-gray-600 text-xs">
                         {{ $log->dibuatOleh?->name ?? '—' }}

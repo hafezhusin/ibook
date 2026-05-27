@@ -38,6 +38,7 @@ class BackupController extends Controller
             BackupLog::create([
                 'nama_fail'  => $result['nama'],
                 'saiz_bytes' => $result['saiz'],
+                'checksum'   => $result['checksum'],
                 'jenis'      => 'segera',
                 'dibuat_oleh'=> auth()->id(),
             ]);

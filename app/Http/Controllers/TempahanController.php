@@ -15,6 +15,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\TempahanExport;
+use App\Filters\TempahanFilter;
 use App\Http\Requests\StoreTempahanRequest;
 use App\Http\Requests\UpdateTempahanRequest;
 use App\Mail\NotifikasiTempahanBaharu;
@@ -330,19 +331,20 @@ class TempahanController extends Controller
         $bilikId = (int) $request->bilik_id;
         $tarikh  = $request->tarikh;
 
-        $hasil = [];
-        foreach (['pagi', 'petang'] as $sesi) {
-            $hasil[$sesi] = Tempahan::where('bilik_id', $bilikId)
-                ->whereDate('tarikh', $tarikh)
-                ->where('sesi', $sesi)
-                ->where('status', '!=', Tempahan::STATUS_DITOLAK)
-                ->exists();
-        }
+        // Satu query — ambil semua sesi yang berkonflik sekaligus
+        $sesiKonflik = Tempahan::where('bilik_id', $bilikId)
+            ->whereDate('tarikh', $tarikh)
+            ->whereIn('sesi', ['pagi', 'petang'])
+            ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+            ->pluck('sesi');
 
         $bilik = BilikMesyuarat::find($bilikId);
-        $hasil['kapasiti'] = $bilik?->kapasiti ?? 0;
 
-        return response()->json($hasil);
+        return response()->json([
+            'pagi'     => $sesiKonflik->contains('pagi'),
+            'petang'   => $sesiKonflik->contains('petang'),
+            'kapasiti' => $bilik?->kapasiti ?? 0,
+        ]);
     }
 
     public function exportPdf(Request $request)
@@ -366,56 +368,12 @@ class TempahanController extends Controller
     }
 
     /**
-     * Terapi semua parameter filter permintaan pada query tempahan.
-     * Digunakan bersama oleh index() dan exportPdf() supaya output
-     * eksport sentiasa selari dengan paparan senarai semasa.
+     * Delegasi semua logik penapisan kepada TempahanFilter.
+     * Dikongsi oleh index(), exportPdf(), dan TempahanExport.
      */
     private function terapiFilters($query, Request $request): void
     {
-        $user = Auth::user();
-
-        if ($request->filled('bilik_id')) {
-            $query->where('bilik_id', $request->bilik_id);
-        }
-        if ($request->filled('carian')) {
-            $query->where('nama_mesyuarat', 'like', '%' . $request->carian . '%');
-        }
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-        if ($request->filled('kategori')) {
-            $query->where('kategori', $request->kategori);
-        }
-        if ($request->filled('tarikh_dari')) {
-            $query->whereDate('tarikh', '>=', $request->tarikh_dari);
-        }
-        if ($request->filled('tarikh_hingga')) {
-            $query->whereDate('tarikh', '<=', $request->tarikh_hingga);
-        }
-        if ($request->filled('jabatan') && !$user->isStaf()) {
-            $query->whereHas('pengguna', fn ($q) => $q->where('jabatan', 'like', '%' . $request->jabatan . '%'));
-        }
-
-        switch ($request->get('tarikh_filter')) {
-            case 'hari_ini':
-                $query->whereDate('tarikh', today());
-                break;
-            case 'esok':
-                $query->whereDate('tarikh', today()->addDay());
-                break;
-            case 'baharu':
-                $query->where('created_at', '>=', now()->subHours(24));
-                break;
-            case '7_hari':
-                $query->whereBetween('tarikh', [today(), today()->addDays(7)]);
-                break;
-            case 'bulan_ini':
-                $query->whereMonth('tarikh', now()->month)->whereYear('tarikh', now()->year);
-                break;
-            case 'akan_datang':
-                $query->where('tarikh', '>=', today());
-                break;
-        }
+        TempahanFilter::terapkan($query, $request);
     }
 
     /**

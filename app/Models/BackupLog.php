@@ -16,6 +16,7 @@ class BackupLog extends Model
     protected $fillable = [
         'nama_fail',
         'saiz_bytes',
+        'checksum',
         'jenis',
         'dibuat_oleh',
     ];

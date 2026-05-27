@@ -1,0 +1,271 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Console/Commands/AuditVerify.php
+
+		-
+			message: '#^Relation ''pengguna'' is not found in App\\Models\\ActivityLog model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Exports/AuditLogExport.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Exports/AuditLogExport.php
+
+		-
+			message: '#^Property App\\Exports\\LaporanBilikSheet\:\:\$tahun is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Exports/LaporanExport.php
+
+		-
+			message: '#^Property App\\Exports\\LaporanBulanSheet\:\:\$tahun is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Exports/LaporanExport.php
+
+		-
+			message: '#^Property App\\Exports\\LaporanKategoriSheet\:\:\$tahun is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Exports/LaporanExport.php
+
+		-
+			message: '#^Property App\\Exports\\LaporanTop10Sheet\:\:\$tahun is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Exports/LaporanExport.php
+
+		-
+			message: '#^Property App\\Exports\\LaporanUnitSheet\:\:\$tahun is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Exports/LaporanExport.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>jumlah" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Exports/LaporanExport.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>unit" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Exports/LaporanExport.php
+
+		-
+			message: '#^Relation ''bilik'' is not found in App\\Models\\Tempahan model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Exports/TempahanExport.php
+
+		-
+			message: '#^Relation ''pengguna'' is not found in App\\Models\\Tempahan model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Exports/TempahanExport.php
+
+		-
+			message: '#^Relation ''pengguna'' is not found in App\\Models\\ActivityLog model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/AuditLogController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$dua_faktor_aktif\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Auth/AuthController.php
+
+		-
+			message: '#^Call to an undefined method Laravel\\Socialite\\Contracts\\Provider\:\:stateless\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Http/Controllers/Auth/AuthController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>masked_email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Auth/DuaFaktorController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BilikMesyuarat\:\:\$peratus_penggunaan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/BilikController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BilikMesyuarat\:\:\$tempahan_bulan_ini\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/BilikController.php
+
+		-
+			message: '#^Relation ''bilik'' is not found in App\\Models\\Tempahan model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/CarianController.php
+
+		-
+			message: '#^Relation ''pengguna'' is not found in App\\Models\\Tempahan model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/CarianController.php
+
+		-
+			message: '#^Relation ''bilik'' is not found in App\\Models\\Tempahan model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Http/Controllers/KalendarController.php
+
+		-
+			message: '#^Relation ''pengguna'' is not found in App\\Models\\Tempahan model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/KalendarController.php
+
+		-
+			message: '#^Instanceof between Carbon\\Carbon and Carbon\\Carbon will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/KetersediaanController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\BilikMesyuarat\:\:\$tempahan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/LaporanController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Tempahan\:\:\$bulan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/LaporanController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Tempahan\:\:\$jumlah\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/LaporanController.php
+
+		-
+			message: '#^Comparison operation "\>" between 730\|732 and 0 is always true\.$#'
+			identifier: greater.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/LaporanController.php
+
+		-
+			message: '#^Relation ''tempahan'' is not found in App\\Models\\BilikMesyuarat model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/LaporanController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>jumlah" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/LaporanController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\User\:\:\$dua_faktor_aktif\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/ProfilController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Tempahan\:\:\$kumpulanBerulang\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TempahanBerulangController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\TempahanBerulang\:\:\$bilik\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TempahanBerulangController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Tempahan\:\:\$pengguna\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/TempahanController.php
+
+		-
+			message: '#^Relation ''pengguna'' is not found in App\\Models\\Tempahan model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/TempahanController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>kapasiti" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/TempahanController.php
+
+		-
+			message: '#^Relation ''pengguna'' is not found in App\\Models\\ActivityLog model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Http/Controllers/TetapanController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Tempahan\:\:\$pengguna\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Models/Tempahan.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Models/Tempahan.php
+
+		-
+			message: '#^Match arm comparison between ''ditolak'' and ''ditolak'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Models/Tempahan.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>year" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Models/Tempahan.php
+
+		-
+			message: '#^Match arm comparison between ''staf'' and ''staf'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/AuditLogger.php
+
+		-
+			message: '#^Relation ''bilik'' is not found in App\\Models\\Tempahan model\.$#'
+			identifier: larastan.relationExistence
+			count: 2
+			path: app/Services/DashboardService.php
+
+		-
+			message: '#^Relation ''pengguna'' is not found in App\\Models\\Tempahan model\.$#'
+			identifier: larastan.relationExistence
+			count: 1
+			path: app/Services/DashboardService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>jumlah" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/DashboardService.php

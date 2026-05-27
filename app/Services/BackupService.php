@@ -100,10 +100,14 @@ class BackupService
 
         Storage::disk('local')->put($path, $sql);
 
+        // Kira SHA-256 checksum untuk integriti forensik
+        $checksum = hash('sha256', $sql);
+
         return [
-            'nama'  => $nama,
-            'path'  => $path,
-            'saiz'  => strlen($sql),
+            'nama'     => $nama,
+            'path'     => $path,
+            'saiz'     => strlen($sql),
+            'checksum' => $checksum,
         ];
     }
 
