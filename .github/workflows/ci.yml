@@ -8,8 +8,18 @@ on:
 
 jobs:
   build:
-    name: PHP ${{ matrix.php }} — Syntax & Style
+    name: PHP ${{ matrix.php }} — Syntax, Style & Tests
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: ibook_test
+          MYSQL_ROOT_PASSWORD: secret
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
 
     strategy:
       matrix:
@@ -41,6 +51,18 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
+      - name: Prepare Laravel environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          sed -i 's/DB_CONNECTION=.*/DB_CONNECTION=mysql/' .env
+          sed -i 's/DB_HOST=.*/DB_HOST=127.0.0.1/' .env
+          sed -i 's/DB_PORT=.*/DB_PORT=3306/' .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=ibook_test/' .env
+          sed -i 's/DB_USERNAME=.*/DB_USERNAME=root/' .env
+          sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=secret/' .env
+          php artisan migrate --force
+
       - name: Check PHP syntax (all source files)
         run: |
           find app config database routes -name "*.php" | \
@@ -53,3 +75,6 @@ jobs:
 
       - name: Run PHPStan (static analysis)
         run: ./vendor/bin/phpstan analyse --memory-limit=512M --no-progress
+
+      - name: Run Feature Tests
+        run: php artisan test --stop-on-failure
