@@ -432,6 +432,10 @@
                 <div>
                     <label for="edit-name" class="form-label">Nama Penuh</label>
                     <input type="text" id="edit-name" name="name" class="form-input">
+                    <p id="edit-name-sso-hint" class="hidden mt-1.5 text-xs flex items-center gap-1.5" style="color:#92400e">
+                        <i class="fa-brands fa-google" aria-hidden="true"></i>
+                        Nama diambil dari akaun MyGovUC — tidak boleh diubah di sini.
+                    </p>
                 </div>
                 <div>
                     <label for="edit-jabatan" class="form-label">Unit</label>
@@ -590,7 +594,7 @@ document.addEventListener('click', function(e) {
     const editBtn = e.target.closest('[data-open-edit]');
     if (editBtn) {
         const d = editBtn.dataset;
-        openEdit(parseInt(d.openEdit, 10), d.name, d.jabatan, d.peranan, d.aktif === 'true');
+        openEdit(parseInt(d.openEdit, 10), d.name, d.jabatan, d.peranan, d.aktif === 'true', d.hasSso === 'true');
         return;
     }
     const nyahaktifBtn = e.target.closest('[data-open-nyahaktif]');
@@ -752,14 +756,23 @@ function sortList(panel, col, btnEl) {
     btnEl.querySelector('.sort-icon').textContent = dir === 'asc' ? '↑' : '↓';
 }
 
-function openEdit(id, name, jabatan, peranan, aktif) {
-    document.getElementById('form-edit').action = '/pengguna/' + id;
-    document.getElementById('edit-name').value    = name;
-    document.getElementById('edit-jabatan').value = jabatan || '';
-    document.getElementById('edit-peranan').value = peranan;
-    document.getElementById('edit-aktif').checked = aktif;
+function openEdit(id, name, jabatan, peranan, aktif, hasSso) {
+    document.getElementById('form-edit').action    = '/pengguna/' + id;
+    document.getElementById('edit-jabatan').value  = jabatan || '';
+    document.getElementById('edit-peranan').value  = peranan;
+    document.getElementById('edit-aktif').checked  = aktif;
+
+    const nameInput = document.getElementById('edit-name');
+    const ssoHint   = document.getElementById('edit-name-sso-hint');
+    nameInput.value    = name;
+    nameInput.readOnly = hasSso;
+    nameInput.style.opacity = hasSso ? '0.5' : '1';
+    nameInput.style.cursor  = hasSso ? 'not-allowed' : '';
+    ssoHint.classList.toggle('hidden', !hasSso);
+
     document.getElementById('modal-edit').classList.remove('hidden');
-    setTimeout(() => document.getElementById('edit-name').focus(), 50);
+    // Fokus ke jabatan jika nama readonly, nama jika tidak
+    setTimeout(() => (hasSso ? document.getElementById('edit-jabatan') : nameInput).focus(), 50);
 }
 
 // ── Modal Nyahaktifkan ──
