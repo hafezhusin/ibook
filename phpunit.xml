@@ -17,6 +17,15 @@
         <include>
             <directory>app</directory>
         </include>
+        <exclude>
+            <!-- Kelas Mail & Notification — tiada logik perniagaan, hanya templat e-mel -->
+            <directory>app/Mail</directory>
+            <directory>app/Notifications</directory>
+            <!-- Infrastruktur Backup — operasi fail sistem & PDO dump, tidak sesuai untuk ujian unit -->
+            <file>app/Services/BackupService.php</file>
+            <file>app/Models/BackupLog.php</file>
+            <file>app/Http/Controllers/BackupController.php</file>
+        </exclude>
     </source>
 
     <php>
