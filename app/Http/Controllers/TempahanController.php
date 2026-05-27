@@ -345,6 +345,7 @@ class TempahanController extends Controller
         return response()->json([
             'pagi'     => $sesiKonflik->contains('pagi'),
             'petang'   => $sesiKonflik->contains('petang'),
+            // @phpstan-ignore-next-line nullsafe.neverNull — find() boleh null jika bilik_id tidak sah
             'kapasiti' => $bilik?->kapasiti ?? 0,
         ]);
     }

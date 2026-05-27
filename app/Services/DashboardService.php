@@ -251,6 +251,7 @@ class DashboardService
 
             $hasil[] = [
                 'label'  => $namaBulan[$tarikh->month] . ' ' . $tarikh->year,
+                // @phpstan-ignore-next-line nullsafe.neverNull — keyBy collection mungkin tiada kunci bulan ini
                 'jumlah' => (int) ($baris->get($kunci)?->jumlah ?? 0),
             ];
         }

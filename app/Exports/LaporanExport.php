@@ -77,7 +77,9 @@ class LaporanRingkasanSheet implements FromArray, WithTitle, WithColumnWidths, W
             ['', ''],
             ['RINGKASAN KPI', ''],
             ['Jumlah Tempahan Diluluskan', $this->data['totalDiluluskan']],
+            // @phpstan-ignore-next-line nullsafe.neverNull — $up boleh null jika tiada tempahan
             ['Unit Paling Aktif', $up?->unit ?? '—'],
+            // @phpstan-ignore-next-line nullsafe.neverNull
             ['Tempahan Unit Paling Aktif', $up?->jumlah ?? '—'],
             ['Bilik Paling Digunakan', $bp ? $bp['nama'] : '—'],
             ['Tempahan Bilik Paling Digunakan', $bp ? $bp['jumlah_tempahan'] : '—'],

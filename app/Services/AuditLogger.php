@@ -96,6 +96,7 @@ class AuditLogger
      */
     private static function janaPenerangan(string $tindakan, ?Model $model): string
     {
+        // @phpstan-ignore-next-line nullsafe.neverNull — boleh dipanggil dari konteks tanpa auth (cron/sistem)
         $namaPengguna = Auth::user()?->name ?? 'Sistem';
         $namaModel    = $model ? class_basename($model) . ' #' . $model->getKey() : '';
 

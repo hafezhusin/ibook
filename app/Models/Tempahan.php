@@ -164,6 +164,8 @@ class Tempahan extends Model
      */
     public function getNoRujukanAttribute(): string
     {
+        // tarikh/created_at boleh null sebelum save — nullsafe dan coalesce adalah pertahanan defensif.
+        // @phpstan-ignore-next-line nullsafe.neverNull, nullCoalesce.expr
         $year   = $this->tarikh?->year ?? $this->created_at?->year ?? now()->year;
         $suffix = $this->ulid
             ? strtoupper(substr($this->ulid, -8))
@@ -180,11 +182,12 @@ class Tempahan extends Model
 
     public function getStatusBadgeAttribute(): string
     {
-        return match ($this->status) {
-            self::STATUS_DILULUSKAN => '<span class="badge-lulus">Diluluskan</span>',
-            self::STATUS_DITOLAK => '<span class="badge-tolak">Ditolak</span>',
-            default => '-',
-        };
+        // PHPStan mengetahui status adalah 'diluluskan'|'ditolak' sahaja.
+        // Semak satu kes, pulang yang satu lagi sebagai default — tiada perbandingan mubazir.
+        if ($this->status === self::STATUS_DILULUSKAN) {
+            return '<span class="badge-lulus">Diluluskan</span>';
+        }
+        return '<span class="badge-tolak">Ditolak</span>';
     }
 
     public function getKategoriLabelAttribute(): string

@@ -40,6 +40,7 @@ class DuaFaktorController extends Controller
         }
 
         $user         = User::find(session('2fa_user_id'));
+        // @phpstan-ignore-next-line nullsafe.neverNull — find() boleh pulang null jika ID tidak sah
         $emailSembunyi = $user?->masked_email ?? '***@***';
 
         return view('auth.dua-faktor', compact('emailSembunyi'));

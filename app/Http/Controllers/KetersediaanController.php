@@ -150,9 +150,8 @@ class KetersediaanController extends Controller
             $map = [];
             foreach ($rows as $row) {
                 $bilikId = $row->bilik_id;
-                $t = $row->tarikh instanceof \Carbon\Carbon
-                    ? $row->tarikh->toDateString()
-                    : substr((string) $row->tarikh, 0, 10);
+                // tarikh adalah Carbon (cast 'date' dalam model) — toDateString() selamat.
+                $t = $row->tarikh->toDateString();
                 $map[$bilikId][$t][] = $row->sesi;
             }
             return $map;

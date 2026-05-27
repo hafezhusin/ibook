@@ -88,6 +88,7 @@ class AuditLogExport implements
         return [
             $this->bil,
             $log->dicipta_pada?->format('d/m/Y H:i:s') ?? '-',
+            // @phpstan-ignore-next-line nullsafe.neverNull — pengguna adalah null untuk tindakan sistem
             $log->pengguna?->name ?? 'Sistem',
             $log->tindakan,
             $log->penerangan,

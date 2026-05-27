@@ -172,8 +172,9 @@ class LaporanController extends Controller
                 'users.name',
                 'users.jabatan',
                 DB::raw('COUNT(*) as jumlah'),
-                DB::raw('SUM(CASE WHEN tempahan.status = "diluluskan" THEN 1 ELSE 0 END) as jumlah_diluluskan'),
-                DB::raw('SUM(CASE WHEN tempahan.status = "ditolak" THEN 1 ELSE 0 END) as jumlah_ditolak')
+                // Guna petikan tunggal — MySQL dan SQLite sama-sama terima
+                DB::raw("SUM(CASE WHEN tempahan.status = 'diluluskan' THEN 1 ELSE 0 END) AS jumlah_diluluskan"),
+                DB::raw("SUM(CASE WHEN tempahan.status = 'ditolak' THEN 1 ELSE 0 END) AS jumlah_ditolak")
             )
             ->groupBy('users.id', 'users.name', 'users.jabatan')
             ->orderByDesc('jumlah')
@@ -192,9 +193,8 @@ class LaporanController extends Controller
               ->where('status', Tempahan::STATUS_DILULUSKAN);
         }])->get()->map(function ($b) use ($maxSesiTahun) {
             $jumlah    = $b->tempahan->count();
-            $peratusan = $maxSesiTahun > 0
-                ? (int) round(($jumlah / $maxSesiTahun) * 100)
-                : 0;
+            // $maxSesiTahun adalah 730 atau 732 — sentiasa > 0, bahagi terus.
+            $peratusan = (int) round(($jumlah / $maxSesiTahun) * 100);
             return [
                 'nama'            => $b->nama,
                 'kapasiti'        => $b->kapasiti,
@@ -231,17 +231,24 @@ class LaporanController extends Controller
     // ─────────────────────────────────────────────────────────
     private function kiraBulan(int $tahun, array $userIds = [], ?int $bilikId = null): array
     {
-        $query = Tempahan::selectRaw('MONTH(tarikh) as bulan, COUNT(*) as jumlah')
+        $isSqlite   = DB::connection()->getDriverName() === 'sqlite';
+        $selectExpr = $isSqlite
+            ? "CAST(strftime('%m', tarikh) AS INTEGER) AS bulan, COUNT(*) AS jumlah"
+            : 'MONTH(tarikh) AS bulan, COUNT(*) AS jumlah';
+        $groupExpr  = $isSqlite ? "strftime('%m', tarikh)" : 'MONTH(tarikh)';
+
+        $query = Tempahan::selectRaw($selectExpr)
             ->whereYear('tarikh', $tahun)
             ->where('status', Tempahan::STATUS_DILULUSKAN)
             ->when(!empty($userIds), fn ($q) => $q->whereIn('user_id', $userIds))
             ->when($bilikId, fn ($q) => $q->where('bilik_id', $bilikId))
-            ->groupBy('bulan')
-            ->orderBy('bulan');
+            ->groupByRaw($groupExpr)
+            ->orderByRaw($groupExpr);
 
         $mengikutBulan = $query->get()->keyBy('bulan');
         $data = [];
         for ($i = 1; $i <= 12; $i++) {
+            // @phpstan-ignore-next-line nullsafe.neverNull, property.notFound — jumlah dari selectRaw
             $data[] = $mengikutBulan->get($i)?->jumlah ?? 0;
         }
         return $data;
@@ -253,21 +260,30 @@ class LaporanController extends Controller
      */
     private function kiraBulanSesi(int $tahun, array $userIds = [], ?int $bilikId = null): array
     {
-        $rows = Tempahan::selectRaw('MONTH(tarikh) as bulan, sesi, COUNT(*) as jumlah')
+        $isSqlite   = DB::connection()->getDriverName() === 'sqlite';
+        $selectExpr = $isSqlite
+            ? "CAST(strftime('%m', tarikh) AS INTEGER) AS bulan, sesi, COUNT(*) AS jumlah"
+            : 'MONTH(tarikh) AS bulan, sesi, COUNT(*) AS jumlah';
+        $groupExpr  = $isSqlite ? "strftime('%m', tarikh), sesi" : 'MONTH(tarikh), sesi';
+
+        $rows = Tempahan::selectRaw($selectExpr)
             ->whereYear('tarikh', $tahun)
             ->where('status', Tempahan::STATUS_DILULUSKAN)
             ->when(!empty($userIds), fn ($q) => $q->whereIn('user_id', $userIds))
             ->when($bilikId, fn ($q) => $q->where('bilik_id', $bilikId))
-            ->groupBy('bulan', 'sesi')
-            ->orderBy('bulan')
+            ->groupByRaw($groupExpr)
+            ->orderByRaw($groupExpr)
             ->get();
 
         $pagi   = array_fill(0, 12, 0);
         $petang = array_fill(0, 12, 0);
 
         foreach ($rows as $r) {
+            // @phpstan-ignore-next-line property.notFound — bulan/jumlah dari selectRaw dinamik
             $idx = $r->bulan - 1;
+            // @phpstan-ignore-next-line property.notFound
             if ($r->sesi === 'pagi')   $pagi[$idx]   = $r->jumlah;
+            // @phpstan-ignore-next-line property.notFound
             if ($r->sesi === 'petang') $petang[$idx] = $r->jumlah;
         }
 
