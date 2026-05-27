@@ -112,11 +112,21 @@ class DashboardService
         $jumlahBilikAktif    = $bilik->count();
         $jumlahBilikTersedia = max(0, $jumlahBilikAktif - $bilikPenuh->count());
 
-        // Kadar penggunaan purata bulan ini
+        // Pra-kira penggunaan bilik bulan ini dalam SATU query (elak N+1 daripada accessor)
+        $maxSesiSebulan  = now()->daysInMonth * 2; // 2 sesi × bilangan hari
+        $penggunaanMap   = Tempahan::selectRaw('bilik_id, COUNT(*) as jumlah')
+            ->whereMonth('tarikh', $bulanIni)
+            ->whereYear('tarikh', $tahunIni)
+            ->where('status', Tempahan::STATUS_DILULUSKAN)
+            ->whereIn('bilik_id', $bilik->pluck('id'))
+            ->groupBy('bilik_id')
+            ->pluck('jumlah', 'bilik_id'); // Collection: bilik_id => jumlah
+
+        // Kadar penggunaan purata bulan ini (%)
         $kadarPenggunaan = 0;
-        if ($bilik->count() > 0) {
-            $total = $bilik->sum(fn ($b) => $b->penggunaan_bulan_ini);
-            $kadarPenggunaan = (int) round($total / $bilik->count());
+        if ($bilik->count() > 0 && $maxSesiSebulan > 0) {
+            $totalPossible   = $maxSesiSebulan * $bilik->count();
+            $kadarPenggunaan = (int) round($penggunaanMap->sum() / $totalPossible * 100);
         }
 
         // Mesyuarat akan datang (7 hari)
@@ -131,10 +141,12 @@ class DashboardService
             ->limit($had)
             ->get();
 
-        // Penggunaan bilik untuk bar chart
+        // Penggunaan bilik untuk bar chart (guna $penggunaanMap — tanpa query tambahan)
         $penggunaanBilik = $bilik->map(fn ($b) => [
             'nama'      => $b->nama,
-            'peratusan' => $b->penggunaan_bulan_ini,
+            'peratusan' => $maxSesiSebulan > 0
+                ? (int) round(($penggunaanMap->get($b->id, 0) / $maxSesiSebulan) * 100)
+                : 0,
         ]);
 
         // Ketersediaan bilik hari ini — pagi & petang (guna data yang dah dikira, tiada query baru)
