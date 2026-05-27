@@ -15,6 +15,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * @property-read User|null $pengguna  Pengguna yang melakukan tindakan (null = tindakan sistem)
@@ -43,7 +44,7 @@ class ActivityLog extends Model
         'dicipta_pada' => 'datetime',
     ];
 
-    public function pengguna()
+    public function pengguna(): BelongsTo
     {
         return $this->belongsTo(User::class, 'pengguna_id');
     }

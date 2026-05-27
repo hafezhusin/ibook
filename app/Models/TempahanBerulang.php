@@ -17,6 +17,8 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -76,17 +78,17 @@ class TempahanBerulang extends Model
 
     // ── Relationships ────────────────────────────────────────────────
 
-    public function tempahan()
+    public function tempahan(): HasMany
     {
         return $this->hasMany(Tempahan::class, 'tempahan_berulang_id');
     }
 
-    public function bilik()
+    public function bilik(): BelongsTo
     {
         return $this->belongsTo(BilikMesyuarat::class, 'bilik_id');
     }
 
-    public function pengguna()
+    public function pengguna(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
@@ -97,7 +99,7 @@ class TempahanBerulang extends Model
      * Hanya tempahan yang belum ditolak dalam kumpulan ini.
      * Digunakan untuk kiraan "X tempahan" dalam modal skop.
      */
-    public function tempahanAktif()
+    public function tempahanAktif(): HasMany
     {
         return $this->tempahan()
             ->where('status', '!=', Tempahan::STATUS_DITOLAK)

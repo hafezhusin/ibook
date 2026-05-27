@@ -15,6 +15,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -96,7 +97,7 @@ class User extends Authenticatable
         $this->notify(new \App\Notifications\ResetKataLaluan($token));
     }
 
-    public function tempahan()
+    public function tempahan(): HasMany
     {
         return $this->hasMany(Tempahan::class);
     }

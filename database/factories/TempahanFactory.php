@@ -25,7 +25,7 @@ class TempahanFactory extends Factory
             'masa_mula'        => $masaSesi['mula'],
             'masa_tamat'       => $masaSesi['tamat'],
             'bilangan_peserta' => $this->faker->numberBetween(5, 20),
-            'kategori'         => 'pengurusan',
+            'kategori'         => 'mesyuarat',
             'nama_pengerusi'   => $this->faker->name(),
             'tujuan'           => $this->faker->sentence(),
             'status'           => Tempahan::STATUS_DILULUSKAN,

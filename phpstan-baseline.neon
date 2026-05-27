@@ -1,12 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Relation ''pengguna'' is not found in App\\Models\\ActivityLog model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Exports/AuditLogExport.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -25,24 +19,6 @@ parameters:
 			path: app/Exports/LaporanExport.php
 
 		-
-			message: '#^Relation ''bilik'' is not found in App\\Models\\Tempahan model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Exports/TempahanExport.php
-
-		-
-			message: '#^Relation ''pengguna'' is not found in App\\Models\\Tempahan model\.$#'
-			identifier: larastan.relationExistence
-			count: 2
-			path: app/Exports/TempahanExport.php
-
-		-
-			message: '#^Relation ''pengguna'' is not found in App\\Models\\ActivityLog model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Http/Controllers/AuditLogController.php
-
-		-
 			message: '#^Call to an undefined method Laravel\\Socialite\\Contracts\\Provider\:\:stateless\(\)\.$#'
 			identifier: method.notFound
 			count: 2
@@ -53,30 +29,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Controllers/Auth/DuaFaktorController.php
-
-		-
-			message: '#^Relation ''bilik'' is not found in App\\Models\\Tempahan model\.$#'
-			identifier: larastan.relationExistence
-			count: 2
-			path: app/Http/Controllers/CarianController.php
-
-		-
-			message: '#^Relation ''pengguna'' is not found in App\\Models\\Tempahan model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Http/Controllers/CarianController.php
-
-		-
-			message: '#^Relation ''bilik'' is not found in App\\Models\\Tempahan model\.$#'
-			identifier: larastan.relationExistence
-			count: 2
-			path: app/Http/Controllers/KalendarController.php
-
-		-
-			message: '#^Relation ''pengguna'' is not found in App\\Models\\Tempahan model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Http/Controllers/KalendarController.php
 
 		-
 			message: '#^Instanceof between Carbon\\Carbon and Carbon\\Carbon will always evaluate to true\.$#'
@@ -103,34 +55,16 @@ parameters:
 			path: app/Http/Controllers/LaporanController.php
 
 		-
-			message: '#^Relation ''tempahan'' is not found in App\\Models\\BilikMesyuarat model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Http/Controllers/LaporanController.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>jumlah" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Controllers/LaporanController.php
 
 		-
-			message: '#^Relation ''pengguna'' is not found in App\\Models\\Tempahan model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Http/Controllers/TempahanController.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>kapasiti" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Http/Controllers/TempahanController.php
-
-		-
-			message: '#^Relation ''pengguna'' is not found in App\\Models\\ActivityLog model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Http/Controllers/TetapanController.php
 
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
@@ -155,18 +89,6 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/AuditLogger.php
-
-		-
-			message: '#^Relation ''bilik'' is not found in App\\Models\\Tempahan model\.$#'
-			identifier: larastan.relationExistence
-			count: 2
-			path: app/Services/DashboardService.php
-
-		-
-			message: '#^Relation ''pengguna'' is not found in App\\Models\\Tempahan model\.$#'
-			identifier: larastan.relationExistence
-			count: 1
-			path: app/Services/DashboardService.php
 
 		-
 			message: '#^Using nullsafe property access "\?\-\>jumlah" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'

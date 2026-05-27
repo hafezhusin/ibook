@@ -16,6 +16,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
 /**
@@ -114,27 +115,27 @@ class Tempahan extends Model
         return 'ulid';
     }
 
-    public function bilik()
+    public function bilik(): BelongsTo
     {
         return $this->belongsTo(BilikMesyuarat::class, 'bilik_id');
     }
 
-    public function pengguna()
+    public function pengguna(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    public function pelulus()
+    public function pelulus(): BelongsTo
     {
         return $this->belongsTo(User::class, 'diluluskan_oleh');
     }
 
-    public function pengubah()
+    public function pengubah(): BelongsTo
     {
         return $this->belongsTo(User::class, 'dikemaskini_oleh');
     }
 
-    public function kumpulanBerulang()
+    public function kumpulanBerulang(): BelongsTo
     {
         return $this->belongsTo(TempahanBerulang::class, 'tempahan_berulang_id');
     }
