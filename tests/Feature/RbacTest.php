@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -10,7 +11,7 @@ use Tests\TestCase;
  */
 class RbacTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function staf_tidak_boleh_akses_pengurusan_bilik_mesyuarat(): void
     {
         $staf = User::factory()->staf()->create();
@@ -20,7 +21,7 @@ class RbacTest extends TestCase
             ->assertStatus(403);
     }
 
-    /** @test */
+    #[Test]
     public function staf_tidak_boleh_akses_pengurusan_pengguna(): void
     {
         $staf = User::factory()->staf()->create();
@@ -30,7 +31,7 @@ class RbacTest extends TestCase
             ->assertStatus(403);
     }
 
-    /** @test */
+    #[Test]
     public function pentadbir_boleh_akses_pengurusan_bilik_mesyuarat(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
@@ -40,7 +41,7 @@ class RbacTest extends TestCase
             ->assertStatus(200);
     }
 
-    /** @test */
+    #[Test]
     public function tetamu_tanpa_log_masuk_dihalang_dari_dashboard(): void
     {
         $this->get('/')

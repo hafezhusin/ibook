@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -10,7 +11,7 @@ use Tests\TestCase;
  */
 class AuthTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function pengguna_aktif_boleh_log_masuk_dengan_kelayakan_betul(): void
     {
         $pengguna = User::factory()->create([
@@ -28,7 +29,7 @@ class AuthTest extends TestCase
         $this->assertAuthenticatedAs($pengguna);
     }
 
-    /** @test */
+    #[Test]
     public function pengguna_tidak_boleh_log_masuk_dengan_kata_laluan_salah(): void
     {
         User::factory()->create([

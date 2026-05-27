@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -10,7 +11,7 @@ use Tests\TestCase;
  */
 class EksportTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function hanya_pentadbir_boleh_eksport_pdf(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
@@ -28,7 +29,7 @@ class EksportTest extends TestCase
         $responsStaf->assertStatus(403);
     }
 
-    /** @test */
+    #[Test]
     public function hanya_pentadbir_boleh_eksport_excel(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();

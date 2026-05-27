@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\BilikMesyuarat;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -10,7 +11,7 @@ use Tests\TestCase;
  */
 class AwamTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function endpoint_awam_senarai_bilik_boleh_diakses_tanpa_log_masuk(): void
     {
         BilikMesyuarat::factory()->count(3)->create();
@@ -27,7 +28,7 @@ class AwamTest extends TestCase
         $this->assertCount(3, $response->json());
     }
 
-    /** @test */
+    #[Test]
     public function endpoint_awam_events_kalendar_boleh_diakses_tanpa_log_masuk(): void
     {
         $response = $this->getJson('/awam/events');

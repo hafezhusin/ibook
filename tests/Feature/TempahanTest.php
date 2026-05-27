@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\BilikMesyuarat;
 use App\Models\Tempahan;
 use App\Models\User;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 /**
@@ -12,7 +13,7 @@ use Tests\TestCase;
  */
 class TempahanTest extends TestCase
 {
-    /** @test */
+    #[Test]
     public function staf_boleh_buat_tempahan_baru_yang_sah(): void
     {
         $staf  = User::factory()->staf()->create();
@@ -24,12 +25,13 @@ class TempahanTest extends TestCase
             'bilik_id'         => $bilik->id,
             'sesi'             => ['pagi'],
             'bilangan_peserta' => 20,
-            'kategori'         => 'pengurusan',
+            'kategori'         => 'mesyuarat',
             'nama_pengerusi'   => 'Encik Ahmad',
             'tujuan'           => 'Perbincangan bajet',
         ]);
 
-        $response->assertRedirect('/tempahan');
+        // Controller redirect ke senarai dengan filter baharu supaya pengguna nampak tempahan baru
+        $response->assertRedirect('/tempahan?tarikh_filter=baharu');
         $this->assertDatabaseHas('tempahan', [
             'nama_mesyuarat' => 'Mesyuarat Unit Mei 2026',
             'bilik_id'       => $bilik->id,
@@ -38,7 +40,7 @@ class TempahanTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function tempahan_ditolak_apabila_sesi_sudah_ditempah_bilik_sama(): void
     {
         $staf  = User::factory()->staf()->create();
@@ -59,7 +61,7 @@ class TempahanTest extends TestCase
             'bilik_id'         => $bilik->id,
             'sesi'             => ['pagi'],
             'bilangan_peserta' => 10,
-            'kategori'         => 'pengurusan',
+            'kategori'         => 'mesyuarat',
             'nama_pengerusi'   => 'Encik Ali',
         ]);
 
@@ -70,7 +72,7 @@ class TempahanTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function tempahan_ditolak_apabila_bilangan_peserta_melebihi_kapasiti(): void
     {
         $staf  = User::factory()->staf()->create();
@@ -82,7 +84,7 @@ class TempahanTest extends TestCase
             'bilik_id'         => $bilik->id,
             'sesi'             => ['pagi'],
             'bilangan_peserta' => 50, // melebihi kapasiti
-            'kategori'         => 'pengurusan',
+            'kategori'         => 'mesyuarat',
             'nama_pengerusi'   => 'Puan Siti',
         ]);
 
@@ -92,7 +94,7 @@ class TempahanTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function tempahan_ditolak_tidak_menghalang_sesi_lain_pada_hari_sama(): void
     {
         $staf  = User::factory()->staf()->create();
@@ -113,14 +115,36 @@ class TempahanTest extends TestCase
             'bilik_id'         => $bilik->id,
             'sesi'             => ['pagi'],
             'bilangan_peserta' => 10,
-            'kategori'         => 'pengurusan',
+            'kategori'         => 'mesyuarat',
             'nama_pengerusi'   => 'Encik Zul',
         ]);
 
-        $response->assertRedirect('/tempahan');
+        $response->assertRedirect('/tempahan?tarikh_filter=baharu');
         $this->assertDatabaseHas('tempahan', [
             'nama_mesyuarat' => 'Tempahan Selepas Tolak',
             'status'         => Tempahan::STATUS_DILULUSKAN,
+        ]);
+    }
+
+    #[Test]
+    public function staf_tidak_boleh_tempah_tarikh_yang_telah_lepas(): void
+    {
+        $staf  = User::factory()->staf()->create();
+        $bilik = BilikMesyuarat::factory()->kapasiti(20)->create();
+
+        $response = $this->actingAs($staf)->post('/tempahan', [
+            'nama_mesyuarat'   => 'Mesyuarat Masa Lalu',
+            'tarikh'           => now()->subDay()->format('Y-m-d'),
+            'bilik_id'         => $bilik->id,
+            'sesi'             => ['pagi'],
+            'bilangan_peserta' => 10,
+            'kategori'         => 'taklimat',
+            'nama_pengerusi'   => 'Encik Razak',
+        ]);
+
+        $response->assertSessionHasErrors('tarikh');
+        $this->assertDatabaseMissing('tempahan', [
+            'nama_mesyuarat' => 'Mesyuarat Masa Lalu',
         ]);
     }
 }
