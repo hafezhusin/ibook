@@ -18,6 +18,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
 
+/**
+ * @property-read BilikMesyuarat|null  $bilik           Bilik yang ditempah
+ * @property-read User|null           $pengguna        Pemohon tempahan
+ * @property-read User|null           $pelulus         Pegawai yang meluluskan
+ * @property-read User|null           $pengubah        Pegawai yang mengemaskini
+ * @property-read TempahanBerulang|null $kumpulanBerulang Kumpulan tempahan berulang (jika ada)
+ * @property      string              $no_rujukan      Accessor: TMP-{tahun}-{ulid_suffix}
+ * @property      string              $masa_label      Accessor: "HH:MM - HH:MM"
+ * @property      string              $status_badge    Accessor: HTML badge
+ * @property      string              $kategori_label  Accessor: label mesyuarat/bengkel/dll
+ */
 class Tempahan extends Model
 {
     use HasFactory;

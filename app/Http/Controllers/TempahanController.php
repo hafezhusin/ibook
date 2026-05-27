@@ -104,19 +104,21 @@ class TempahanController extends Controller
 
         // ── Worklist ringkasan ────────────────────────────────────────
         // Dikira berdasarkan skop unit (unit untuk staf, semua untuk admin/urus setia)
-        $today = today()->toDateString();
-        $esok = today()->addDay()->toDateString();
+        $today    = today()->toDateString();
+        $esok     = today()->addDay()->toDateString();
         $sub24Jam = now()->subHours(24);
-        $bulan = now()->month;
-        $tahun = now()->year;
+        // Guna julat tarikh mula/akhir bulan supaya berfungsi pada MySQL DAN SQLite
+        // (MONTH() dan YEAR() tidak tersedia dalam SQLite)
+        $mulaBulan  = now()->startOfMonth()->toDateString();
+        $akhirBulan = now()->endOfMonth()->toDateString();
 
         $ringkasanAgg = $this->unitQuery()
             ->selectRaw(
                 "SUM(CASE WHEN tarikh = ? AND status = ? THEN 1 ELSE 0 END) AS hari_ini,
                  SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS baharu,
                  SUM(CASE WHEN tarikh = ? AND status = ? THEN 1 ELSE 0 END) AS esok,
-                 SUM(CASE WHEN MONTH(tarikh) = ? AND YEAR(tarikh) = ? THEN 1 ELSE 0 END) AS bulan_ini",
-                [$today, Tempahan::STATUS_DILULUSKAN, $sub24Jam, $esok, Tempahan::STATUS_DILULUSKAN, $bulan, $tahun]
+                 SUM(CASE WHEN tarikh >= ? AND tarikh <= ? THEN 1 ELSE 0 END) AS bulan_ini",
+                [$today, Tempahan::STATUS_DILULUSKAN, $sub24Jam, $esok, Tempahan::STATUS_DILULUSKAN, $mulaBulan, $akhirBulan]
             )
             ->first();
 

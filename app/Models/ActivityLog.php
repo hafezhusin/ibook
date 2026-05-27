@@ -16,6 +16,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property-read User|null $pengguna  Pengguna yang melakukan tindakan (null = tindakan sistem)
+ */
 class ActivityLog extends Model
 {
     protected $table = 'activity_log';

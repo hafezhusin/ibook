@@ -19,6 +19,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+/**
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Tempahan> $tempahan      Semua tempahan untuk bilik ini
+ * @property      float|null $peratus_penggunaan  Dikira dari query agregat (bukan lajur DB)
+ * @property      int|null   $tempahan_bulan_ini  Dikira dari query agregat (bukan lajur DB)
+ */
 class BilikMesyuarat extends Model
 {
     use HasFactory, SoftDeletes;

@@ -20,6 +20,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
+/**
+ * @property-read BilikMesyuarat|null                                    $bilik    Bilik yang ditempah
+ * @property-read User|null                                             $pengguna Pemohon
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Tempahan> $tempahan Semua tempahan dalam kumpulan
+ */
 class TempahanBerulang extends Model
 {
     use HasFactory;

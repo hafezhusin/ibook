@@ -18,6 +18,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+/**
+ * @property bool        $dua_faktor_aktif   Sama ada pengguna mengaktifkan 2FA
+ * @property bool        $aktif              Status akaun aktif/tidak aktif
+ * @property string|null $jabatan            Unit/jabatan pengguna
+ * @property string      $peranan            Peranan: pentadbir_sistem|urus_setia|staf
+ * @property string      $label_peranan      Accessor: label peranan dalam Bahasa Melayu
+ * @property string      $masked_email       Accessor: emel disamarkan (cth: a***@mail.com)
+ */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;

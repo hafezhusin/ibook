@@ -228,10 +228,19 @@ class DashboardService
         $dari      = Carbon::now()->subMonths($bulan - 1)->startOfMonth();
 
         // Satu query: kumpulkan semua bulan dalam julat sekaligus
+        // Guna ekspresi DB-agnostik supaya ujian SQLite dan produksi MySQL sama-sama berjalan.
+        $isSqlite   = DB::connection()->getDriverName() === 'sqlite';
+        $selectExpr = $isSqlite
+            ? "CAST(strftime('%Y', tarikh) AS INTEGER) AS tahun, CAST(strftime('%m', tarikh) AS INTEGER) AS bulan_num, COUNT(*) AS jumlah"
+            : 'YEAR(tarikh) AS tahun, MONTH(tarikh) AS bulan_num, COUNT(*) AS jumlah';
+        $groupExpr  = $isSqlite
+            ? "strftime('%Y', tarikh), strftime('%m', tarikh)"
+            : 'YEAR(tarikh), MONTH(tarikh)';
+
         $baris = (clone $baseQuery)
             ->where('tarikh', '>=', $dari)
-            ->selectRaw('YEAR(tarikh) AS tahun, MONTH(tarikh) AS bulan_num, COUNT(*) AS jumlah')
-            ->groupByRaw('YEAR(tarikh), MONTH(tarikh)')
+            ->selectRaw($selectExpr)
+            ->groupByRaw($groupExpr)
             ->get()
             ->keyBy(fn ($r) => $r->tahun . '-' . $r->bulan_num);
 

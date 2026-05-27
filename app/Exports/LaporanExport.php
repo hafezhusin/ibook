@@ -130,7 +130,7 @@ class LaporanBulanSheet implements FromArray, WithTitle, WithHeadings, WithStyle
         return $rows;
     }
 
-    public function title(): string { return 'Mengikut Bulan'; }
+    public function title(): string { return "Mengikut Bulan {$this->tahun}"; }
 
     public function columnWidths(): array { return ['A' => 16, 'B' => 12, 'C' => 12, 'D' => 12]; }
 }
@@ -153,7 +153,7 @@ class LaporanKategoriSheet implements FromArray, WithTitle, WithHeadings, WithSt
             ->all();
     }
 
-    public function title(): string { return 'Mengikut Kategori'; }
+    public function title(): string { return "Mengikut Kategori {$this->tahun}"; }
 
     public function columnWidths(): array { return ['A' => 6, 'B' => 36, 'C' => 20]; }
 }
@@ -176,7 +176,7 @@ class LaporanUnitSheet implements FromArray, WithTitle, WithHeadings, WithStyles
             ->all();
     }
 
-    public function title(): string { return 'Mengikut Unit'; }
+    public function title(): string { return "Mengikut Unit {$this->tahun}"; }
 
     public function columnWidths(): array { return ['A' => 6, 'B' => 52, 'C' => 30]; }
 }
@@ -207,7 +207,7 @@ class LaporanBilikSheet implements FromArray, WithTitle, WithHeadings, WithStyle
             ->all();
     }
 
-    public function title(): string { return 'Penggunaan Bilik'; }
+    public function title(): string { return "Penggunaan Bilik {$this->tahun}"; }
 
     public function columnWidths(): array { return ['A' => 34, 'B' => 12, 'C' => 22, 'D' => 22]; }
 }
@@ -240,7 +240,7 @@ class LaporanTop10Sheet implements FromArray, WithTitle, WithHeadings, WithStyle
             ->all();
     }
 
-    public function title(): string { return 'Top 10 Pemohon'; }
+    public function title(): string { return "Top 10 Pemohon {$this->tahun}"; }
 
     public function columnWidths(): array { return ['A' => 6, 'B' => 30, 'C' => 52, 'D' => 18, 'E' => 14, 'F' => 10]; }
 }
