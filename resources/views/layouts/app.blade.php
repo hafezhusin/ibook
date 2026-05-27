@@ -764,6 +764,21 @@
                         <span>Tetapan</span>
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('backup.index') }}"
+                       class="sidebar-link"
+                       {{ request()->routeIs('backup*') ? 'aria-current=page' : '' }}>
+                        <i class="fa-solid fa-database w-5" aria-hidden="true"></i>
+                        <span>Backup</span>
+                        @php
+                            try {
+                                $backupSvc = app(\App\Services\BackupService::class);
+                                if ($backupSvc->adaBackupTertunggak()):
+                        @endphp
+                        <span class="ml-auto w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" aria-label="Backup tertunggak" title="Backup tertunggak"></span>
+                        @php endif; } catch (\Throwable $e) {} @endphp
+                    </a>
+                </li>
                 @endif
                 @endif
             </ul>

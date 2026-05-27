@@ -28,6 +28,7 @@ class PenggunaController extends Controller
     public function index(Request $request)
     {
         $cari = trim($request->input('cari', ''));
+        $unit = trim($request->input('unit', ''));
 
         // Aktif
         $queryAktif = User::where('aktif', true)->orderBy('name');
@@ -53,11 +54,21 @@ class PenggunaController extends Controller
             $queryNyahaktif->where($filter);
         }
 
-        $penggunaAktif     = $queryAktif->paginate(25, ['*'], 'page_aktif')->appends(['cari' => $cari]);
-        $penggunaPending   = $queryPending->paginate(25, ['*'], 'page_pending')->appends(['cari' => $cari]);
-        $penggunaNyahaktif = $queryNyahaktif->paginate(25, ['*'], 'page_nyahaktif')->appends(['cari' => $cari]);
+        if ($unit !== '') {
+            $queryAktif->where('jabatan', $unit);
+            $queryPending->where('jabatan', $unit);
+            $queryNyahaktif->where('jabatan', $unit);
+        }
 
-        return view('pengguna.index', compact('penggunaAktif', 'penggunaPending', 'penggunaNyahaktif', 'cari'));
+        $appends = array_filter(['cari' => $cari, 'unit' => $unit], fn($v) => $v !== '');
+
+        $penggunaAktif     = $queryAktif->paginate(25, ['*'], 'page_aktif')->appends($appends);
+        $penggunaPending   = $queryPending->paginate(25, ['*'], 'page_pending')->appends($appends);
+        $penggunaNyahaktif = $queryNyahaktif->paginate(25, ['*'], 'page_nyahaktif')->appends($appends);
+
+        $units = User::SENARAI_UNIT;
+
+        return view('pengguna.index', compact('penggunaAktif', 'penggunaPending', 'penggunaNyahaktif', 'cari', 'unit', 'units'));
     }
 
     public function store(StorePenggunaRequest $request)

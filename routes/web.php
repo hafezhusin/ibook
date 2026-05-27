@@ -4,6 +4,7 @@ use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\DuaFaktorController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BilikController;
 use App\Http\Controllers\CarianController;
 use App\Http\Controllers\DashboardController;
@@ -136,5 +137,12 @@ Route::middleware('auth.custom')->group(function () {
         // Tetapan
         Route::get('/tetapan', [TetapanController::class, 'index'])->name('tetapan.index');
         Route::post('/tetapan', [TetapanController::class, 'update'])->name('tetapan.update');
+
+        // Backup Database
+        Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
+        Route::post('/backup/segera', [BackupController::class, 'instant'])->name('backup.instant');
+        Route::post('/backup/jadual', [BackupController::class, 'simpanJadual'])->name('backup.jadual');
+        Route::post('/backup/{backup}/muat-turun', [BackupController::class, 'muatTurun'])->name('backup.muat-turun');
+        Route::delete('/backup/{backup}', [BackupController::class, 'padam'])->name('backup.padam');
     });
 });

@@ -55,24 +55,49 @@
 </div>
 @endif
 
-{{-- ── Carian --}}
-<form id="form-carian" method="GET" action="{{ route('pengguna.index') }}" class="mb-4" role="search">
-    <div class="relative w-full md:w-80">
+{{-- ── Carian + Filter Unit --}}
+<form id="form-carian" method="GET" action="{{ route('pengguna.index') }}" class="mb-4 flex flex-wrap gap-2 items-center" role="search">
+
+    {{-- Carian teks --}}
+    <div class="relative w-full md:w-72">
         <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" aria-hidden="true"></i>
         <input type="search" id="carian-pengguna" name="cari"
             value="{{ $cari }}"
-            placeholder="Cari nama, emel atau unit..."
+            placeholder="Cari nama atau emel..."
             class="form-input pl-9 pr-8 text-sm w-full"
             aria-label="Cari pengguna"
             autocomplete="off">
         @if($cari !== '')
-        <a href="{{ route('pengguna.index') }}"
+        <button type="button" onclick="document.getElementById('carian-pengguna').value=''; document.getElementById('form-carian').submit();"
             class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
             aria-label="Kosongkan carian" title="Kosongkan carian">
             <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
-        </a>
+        </button>
         @endif
     </div>
+
+    {{-- Dropdown Unit --}}
+    <div class="relative">
+        <select id="filter-unit" name="unit"
+            class="form-input text-sm pr-8 appearance-none cursor-pointer min-w-[200px]"
+            aria-label="Tapis mengikut unit">
+            <option value="">— Semua Unit —</option>
+            @foreach($units as $u)
+            <option value="{{ $u }}" {{ $unit === $u ? 'selected' : '' }}>{{ $u }}</option>
+            @endforeach
+        </select>
+        <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" aria-hidden="true"></i>
+    </div>
+
+    {{-- Papar butang Kosongkan jika ada filter aktif --}}
+    @if($cari !== '' || $unit !== '')
+    <a href="{{ route('pengguna.index') }}"
+        class="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-3 py-2 bg-white transition-colors"
+        title="Kosongkan semua penapis">
+        <i class="fa-solid fa-filter-circle-xmark" aria-hidden="true"></i> Kosongkan Penapis
+    </a>
+    @endif
+
 </form>
 
 {{-- ── Tab + View Toggle Bar ── --}}
@@ -532,13 +557,18 @@ document.getElementById('btn-tutup-nyahaktifkan').addEventListener('click', func
 // Carian pengguna — tapis segera (visual) + hantar ke server selepas 650ms
 let _carianTimer = null;
 document.getElementById('carian-pengguna').addEventListener('input', function() {
-    const kata = this.value;
-    caripenggunaFilter(kata);           // maklum balas visual segera
+    applyFilters();                     // maklum balas visual segera
 
     clearTimeout(_carianTimer);
     _carianTimer = setTimeout(function() {
         document.getElementById('form-carian').submit();
     }, 650);
+});
+
+// Unit dropdown — tapis visual segera + submit ke server
+document.getElementById('filter-unit').addEventListener('change', function() {
+    applyFilters();                     // tapis segera pada halaman semasa
+    document.getElementById('form-carian').submit();  // hantar ke server (pagination betul)
 });
 
 // Tab buttons
@@ -626,8 +656,8 @@ function tukarTab(tab) {
     // reset checkbox semua bila tukar tab
     document.querySelectorAll('.checkbox-pengguna:checked').forEach(cb => cb.checked = false);
     kemaskiniToolbar();
-    // apply carian visual semula
-    caripenggunaFilter(document.getElementById('carian-pengguna').value);
+    // apply filter visual semula
+    applyFilters();
 }
 
 // ── View Toggle ──
@@ -653,26 +683,29 @@ function tukarView(view) {
     kemaskiniToolbar();
 }
 
-// ── Carian Pengguna ──
-function caripenggunaFilter(kata) {
-    const carian = kata.trim().toLowerCase();
+// ── Filter Gabungan (teks + unit) ──
+function applyFilters() {
+    const kata  = (document.getElementById('carian-pengguna')?.value || '').trim().toLowerCase();
+    const unit  = (document.getElementById('filter-unit')?.value || '').toLowerCase();
 
-    // Kad
-    document.querySelectorAll('#kad-aktif article, #kad-nyahaktif article').forEach(kad => {
-        const nama  = (kad.querySelector('[id^="pengguna-"]')?.textContent || '').toLowerCase();
-        const emel  = (kad.querySelector('.text-gray-400.truncate')?.textContent || '').toLowerCase();
-        const unit  = (kad.querySelectorAll('.text-gray-500.truncate')[0]?.textContent || '').toLowerCase();
-        const match = !carian || nama.includes(carian) || emel.includes(carian) || unit.includes(carian);
-        kad.style.display = match ? '' : 'none';
+    // Kad view
+    document.querySelectorAll('#kad-aktif article, #kad-pending article, #kad-nyahaktif article').forEach(kad => {
+        const nama    = (kad.querySelector('[id^="pengguna-"]')?.textContent || '').toLowerCase();
+        const emel    = (kad.querySelector('.text-xs.text-gray-400.truncate')?.textContent || '').toLowerCase();
+        const kadUnit = (kad.querySelector('.text-xs.text-gray-500.truncate')?.textContent || '').toLowerCase().trim();
+        const matchTeks = !kata || nama.includes(kata) || emel.includes(kata) || kadUnit.includes(kata);
+        const matchUnit = !unit || kadUnit === unit;
+        kad.style.display = (matchTeks && matchUnit) ? '' : 'none';
     });
 
-    // Baris senarai
+    // Baris senarai (list view)
     document.querySelectorAll('.list-data-row').forEach(baris => {
-        const nama  = (baris.dataset.name || '').toLowerCase();
-        const unit  = (baris.dataset.unit || '').toLowerCase();
-        const emel  = (baris.querySelector('.text-gray-400.truncate')?.textContent || '').toLowerCase();
-        const match = !carian || nama.includes(carian) || unit.includes(carian) || emel.includes(carian);
-        baris.style.display = match ? '' : 'none';
+        const nama      = (baris.dataset.name || '').toLowerCase();
+        const barisUnit = (baris.dataset.unit || '').toLowerCase();
+        const emel      = (baris.querySelector('.text-xs.text-gray-400.truncate')?.textContent || '').toLowerCase();
+        const matchTeks = !kata || nama.includes(kata) || barisUnit.includes(kata) || emel.includes(kata);
+        const matchUnit = !unit || barisUnit === unit;
+        baris.style.display = (matchTeks && matchUnit) ? '' : 'none';
     });
 }
 
@@ -797,6 +830,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (viewSemasa !== 'kad') {
         tukarView(viewSemasa);
     }
+    // Apply filter unit/teks jika ada nilai semasa muat halaman
+    applyFilters();
 });
 </script>
 @endpush

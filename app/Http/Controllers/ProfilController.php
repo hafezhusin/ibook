@@ -32,10 +32,14 @@ class ProfilController extends Controller
 
     public function update(Request $request)
     {
-        $user = Auth::user();
+        $user      = Auth::user();
+        $isSsoUser = $user->google_id || str_ends_with($user->email, '@anm.gov.my');
 
-        // Staf tidak dibenarkan ubah unit — hanya pentadbir & urus setia
-        $rehat = ['name' => 'required|string|max:255'];
+        // Nama SSO diambil dari MyGovUC — tidak boleh diubah sendiri
+        $rehat = [];
+        if (!$isSsoUser) {
+            $rehat['name'] = 'required|string|max:255';
+        }
         if (!$user->isStaf()) {
             $rehat['jabatan'] = ['nullable', 'string', 'in:' . implode(',', User::SENARAI_UNIT)];
         }
@@ -45,11 +49,9 @@ class ProfilController extends Controller
             'jabatan.in'    => 'Sila pilih unit yang sah dari senarai.',
         ]);
 
-        // Buang jabatan daripada data kemaskini jika pengguna adalah staf
-        // (cegah bypass melalui request terus walaupun field tiada dalam UI)
-        if ($user->isStaf()) {
-            unset($validated['jabatan']);
-        }
+        // Cegah bypass — buang nama jika SSO, buang jabatan jika staf
+        if ($isSsoUser) unset($validated['name']);
+        if ($user->isStaf()) unset($validated['jabatan']);
 
         $user->update($validated);
         AuditLogger::catat('kemaskini_profil', $user);
@@ -60,6 +62,12 @@ class ProfilController extends Controller
     public function updatePassword(Request $request)
     {
         $user = Auth::user();
+
+        // Akaun MyGovUC tidak menggunakan kata laluan sistem
+        if ($user->google_id || str_ends_with($user->email, '@anm.gov.my')) {
+            return back()->with('error_password',
+                'Akaun @anm.gov.my diuruskan oleh MyGovUC. Kata laluan tidak boleh ditukar di sini.');
+        }
 
         $request->validate([
             'kata_laluan_semasa'  => 'required|string',

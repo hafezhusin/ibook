@@ -3,10 +3,18 @@
 @section('title', 'Profil Saya')
 
 @section('content')
+@php $isSsoUser = auth()->user()->google_id || str_ends_with(auth()->user()->email, '@anm.gov.my'); @endphp
+
 <div class="flex items-center gap-3 mb-6">
     <div>
         <h1 class="text-2xl font-bold text-gray-800">Profil Saya</h1>
-        <p class="text-gray-500 text-sm mt-0.5">Urus maklumat peribadi dan kata laluan anda</p>
+        <p class="text-gray-500 text-sm mt-0.5">
+            @if($isSsoUser)
+                Maklumat akaun anda diuruskan melalui MyGovUC
+            @else
+                Urus maklumat peribadi dan kata laluan anda
+            @endif
+        </p>
     </div>
 </div>
 
@@ -19,6 +27,12 @@
 @if(session('success_password'))
 <div class="mb-5 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-center gap-2" role="alert">
     <i class="fa-solid fa-circle-check" aria-hidden="true"></i> {{ session('success_password') }}
+</div>
+@endif
+
+@if(session('error_password'))
+<div class="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm flex items-center gap-2" role="alert">
+    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i> {{ session('error_password') }}
 </div>
 @endif
 
@@ -69,16 +83,23 @@
                 <div class="space-y-4">
 
                     {{-- Nama --}}
-                    <div>
+                    <div @if($isSsoUser) style="opacity:0.55" @endif>
                         <label for="name" class="form-label">
-                            Nama Penuh <span class="text-red-500" aria-hidden="true">*</span>
+                            Nama Penuh
+                            @if(!$isSsoUser)<span class="text-red-500" aria-hidden="true">*</span>@endif
                         </label>
                         <input type="text" id="name" name="name"
                             value="{{ old('name', $user->name) }}"
-                            class="form-input"
-                            required aria-required="true"
+                            class="form-input @if($isSsoUser) cursor-not-allowed @endif"
+                            @if($isSsoUser) readonly aria-readonly="true" @else required aria-required="true" @endif
                             autocomplete="name"
                             @error('name') aria-invalid="true" aria-describedby="ralat-name" @enderror>
+                        @if($isSsoUser)
+                        <p class="form-hint">
+                            <i class="fa-solid fa-lock text-[10px] mr-1" aria-hidden="true"></i>
+                            Nama diambil dari akaun MyGovUC — tidak boleh diubah di sini.
+                        </p>
+                        @endif
                         @error('name')
                         <p id="ralat-name" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
                         @enderror
@@ -138,11 +159,13 @@
             </form>
         </section>
 
-        {{-- ── Tukar Kata Laluan ── --}}
+        {{-- ── Tukar Kata Laluan (sembunyi untuk pengguna SSO) ── --}}
+        @if(!$isSsoUser)
         <section class="bg-white rounded-xl shadow-sm p-6" aria-labelledby="heading-password">
             <h2 id="heading-password" class="font-bold text-gray-800 text-base mb-5 pb-3 border-b border-gray-100">
                 <i class="fa-solid fa-lock text-amber-500 mr-2" aria-hidden="true"></i>Tukar Kata Laluan
             </h2>
+
 
             <form method="POST" action="{{ route('profil.password') }}" novalidate>
                 @csrf
@@ -247,6 +270,7 @@
                 </div>
             </form>
         </section>
+        @endif
 
         {{-- ── Pengesahan Dua Faktor (2FA) ── --}}
         <section class="bg-white rounded-xl shadow-sm p-6" aria-labelledby="heading-2fa">
