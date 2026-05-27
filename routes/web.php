@@ -119,6 +119,7 @@ Route::middleware('auth.custom')->group(function () {
     Route::middleware('role:pentadbir_sistem')->group(function () {
         // Log Audit
         Route::get('/log-audit', [AuditLogController::class, 'index'])->name('audit.index');
+        Route::get('/log-audit/eksport/excel', [AuditLogController::class, 'exportExcel'])->name('audit.excel');
 
         // Bilik Mesyuarat
         Route::get('/bilik-mesyuarat', [BilikController::class, 'index'])->name('bilik.index');

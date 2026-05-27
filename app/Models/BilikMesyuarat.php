@@ -73,6 +73,14 @@ class BilikMesyuarat extends Model
         return implode(', ', $this->kemudahan);
     }
 
+    /**
+     * Peratusan penggunaan bilik untuk bulan semasa.
+     *
+     * @deprecated BilikController menetapkan $b->peratus_penggunaan melalui withCount()
+     *             bagi halaman senarai bilik — accessor ini tidak dipanggil dalam laluan
+     *             utama. DashboardService pula menggunakan $penggunaanMap (satu query GROUP BY).
+     *             Dikekalkan sebagai fallback sekiranya model dimuatkan secara langsung.
+     */
     public function getPenggunaanBulanIniAttribute(): int
     {
         $tempahan = $this->tempahan()
@@ -81,8 +89,7 @@ class BilikMesyuarat extends Model
             ->where('status', 'diluluskan')
             ->count();
 
-        $maxHari = now()->daysInMonth;
-        $maxSesi = $maxHari * 2;
+        $maxSesi = now()->daysInMonth * 2;
 
         return $maxSesi > 0 ? (int) round(($tempahan / $maxSesi) * 100) : 0;
     }

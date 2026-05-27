@@ -207,22 +207,30 @@ class DashboardService
     /**
      * Kira jumlah tempahan per bulan untuk N bulan ke belakang.
      * Menghormati skop pengguna (staf: sendiri sahaja, admin: semua).
+     *
+     * Menggunakan SATU query GROUP BY — bukan N query dalam gelung.
      */
     private function kiraTrendBulanan($baseQuery, int $bulan): array
     {
         $namaBulan = ['','Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'];
-        $hasil     = [];
+        $dari      = Carbon::now()->subMonths($bulan - 1)->startOfMonth();
 
+        // Satu query: kumpulkan semua bulan dalam julat sekaligus
+        $baris = (clone $baseQuery)
+            ->where('tarikh', '>=', $dari)
+            ->selectRaw('YEAR(tarikh) AS tahun, MONTH(tarikh) AS bulan_num, COUNT(*) AS jumlah')
+            ->groupByRaw('YEAR(tarikh), MONTH(tarikh)')
+            ->get()
+            ->keyBy(fn ($r) => $r->tahun . '-' . $r->bulan_num);
+
+        $hasil = [];
         for ($i = $bulan - 1; $i >= 0; $i--) {
             $tarikh = Carbon::now()->subMonths($i);
-            $jumlah = (clone $baseQuery)
-                ->whereMonth('tarikh', $tarikh->month)
-                ->whereYear('tarikh', $tarikh->year)
-                ->count();
+            $kunci  = $tarikh->year . '-' . $tarikh->month;
 
             $hasil[] = [
                 'label'  => $namaBulan[$tarikh->month] . ' ' . $tarikh->year,
-                'jumlah' => $jumlah,
+                'jumlah' => (int) ($baris->get($kunci)?->jumlah ?? 0),
             ];
         }
 

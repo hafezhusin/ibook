@@ -12,9 +12,17 @@
             {{ number_format($jumlahKeseluruhan) }} rekod aktiviti sistem
         </p>
     </div>
-    <div class="flex items-center gap-2 text-xs text-gray-400 bg-white border border-gray-200 rounded-lg px-3 py-2 self-start">
-        <i class="fa-solid fa-link text-green-500" aria-hidden="true"></i>
-        <span>SHA-256 hash chain &mdash; integriti boleh disahkan secara luar talian</span>
+    <div class="flex flex-wrap items-center gap-2 self-start">
+        {{-- Eksport Excel (menghormati penapis semasa) --}}
+        <a href="{{ route('audit.excel', request()->query()) }}"
+           class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-green-700 hover:bg-green-100 transition-colors"
+           title="Eksport log audit ke Excel (menghormati penapis semasa, maks 5,000 rekod)">
+            <i class="fa-solid fa-file-excel" aria-hidden="true"></i> Eksport Excel
+        </a>
+        <div class="flex items-center gap-2 text-xs text-gray-400 bg-white border border-gray-200 rounded-lg px-3 py-2">
+            <i class="fa-solid fa-link text-green-500" aria-hidden="true"></i>
+            <span>SHA-256 hash chain &mdash; integriti boleh disahkan secara luar talian</span>
+        </div>
     </div>
 </div>
 

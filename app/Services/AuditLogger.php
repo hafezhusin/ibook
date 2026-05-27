@@ -106,6 +106,7 @@ class AuditLogger
             'eksport_excel'         => "{$namaPengguna} mengeksport senarai tempahan (Excel)",
             'eksport_laporan_pdf'   => "{$namaPengguna} mengeksport laporan statistik (PDF)",
             'eksport_laporan_excel' => "{$namaPengguna} mengeksport laporan statistik (Excel)",
+            'eksport_audit_excel'   => "{$namaPengguna} mengeksport log audit (Excel)",
             'tambah_pengguna'       => "{$namaPengguna} menambah pengguna baru {$namaModel}",
             'kemaskini_pengguna'    => "{$namaPengguna} mengemaskini maklumat pengguna {$namaModel}",
             'reset_kata_laluan'     => "{$namaPengguna} menetapkan semula kata laluan pengguna {$namaModel}",

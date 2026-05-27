@@ -14,9 +14,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AuditLogExport;
 use App\Models\ActivityLog;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AuditLogController extends Controller
 {
@@ -91,5 +94,21 @@ class AuditLogController extends Controller
             'amalanBahaya',
             'ipMencurigai',
         ));
+    }
+
+    /**
+     * Eksport log audit ke Excel (.xlsx), menghormati penapis semasa.
+     */
+    public function exportExcel(Request $request)
+    {
+        abort_unless(auth()->user()->isPentadbir(), 403);
+
+        $filters = $request->only(['tindakan', 'pengguna_id', 'tarikh_dari', 'tarikh_hingga', 'carian']);
+
+        AuditLogger::catat('eksport_audit_excel', null, array_filter($filters));
+
+        $namafail = 'log-audit-' . now()->format('Ymd-His') . '.xlsx';
+
+        return Excel::download(new AuditLogExport($filters), $namafail);
     }
 }
