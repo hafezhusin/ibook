@@ -89,6 +89,19 @@
             <span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full"
                 style="background:rgba(255,255,255,.25)">{{ $penggunaAktif->total() }}</span>
         </button>
+        <button type="button" id="tab-pending" role="tab"
+            class="tab-btn"
+            aria-selected="false" aria-controls="panel-pending"
+            data-tab="pending">
+            <i class="fa-solid fa-clock mr-1" aria-hidden="true"></i>
+            Menunggu Kelulusan
+            @if($penggunaPending->total() > 0)
+            <span class="ml-1.5 text-xs px-1.5 py-0.5 rounded-full font-bold"
+                  style="background:#f59e0b; color:#1a1a2e">
+                {{ $penggunaPending->total() }}
+            </span>
+            @endif
+        </button>
         <button type="button" id="tab-nyahaktif" role="tab"
             class="tab-btn"
             aria-selected="false" aria-controls="panel-nyahaktif"
@@ -205,6 +218,68 @@
     @if($penggunaAktif->hasPages())
     <div id="pagination-list-aktif" class="hidden mb-4">
         {{ $penggunaAktif->appends(request()->except('page_aktif'))->links() }}
+    </div>
+    @endif
+
+</div>
+
+{{-- ════════════════════════════════════════════ --}}
+{{-- PANEL: MENUNGGU KELULUSAN                   --}}
+{{-- ════════════════════════════════════════════ --}}
+<div id="panel-pending" role="tabpanel" aria-labelledby="tab-pending" class="hidden">
+
+    {{-- Info banner --}}
+    <div class="mb-4 p-4 rounded-xl flex items-start gap-3 text-sm"
+         style="background:#fefce8; border:1px solid #fde68a; color:#92400e">
+        <i class="fa-solid fa-clock mt-0.5 flex-shrink-0" style="color:#f59e0b" aria-hidden="true"></i>
+        <div>
+            <span class="font-semibold">Pengguna ini mendaftar melalui MyGovUC SSO</span> dan sedang menunggu kelulusan pentadbir.
+            Semak sama ada mereka warga BPTM, kemudian klik <strong>Aktifkan</strong> untuk memberi akses.
+        </div>
+    </div>
+
+    {{-- KAD VIEW --}}
+    <div id="kad-pending" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+        @forelse($penggunaPending as $p)
+        @include('pengguna._kad', ['p' => $p, 'isAktif' => false])
+        @empty
+        <div class="col-span-3 text-center py-12 text-gray-400">
+            <i class="fa-solid fa-circle-check text-3xl mb-2 text-green-400" aria-hidden="true"></i>
+            <p>Tiada pendaftaran baharu menunggu kelulusan</p>
+        </div>
+        @endforelse
+    </div>
+
+    @if($penggunaPending->hasPages())
+    <div id="pagination-kad-pending" class="mb-4">
+        {{ $penggunaPending->appends(request()->except('page_pending'))->links() }}
+    </div>
+    @endif
+
+    {{-- LIST VIEW --}}
+    <div id="list-pending" class="hidden bg-white rounded-xl shadow-sm overflow-hidden mb-8">
+        <div class="list-row list-header rounded-t-xl">
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="cb-semua-list-pending"
+                    style="accent-color:#f59e0b" aria-label="Pilih semua">
+                <button class="sort-btn" data-col="name" data-panel="pending">Pengguna <span class="sort-icon">⇅</span></button>
+            </div>
+            <button class="sort-btn" data-col="unit" data-panel="pending">Unit <span class="sort-icon">⇅</span></button>
+            <button class="sort-btn" data-col="peranan" data-panel="pending">Peranan <span class="sort-icon">⇅</span></button>
+            <button class="sort-btn" data-col="tarikh" data-panel="pending">Tarikh Daftar <span class="sort-icon">⇅</span></button>
+            <button class="sort-btn" data-col="status" data-panel="pending">Status <span class="sort-icon">⇅</span></button>
+            <div>Tindakan</div>
+        </div>
+        @forelse($penggunaPending as $p)
+        @include('pengguna._baris', ['p' => $p, 'isAktif' => false])
+        @empty
+        <div class="p-8 text-center text-gray-400">Tiada pendaftaran baharu</div>
+        @endforelse
+    </div>
+
+    @if($penggunaPending->hasPages())
+    <div id="pagination-list-pending" class="hidden mb-4">
+        {{ $penggunaPending->appends(request()->except('page_pending'))->links() }}
     </div>
     @endif
 
@@ -386,41 +461,6 @@
     </div>
 </div>
 
-{{-- ─── Modal Tukar Kata Laluan ─── --}}
-<div id="modal-reset" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-    role="dialog" aria-modal="true" aria-labelledby="modal-reset-heading">
-    <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
-        <h3 id="modal-reset-heading" class="font-bold text-gray-800 text-lg mb-1">Tukar Kata Laluan</h3>
-        <p id="reset-nama" class="text-gray-500 text-sm mb-5"></p>
-        <form id="form-reset" method="POST">
-            @csrf
-            <div class="space-y-4">
-                <div>
-                    <label for="reset-password" class="form-label">Kata Laluan Baru</label>
-                    <input type="password" id="reset-password" name="password"
-                        class="form-input" autocomplete="new-password">
-                </div>
-                <div>
-                    <label for="reset-password-sahkan" class="form-label">Sahkan Kata Laluan</label>
-                    <input type="password" id="reset-password-sahkan" name="password_confirmation"
-                        class="form-input" autocomplete="new-password">
-                </div>
-                <div>
-                    <label for="reset-sebab" class="form-label">Sebab Penukaran <span class="text-red-500">*</span></label>
-                    <input type="text" id="reset-sebab" name="sebab"
-                        class="form-input" placeholder="cth: Pengguna terlupa kata laluan"
-                        required aria-required="true" maxlength="255">
-                </div>
-            </div>
-            <div class="flex gap-3 mt-6">
-                <button type="submit" class="btn-primary flex-1 justify-center py-2.5">Tukar</button>
-                <button type="button" id="btn-tutup-reset"
-                    class="btn-secondary flex-1 justify-center py-2.5">Batal</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 {{-- ─── Modal Nyahaktifkan ─── --}}
 <div id="modal-nyahaktifkan" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
     role="dialog" aria-modal="true" aria-labelledby="modal-nyahaktifkan-heading">
@@ -481,9 +521,6 @@ document.getElementById('btn-tutup-tambah').addEventListener('click', function()
 document.getElementById('btn-tutup-edit').addEventListener('click', function() {
     document.getElementById('modal-edit').classList.add('hidden');
 });
-document.getElementById('btn-tutup-reset').addEventListener('click', function() {
-    document.getElementById('modal-reset').classList.add('hidden');
-});
 document.getElementById('btn-tutup-nyahaktifkan').addEventListener('click', function() {
     document.getElementById('modal-nyahaktifkan').classList.add('hidden');
 });
@@ -530,6 +567,10 @@ if (btnBulkNyah) btnBulkNyah.addEventListener('click', function() { submitBulk('
 const cbSemuaList = document.getElementById('cb-semua-list');
 if (cbSemuaList) cbSemuaList.addEventListener('change', function() { pilihSemuaList(this); });
 
+// Checkbox pilih semua (list view pending)
+const cbSemuaListPending = document.getElementById('cb-semua-list-pending');
+if (cbSemuaListPending) cbSemuaListPending.addEventListener('change', function() { pilihSemuaList(this); });
+
 // Checkbox pilih semua (list view nyahaktif)
 const cbSemuaListNyah = document.getElementById('cb-semua-list-nyahaktif');
 if (cbSemuaListNyah) cbSemuaListNyah.addEventListener('change', function() { pilihSemuaList(this); });
@@ -544,17 +585,12 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Event delegation for openEdit and openReset (from partial views)
+// Event delegation for openEdit / openNyahaktif (from partial views)
 document.addEventListener('click', function(e) {
     const editBtn = e.target.closest('[data-open-edit]');
     if (editBtn) {
         const d = editBtn.dataset;
         openEdit(parseInt(d.openEdit, 10), d.name, d.jabatan, d.peranan, d.aktif === 'true');
-        return;
-    }
-    const resetBtn = e.target.closest('[data-open-reset]');
-    if (resetBtn) {
-        openReset(parseInt(resetBtn.dataset.openReset, 10), resetBtn.dataset.name);
         return;
     }
     const nyahaktifBtn = e.target.closest('[data-open-nyahaktif]');
@@ -577,16 +613,16 @@ document.addEventListener('click', function(e) {
 // ── Tab ──
 function tukarTab(tab) {
     tabSemasa = tab;
-    ['aktif','nyahaktif'].forEach(t => {
-        const isAktif = (t === tab);
-        document.getElementById('tab-' + t).classList.toggle('aktif-tab', isAktif);
-        document.getElementById('tab-' + t).setAttribute('aria-selected', isAktif);
-        document.getElementById('panel-' + t).classList.toggle('hidden', !isAktif);
+    ['aktif','pending','nyahaktif'].forEach(t => {
+        const isActive = (t === tab);
+        document.getElementById('tab-' + t)?.classList.toggle('aktif-tab', isActive);
+        document.getElementById('tab-' + t)?.setAttribute('aria-selected', isActive);
+        document.getElementById('panel-' + t)?.classList.toggle('hidden', !isActive);
     });
     // reset checkbox semua bila tukar tab
     document.querySelectorAll('.checkbox-pengguna:checked').forEach(cb => cb.checked = false);
     kemaskiniToolbar();
-    // apply carian visual semula (teks dalam input sahaja — server sudah menapis)
+    // apply carian visual semula
     caripenggunaFilter(document.getElementById('carian-pengguna').value);
 }
 
@@ -599,10 +635,9 @@ function tukarView(view) {
     document.getElementById('btn-kad').setAttribute('aria-pressed', view === 'kad');
     document.getElementById('btn-senarai').setAttribute('aria-pressed', view === 'senarai');
 
-    ['aktif','nyahaktif'].forEach(tab => {
-        document.getElementById('kad-' + tab).classList.toggle('hidden', view !== 'kad');
-        document.getElementById('list-' + tab).classList.toggle('hidden', view !== 'senarai');
-        // Toggle pagination divs jika wujud
+    ['aktif','pending','nyahaktif'].forEach(tab => {
+        document.getElementById('kad-' + tab)?.classList.toggle('hidden', view !== 'kad');
+        document.getElementById('list-' + tab)?.classList.toggle('hidden', view !== 'senarai');
         const pgKad  = document.getElementById('pagination-kad-'  + tab);
         const pgList = document.getElementById('pagination-list-' + tab);
         if (pgKad)  pgKad.classList.toggle('hidden', view !== 'kad');
@@ -727,15 +762,6 @@ function openEdit(id, name, jabatan, peranan, aktif) {
     setTimeout(() => document.getElementById('edit-name').focus(), 50);
 }
 
-// ── Modal Reset ──
-function openReset(id, name) {
-    document.getElementById('reset-nama').textContent = name;
-    document.getElementById('form-reset').action = '/pengguna/' + id + '/reset-password';
-    document.getElementById('reset-sebab').value = '';
-    document.getElementById('modal-reset').classList.remove('hidden');
-    setTimeout(() => document.getElementById('reset-password').focus(), 50);
-}
-
 // ── Modal Nyahaktifkan ──
 function openNyahaktifkan(id, name) {
     document.getElementById('nyahaktifkan-nama').textContent = name;
@@ -748,8 +774,8 @@ function openNyahaktifkan(id, name) {
 // ── Esc tutup modal ──
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
-        ['modal-tambah','modal-edit','modal-reset','modal-nyahaktifkan'].forEach(id =>
-            document.getElementById(id).classList.add('hidden'));
+        ['modal-tambah','modal-edit','modal-nyahaktifkan'].forEach(id =>
+            document.getElementById(id)?.classList.add('hidden'));
     }
 });
 

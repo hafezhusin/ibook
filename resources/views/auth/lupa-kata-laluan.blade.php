@@ -28,7 +28,27 @@
     </div>
 
     <h1 class="text-white text-2xl font-bold mb-1">Lupa Kata Laluan?</h1>
-    <p class="text-slate-400 text-sm mb-7">Masukkan emel anda dan kami akan hantar pautan untuk menetapkan semula kata laluan.</p>
+    <p class="text-slate-400 text-sm mb-6">Masukkan emel anda untuk menerima pautan set semula kata laluan.</p>
+
+    {{-- Banner MyGovUC — papar bila email @anm.gov.my dikesan --}}
+    <div id="banner-sso" class="hidden rounded-xl p-4 mb-5"
+         style="background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.35)">
+        <div class="flex items-start gap-3">
+            <i class="fa-solid fa-circle-info text-amber-400 mt-0.5 flex-shrink-0" aria-hidden="true"></i>
+            <div>
+                <p class="text-amber-300 font-semibold text-sm mb-1">Akaun @anm.gov.my tidak memerlukan kata laluan</p>
+                <p class="text-slate-400 text-xs mb-3">
+                    Staf BPTM log masuk terus menggunakan <strong class="text-white">MyGovUC</strong>.
+                    Kata laluan tidak diperlukan — proses reset tidak akan berfungsi untuk akaun ini.
+                </p>
+                <a href="{{ route('login') }}"
+                   class="inline-flex items-center gap-2 font-bold text-sm py-2 px-4 rounded-lg transition-colors"
+                   style="background:#f59e0b; color:#1a1a2e">
+                    Log Masuk dengan MyGovUC →
+                </a>
+            </div>
+        </div>
+    </div>
 
     @if(session('status'))
     <div class="bg-green-900/40 border border-green-500/40 text-green-300 rounded-lg p-4 mb-6 text-sm flex items-start gap-2" role="alert">
@@ -55,7 +75,8 @@
                 required aria-required="true"
                 autocomplete="email"
                 class="form-input"
-                placeholder="nama@jabatan.gov.my">
+                placeholder="nama@jabatan.gov.my"
+                oninput="semakDomainSSO(this.value)">
         </div>
 
         <button type="submit"
@@ -71,6 +92,15 @@
     <a href="{{ route('login') }}" class="flex items-center justify-center gap-2 text-sm text-slate-400 hover:text-amber-400 transition-colors">
         <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Kembali ke halaman log masuk
     </a>
+
+    <script>
+    function semakDomainSSO(emel) {
+        const isSso = emel.toLowerCase().endsWith('@anm.gov.my');
+        document.getElementById('banner-sso').classList.toggle('hidden', !isSso);
+    }
+    // Semak nilai awal (jika ada old() dari Laravel)
+    semakDomainSSO(document.getElementById('email').value);
+    </script>
 
 </div>
 </body>

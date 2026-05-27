@@ -29,8 +29,18 @@ class PenggunaController extends Controller
     {
         $cari = trim($request->input('cari', ''));
 
-        $queryAktif     = User::where('aktif', true)->orderBy('name');
-        $queryNyahaktif = User::where('aktif', false)->orderBy('name');
+        // Aktif
+        $queryAktif = User::where('aktif', true)->orderBy('name');
+
+        // Menunggu Kelulusan — SSO baru, belum pernah log masuk
+        $queryPending = User::where('aktif', false)
+                            ->whereNull('last_login_at')
+                            ->orderByDesc('created_at');
+
+        // Dinyahaktifkan — pernah aktif, kemudian dinyahaktifkan
+        $queryNyahaktif = User::where('aktif', false)
+                              ->whereNotNull('last_login_at')
+                              ->orderBy('name');
 
         if ($cari !== '') {
             $filter = function ($q) use ($cari) {
@@ -39,13 +49,15 @@ class PenggunaController extends Controller
                   ->orWhere('jabatan', 'like', "%{$cari}%");
             };
             $queryAktif->where($filter);
+            $queryPending->where($filter);
             $queryNyahaktif->where($filter);
         }
 
         $penggunaAktif     = $queryAktif->paginate(25, ['*'], 'page_aktif')->appends(['cari' => $cari]);
+        $penggunaPending   = $queryPending->paginate(25, ['*'], 'page_pending')->appends(['cari' => $cari]);
         $penggunaNyahaktif = $queryNyahaktif->paginate(25, ['*'], 'page_nyahaktif')->appends(['cari' => $cari]);
 
-        return view('pengguna.index', compact('penggunaAktif', 'penggunaNyahaktif', 'cari'));
+        return view('pengguna.index', compact('penggunaAktif', 'penggunaPending', 'penggunaNyahaktif', 'cari'));
     }
 
     public function store(StorePenggunaRequest $request)

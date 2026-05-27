@@ -36,13 +36,19 @@
     </div>
 
     {{-- Badge peranan + status --}}
+    @php $isPending = !$isAktif && is_null($p->last_login_at); @endphp
     <div class="mt-3 flex items-center gap-2 flex-wrap">
         <span class="text-xs font-semibold px-2 py-0.5 rounded-full
             {{ $p->peranan === 'pentadbir_sistem' ? 'bg-red-100 text-red-700' :
                ($p->peranan === 'urus_setia' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700') }}">
             {{ $p->label_peranan }}
         </span>
-        @if(!$isAktif)
+        @if($isPending)
+        <span class="text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1"
+              style="background:#fef9c3; color:#92400e">
+            <i class="fa-solid fa-clock text-xs" aria-hidden="true"></i> Menunggu Kelulusan
+        </span>
+        @elseif(!$isAktif)
         <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-600 flex items-center gap-1">
             <i class="fa-solid fa-ban text-xs" aria-hidden="true"></i> Dinyahaktifkan
         </span>
@@ -82,29 +88,6 @@
                 aria-haspopup="dialog" aria-controls="modal-edit">
                 <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
             </button>
-            {{-- Reset Kata Laluan — subordinat: ikon sahaja dengan tooltip --}}
-            <button type="button"
-                data-open-reset="{{ $p->id }}"
-                data-name="{{ addslashes($p->name) }}"
-                class="text-gray-300 text-xs hover:text-gray-500 transition"
-                title="Reset Kata Laluan"
-                aria-label="Reset kata laluan — {{ $p->name }}"
-                aria-haspopup="dialog" aria-controls="modal-reset">
-                <i class="fa-solid fa-key" aria-hidden="true"></i>
-            </button>
-            @else
-            {{-- Urus Setia boleh reset kata laluan sendiri sahaja --}}
-            @if($p->id === auth()->id())
-            <button type="button"
-                data-open-reset="{{ $p->id }}"
-                data-name="{{ addslashes($p->name) }}"
-                class="text-gray-300 text-xs hover:text-gray-500 transition"
-                title="Reset Kata Laluan"
-                aria-label="Reset kata laluan — {{ $p->name }}"
-                aria-haspopup="dialog" aria-controls="modal-reset">
-                <i class="fa-solid fa-key" aria-hidden="true"></i>
-            </button>
-            @endif
             @endif
         </div>
 
