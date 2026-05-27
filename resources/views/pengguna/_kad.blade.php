@@ -83,7 +83,7 @@
                 data-jabatan="{{ addslashes($p->jabatan ?? '') }}"
                 data-peranan="{{ $p->peranan }}"
                 data-aktif="{{ $p->aktif ? 'true' : 'false' }}"
-                data-has-sso="{{ $p->google_id ? 'true' : 'false' }}"
+                data-has-sso="{{ (str_ends_with($p->email, '@anm.gov.my') || $p->google_id) ? 'true' : 'false' }}"
                 class="text-amber-500 text-xs hover:underline"
                 aria-label="Edit pengguna — {{ $p->name }}"
                 aria-haspopup="dialog" aria-controls="modal-edit">

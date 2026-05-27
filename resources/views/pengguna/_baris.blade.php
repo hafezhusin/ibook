@@ -80,7 +80,7 @@
             data-jabatan="{{ addslashes($p->jabatan ?? '') }}"
             data-peranan="{{ $p->peranan }}"
             data-aktif="{{ $p->aktif ? 'true' : 'false' }}"
-            data-has-sso="{{ $p->google_id ? 'true' : 'false' }}"
+            data-has-sso="{{ (str_ends_with($p->email, '@anm.gov.my') || $p->google_id) ? 'true' : 'false' }}"
             class="text-amber-500 text-xs hover:underline" aria-label="Edit {{ $p->name }}">
             <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
         </button>

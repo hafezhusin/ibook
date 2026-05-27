@@ -91,8 +91,8 @@ class PenggunaController extends Controller
             return back()->with('error', 'Anda tidak boleh menyahaktifkan akaun anda sendiri.');
         }
 
-        // Nama dari MyGovUC — tidak boleh diubah oleh admin (walaupun form dimanipulasi)
-        if ($pengguna->google_id) {
+        // Nama dari MyGovUC — semua akaun @anm.gov.my nama tidak boleh diubah admin
+        if ($pengguna->google_id || str_ends_with($pengguna->email, '@anm.gov.my')) {
             unset($validated['name']);
         }
 
