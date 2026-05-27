@@ -1,12 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Using nullsafe method call on non\-nullable type Carbon\\Carbon\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 2
-			path: app/Console/Commands/AuditVerify.php
-
-		-
 			message: '#^Relation ''pengguna'' is not found in App\\Models\\ActivityLog model\.$#'
 			identifier: larastan.relationExistence
 			count: 1

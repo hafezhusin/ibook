@@ -61,7 +61,7 @@ class AuditVerify extends Command
                 'butiran'     => $log->butiran,
                 'ip_address'  => $log->ip_address,
                 'prev_hash'   => $log->prev_hash,
-                'dicipta_pada'=> $log->dicipta_pada?->toIso8601String(),
+                'dicipta_pada'=> $log->dicipta_pada->toIso8601String(),
             ], JSON_UNESCAPED_UNICODE);
 
             $jangkaan = hash('sha256', $kanonikal);
@@ -77,7 +77,7 @@ class AuditVerify extends Command
                     '  [ROSAK] ID #%d | %s | %s',
                     $log->id,
                     $log->tindakan,
-                    $log->dicipta_pada?->format('Y-m-d H:i:s')
+                    $log->dicipta_pada->format('Y-m-d H:i:s')
                 ));
 
                 if (!$hashSah) {

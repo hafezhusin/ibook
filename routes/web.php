@@ -52,6 +52,22 @@ Route::middleware('throttle:60,1')->group(function () {
     Route::get('/awam/bilik', [BilikController::class, 'publicList'])->name('awam.bilik');
 });
 
+// ── Health Check — semak status sistem (DB + storan) ───────────────────────
+Route::get('/health', function () {
+    $checks = [];
+    try {
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+        $checks['db'] = 'ok';
+    } catch (\Exception) {
+        $checks['db'] = 'error';
+    }
+    $checks['disk']    = is_writable(storage_path()) ? 'ok' : 'error';
+    $checks['status']  = collect($checks)->contains('error') ? 'degraded' : 'ok';
+    $checks['version'] = config('app.name', 'iBook') . ' 2.0';
+    $statusCode = $checks['status'] === 'ok' ? 200 : 503;
+    return response()->json($checks, $statusCode);
+})->name('health');
+
 // Routes yang memerlukan log masuk
 Route::middleware('auth.custom')->group(function () {
 
