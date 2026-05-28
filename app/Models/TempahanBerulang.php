@@ -1,7 +1,7 @@
 <?php
 
 /**
- * iBook --- Sistem Pengurusan Bilik Mesyuarat
+ * iBook — Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
  * Hak cipta terpelihara. Dilarang meniru, menyalin, mengubah suai, atau
  * mengedar perisian ini tanpa kebenaran bertulis daripada pemilik hak cipta.
@@ -15,7 +15,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -23,22 +23,43 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
- * @property-read BilikMesyuarat|null                                    $bilik    Bilik yang ditempah
- * @property-read User|null                                             $pengguna Pemohon
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Tempahan> $tempahan Semua tempahan dalam kumpulan
+ * @property int $id
+ * @property string $ulid
+ * @property string $jenis 'mingguan'|'bulanan'
+ * @property int $setiap_n
+ * @property array|null $hari_dalam_minggu [0-6], mingguan sahaja
+ * @property Carbon $tarikh_mula
+ * @property Carbon $tarikh_tamat
+ * @property array $sesi ['pagi']|['pagi','petang']
+ * @property int $bilik_id
+ * @property int $user_id
+ * @property string $nama_mesyuarat
+ * @property int $bilangan_peserta
+ * @property string $kategori
+ * @property string $nama_pengerusi
+ * @property string|null $tujuan
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read BilikMesyuarat                                                 $bilik
+ * @property-read User                                                            $pengguna
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Tempahan>        $tempahan
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Tempahan>        $tempahanAktif
  */
 class TempahanBerulang extends Model
 {
-    use HasFactory;
+    protected $table = 'tempahan_berulang';
 
-    /**
-     * Had keras: maksimum 12 kejadian per kumpulan berulang.
-     * Dikuatkuasakan dalam janaTarikh() — konsisten antara
-     * controller (batch insert) dan AJAX pratonton.
-     */
+    /** Had keras bilangan kejadian per kumpulan berulang. */
     const MAX_KEJADIAN = 12;
 
-    protected $table = 'tempahan_berulang';
+    protected static function booted(): void
+    {
+        static::creating(function (TempahanBerulang $m): void {
+            if (empty($m->ulid)) {
+                $m->ulid = (string) Str::ulid();
+            }
+        });
+    }
 
     protected $fillable = [
         'ulid',
@@ -58,29 +79,37 @@ class TempahanBerulang extends Model
     ];
 
     protected $casts = [
-        'hari_dalam_minggu' => 'array',
-        'sesi' => 'array',
         'tarikh_mula' => 'date',
         'tarikh_tamat' => 'date',
+        'hari_dalam_minggu' => 'array',
+        'sesi' => 'array',
     ];
 
     /**
-     * Jana ULID secara automatik apabila rekod baharu dibuat.
+     * Route model binding menggunakan ULID (bukan ID integer).
+     * Disokong oleh Route::bind('kumpulan', ...) dalam AppServiceProvider.
      */
-    protected static function booted(): void
+    public function getRouteKeyName(): string
     {
-        static::creating(function (TempahanBerulang $model) {
-            if (empty($model->ulid)) {
-                $model->ulid = (string) Str::ulid();
-            }
-        });
+        return 'ulid';
     }
 
-    // ── Relationships ────────────────────────────────────────────────
+    // ── Relationships ──────────────────────────────────────────────────
 
+    /** Semua tempahan individu dalam kumpulan ini. */
     public function tempahan(): HasMany
     {
         return $this->hasMany(Tempahan::class, 'tempahan_berulang_id');
+    }
+
+    /**
+     * Tempahan yang masih aktif (belum ditolak).
+     * Digunakan untuk kira bilangan dan kemaskini kolektif.
+     */
+    public function tempahanAktif(): HasMany
+    {
+        return $this->hasMany(Tempahan::class, 'tempahan_berulang_id')
+            ->where('status', '!=', Tempahan::STATUS_DITOLAK);
     }
 
     public function bilik(): BelongsTo
@@ -93,69 +122,62 @@ class TempahanBerulang extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-    // ── Business Logic ───────────────────────────────────────────────
+    // ── Logik Jana Tarikh ──────────────────────────────────────────────
 
     /**
-     * Hanya tempahan yang belum ditolak dalam kumpulan ini.
-     * Digunakan untuk kiraan "X tempahan" dalam modal skop.
-     */
-    public function tempahanAktif(): HasMany
-    {
-        return $this->tempahan()
-            ->where('status', '!=', Tempahan::STATUS_DITOLAK)
-            ->orderBy('tarikh');
-    }
-
-    /**
-     * Jana semua tarikh booking berdasarkan corak ulangan.
+     * Jana semua tarikh kejadian berdasarkan tetapan kumpulan.
      *
-     * Had MAX_KEJADIAN (12) dikuatkuasakan di sini — berhenti terus
-     * apabila had dicapai tanpa mengira tarikh_tamat.
+     * Had keras: config('ibook.berulang.had_kejadian') = 12.
+     * Mingguan: iterasi minggu demi minggu, ambil hari dari hari_dalam_minggu[].
+     * Bulanan:  tambah N bulan setiap kali — Carbon urus hujung bulan (Feb 28/29).
      *
-     * @return Collection<int, Carbon>
+     * @return Collection<int, CarbonImmutable>
      */
     public function janaTarikh(): Collection
     {
-        $tarikh = collect();
-        $mula = $this->tarikh_mula->copy()->startOfDay();
-        $tamat = $this->tarikh_tamat->copy()->endOfDay();
-        $n = max(1, (int) $this->setiap_n);
+        $had = (int) config('ibook.berulang.had_kejadian', self::MAX_KEJADIAN);
+        $semua = collect();
+        $mula = CarbonImmutable::parse($this->tarikh_mula)->startOfDay();
+        $tamat = CarbonImmutable::parse($this->tarikh_tamat)->startOfDay();
+        $setiapN = max(1, (int) $this->setiap_n);
 
         if ($this->jenis === 'mingguan') {
-            // Hari dalam minggu: 0=Ahad, 1=Isnin, ..., 6=Sabtu
-            $hari = array_map('intval', $this->hari_dalam_minggu ?? [$mula->dayOfWeek]);
-            sort($hari); // susun supaya tarikh dalam minggu ikut urutan
+            $hari = array_map('intval', (array) ($this->hari_dalam_minggu ?? []));
+            sort($hari);
 
-            // Mulakan dari awal minggu yang mengandungi tarikh_mula
-            // Guna Carbon::SUNDAY (0) kerana Malaysia: minggu bermula Ahad
-            $mingguSekarang = $mula->copy()->startOfWeek(Carbon::SUNDAY);
+            if (empty($hari)) {
+                return $semua;
+            }
 
-            while ($mingguSekarang->lte($tamat)) {
+            // Mulakan dari awal minggu (Ahad = 0) supaya semua hari dinilai —
+            // termasuk hari sebelum $mula dalam minggu yang sama.
+            $mingguKursor = $mula->startOfWeek(Carbon::SUNDAY);
+
+            while ($mingguKursor->lte($tamat) && $semua->count() < $had) {
                 foreach ($hari as $dow) {
-                    $calon = $mingguSekarang->copy()->addDays($dow);
-                    if ($calon->gte($mula) && $calon->lte($tamat)) {
-                        $tarikh->push($calon->copy()->startOfDay());
-                        if ($tarikh->count() >= self::MAX_KEJADIAN) {
-                            return $tarikh;
-                        }
+                    $calon = $mingguKursor->addDays($dow);
+                    if ($calon->gte($mula) && $calon->lte($tamat) && $semua->count() < $had) {
+                        $semua->push($calon);
                     }
                 }
-                $mingguSekarang->addWeeks($n);
+                $mingguKursor = $mingguKursor->addWeeks($setiapN);
             }
         } else {
-            // Bulanan: tarikh yang sama setiap bulan
-            // Carbon::addMonths() menangani hujung bulan secara automatik
-            // (cth: 31 Jan + 1 bulan = 28/29 Feb)
-            $calon = $mula->copy();
-            while ($calon->lte($tamat)) {
-                $tarikh->push($calon->copy()->startOfDay());
-                if ($tarikh->count() >= self::MAX_KEJADIAN) {
+            // Bulanan
+            $bulan = 0;
+
+            while ($semua->count() < $had) {
+                $calon = $mula->addMonths($bulan);
+                if ($calon->gt($tamat)) {
                     break;
                 }
-                $calon->addMonths($n);
+                $semua->push($calon);
+                $bulan += $setiapN;
             }
         }
 
-        return $tarikh;
+        return $semua
+            ->sortBy(fn (CarbonImmutable $t) => $t->timestamp)
+            ->values();
     }
 }

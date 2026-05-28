@@ -15,97 +15,110 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTempahanBerulangRequest;
-use App\Mail\NotifikasiTempahanBaharu;
 use App\Mail\PengesahanTempahanBerulang;
-use App\Models\BilikMesyuarat;
 use App\Models\Tempahan;
 use App\Models\TempahanBerulang;
-use App\Models\Tetapan;
 use App\Services\AuditLogger;
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 
 class TempahanBerulangController extends Controller
 {
-    // ── STORE — cipta kumpulan + semua tempahan individu ────────────
+    /**
+     * AJAX pratonton — kembalikan senarai tarikh yang akan dijana.
+     * GET /tempahan-berulang/pratonton
+     */
+    public function pratonton(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'jenis' => ['required', 'in:mingguan,bulanan'],
+            'setiap_n' => ['required', 'integer', 'min:1', 'max:12'],
+            'hari_dalam_minggu' => ['nullable', 'array'],
+            'hari_dalam_minggu.*' => ['integer', 'between:0,6'],
+            'tarikh_mula' => ['required', 'date'],
+            'tarikh_tamat' => ['required', 'date', 'after_or_equal:tarikh_mula'],
+        ]);
 
-    public function store(StoreTempahanBerulangRequest $request)
+        // Bina model sementara (tidak disimpan) untuk panggil janaTarikh()
+        $kumpulan = new TempahanBerulang($data);
+        $tarikh = $kumpulan->janaTarikh();
+        $had = (int) config('ibook.berulang.had_kejadian', 12);
+
+        return response()->json([
+            'tarikh' => $tarikh->map(fn (CarbonImmutable $t) => $t->format('d/m/Y'))->values(),
+            'jumlah' => $tarikh->count(),
+            'had' => $had,
+            'tercapai_had' => $tarikh->count() >= $had,
+        ]);
+    }
+
+    /**
+     * Buat kumpulan berulang + semua tempahan individu dalam satu transaksi.
+     * POST /tempahan-berulang
+     */
+    public function store(StoreTempahanBerulangRequest $request): RedirectResponse
     {
         $validated = $request->validated();
+        $user = $request->user();
 
-        // Semak kapasiti bilik
-        $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
-        if ($validated['bilangan_peserta'] > $bilik->kapasiti) {
-            return back()->withInput()->withErrors([
-                'bilangan_peserta' => "Bilangan peserta melebihi kapasiti bilik ({$bilik->kapasiti} orang).",
-            ]);
-        }
-
-        // Jana semua tarikh (sebelum transaksi supaya lebih pantas)
-        $kumpulanSementara = new TempahanBerulang([
-            'jenis' => $validated['jenis'],
-            'setiap_n' => $validated['setiap_n'],
-            'hari_dalam_minggu' => $validated['hari_dalam_minggu'] ?? null,
-            'tarikh_mula' => $validated['tarikh_mula'],
-            'tarikh_tamat' => $validated['tarikh_tamat'],
-            'sesi' => $validated['sesi'],
-        ]);
+        // 1. Jana semua tarikh menggunakan model sementara
+        $kumpulanSementara = new TempahanBerulang($validated);
         $semuaTarikh = $kumpulanSementara->janaTarikh();
 
         if ($semuaTarikh->isEmpty()) {
-            return back()->withInput()->withErrors([
-                'tarikh_tamat' => 'Tiada tarikh dijana dengan tetapan ini. Semak hari dipilih dan julat tarikh.',
+            throw ValidationException::withMessages([
+                'tarikh_tamat' => 'Tiada tarikh dijana berdasarkan tetapan yang dipilih.',
             ]);
         }
 
-        // Bina senarai semua [tarikh, sesi] yang akan dicipta
-        $slotDiperlukan = [];
-        foreach ($semuaTarikh as $tarikh) {
-            foreach ($validated['sesi'] as $sesi) {
-                $slotDiperlukan[] = ['tarikh' => $tarikh->toDateString(), 'sesi' => $sesi];
-            }
-        }
+        // 2. Bina semua slot [tarikh × sesi]
+        $sesiList = (array) ($validated['sesi'] ?? []);
 
-        $konflikDijumpai = [];
+        // 3. Kumpul konflik dulu (sebelum transaksi) — elak melempar exception dalam closure
+        //    kerana SQLite (ujian) dan MySQL berkelakuan berbeza untuk nested transaction + lockForUpdate.
+        //    Rujukan: https://www.php.net/manual/en/language.variables.variable.php
+        $konflikDitemui = [];
 
         try {
-            DB::transaction(function () use ($validated, $semuaTarikh, $slotDiperlukan, &$konflikDijumpai) {
+            $kumpulan = DB::transaction(function () use ($validated, $user, $semuaTarikh, $sesiList, &$konflikDitemui): ?TempahanBerulang {
 
-                // Semak konflik untuk semua slot dalam satu transaksi
-                // lockForUpdate() cegah race condition (sama seperti TempahanController::store)
-                foreach ($slotDiperlukan as $slot) {
-                    $konflik = Tempahan::where('bilik_id', $validated['bilik_id'])
-                        ->whereDate('tarikh', $slot['tarikh'])
-                        ->where('sesi', $slot['sesi'])
-                        ->where('status', '!=', Tempahan::STATUS_DITOLAK)
-                        ->lockForUpdate()
-                        ->exists();
-
-                    if ($konflik) {
-                        $labelSesi = $slot['sesi'] === 'pagi' ? 'Pagi' : 'Petang';
-                        $konflikDijumpai[] = $slot['tarikh'].' (Sesi '.$labelSesi.')';
+                // Semak konflik untuk setiap slot (lockForUpdate untuk MySQL production)
+                // Guna whereDate() bukan where() — SQLite menyimpan tarikh sebagai datetime penuh
+                // ('2026-06-01 00:00:00'), maka perbandingan string biasa gagal.
+                foreach ($semuaTarikh as $tarikh) {
+                    foreach ($sesiList as $sesi) {
+                        if (Tempahan::where('bilik_id', $validated['bilik_id'])
+                            ->whereDate('tarikh', $tarikh->toDateString())
+                            ->where('sesi', $sesi)
+                            ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+                            ->lockForUpdate()
+                            ->exists()) {
+                            $konflikDitemui[] = $tarikh->format('d/m/Y').' ('.$sesi.')';
+                        }
                     }
                 }
 
-                if (! empty($konflikDijumpai)) {
-                    throw new \RuntimeException('konflik');
+                // Jika ada konflik, keluar tanpa insert — commit kosong (idempoten)
+                if (! empty($konflikDitemui)) {
+                    return null;
                 }
 
-                // Cipta rekod kumpulan
+                // Cipta rekod kumpulan induk
                 $kumpulan = TempahanBerulang::create([
                     'jenis' => $validated['jenis'],
                     'setiap_n' => $validated['setiap_n'],
                     'hari_dalam_minggu' => $validated['hari_dalam_minggu'] ?? null,
                     'tarikh_mula' => $validated['tarikh_mula'],
                     'tarikh_tamat' => $validated['tarikh_tamat'],
-                    'sesi' => $validated['sesi'],
+                    'sesi' => $sesiList,
                     'bilik_id' => $validated['bilik_id'],
-                    'user_id' => Auth::id(),
+                    'user_id' => $user->id,
                     'nama_mesyuarat' => $validated['nama_mesyuarat'],
                     'bilangan_peserta' => $validated['bilangan_peserta'],
                     'kategori' => $validated['kategori'],
@@ -113,241 +126,160 @@ class TempahanBerulangController extends Controller
                     'tujuan' => $validated['tujuan'] ?? null,
                 ]);
 
-                // Cipta semua tempahan individu
+                // Cipta setiap tempahan individu
                 foreach ($semuaTarikh as $tarikh) {
-                    foreach ($validated['sesi'] as $sesi) {
+                    foreach ($sesiList as $sesi) {
                         $masaSesi = Tempahan::masaSesi($sesi);
+
                         Tempahan::create([
                             'tempahan_berulang_id' => $kumpulan->id,
-                            'nama_mesyuarat' => $validated['nama_mesyuarat'],
-                            'tarikh' => $tarikh->toDateString(),
                             'bilik_id' => $validated['bilik_id'],
+                            'user_id' => $user->id,
+                            'tarikh' => $tarikh->toDateString(),
                             'sesi' => $sesi,
-                            'masa_mula' => $masaSesi['mula'],
-                            'masa_tamat' => $masaSesi['tamat'],
+                            'masa_mula' => $masaSesi['mula'] ?? '09:00',
+                            'masa_tamat' => $masaSesi['tamat'] ?? '13:00',
+                            'nama_mesyuarat' => $validated['nama_mesyuarat'],
                             'bilangan_peserta' => $validated['bilangan_peserta'],
                             'kategori' => $validated['kategori'],
                             'nama_pengerusi' => $validated['nama_pengerusi'],
                             'tujuan' => $validated['tujuan'] ?? null,
-                            'user_id' => Auth::id(),
                             'status' => Tempahan::STATUS_DILULUSKAN,
                         ]);
                     }
                 }
-            });
-        } catch (\RuntimeException $e) {
-            if ($e->getMessage() === 'konflik') {
-                $papar = array_slice($konflikDijumpai, 0, 5);
-                $lebih = count($konflikDijumpai) > 5
-                    ? ' ...dan '.(count($konflikDijumpai) - 5).' lagi.'
-                    : '.';
 
-                return back()->withInput()->withErrors([
-                    'tarikh_mula' => 'Konflik ditemui: '.implode(', ', $papar).$lebih
-                        .' Tukar bilik atau laraskan tarikh.',
-                ]);
-            }
-            throw $e;
+                return $kumpulan;
+            });
+        } catch (QueryException $e) {
+            report($e);
+
+            return back()->withInput()->with('error', 'Ralat pangkalan data. Sila cuba semula.');
         }
 
-        $this->bumpKalendarCache();
+        // Periksa konflik selepas transaksi — lempar ValidationException di luar closure
+        if (! empty($konflikDitemui)) {
+            throw ValidationException::withMessages([
+                'tarikh_mula' => 'Konflik tempahan pada: '.implode(', ', $konflikDitemui).'. Sila pilih tarikh atau bilik yang lain.',
+            ]);
+        }
 
-        $jumlahSesi = $semuaTarikh->count() * count($validated['sesi']);
+        // Selepas konflik ditapis, $kumpulan pasti bukan null
+        /** @var TempahanBerulang $kumpulan */
 
-        AuditLogger::catat('buat_tempahan_berulang', null, [
-            'nama_mesyuarat' => $validated['nama_mesyuarat'],
-            'jenis' => $validated['jenis'],
-            'tarikh_mula' => $validated['tarikh_mula'],
-            'tarikh_tamat' => $validated['tarikh_tamat'],
-            'bilik_id' => $validated['bilik_id'],
+        // 4. Hantar emel pengesahan (gagal emel tidak batalkan tempahan)
+        try {
+            $bilik = $kumpulan->bilik;
+
+            Mail::to($user->email)->send(new PengesahanTempahanBerulang(
+                namaMesyuarat: $kumpulan->nama_mesyuarat,
+                jenisLabel: $kumpulan->jenis === 'mingguan' ? 'Mingguan' : 'Bulanan',
+                tarikhMulaLabel: CarbonImmutable::parse($kumpulan->tarikh_mula)->translatedFormat('d F Y'),
+                tarikhTamatLabel: CarbonImmutable::parse($kumpulan->tarikh_tamat)->translatedFormat('d F Y'),
+                semuaSesi: $sesiList,
+                bilikNama: $bilik->nama,
+                bilanganPeserta: $kumpulan->bilangan_peserta,
+                kategoriLabel: $kumpulan->kategori,
+                namaPengerusi: $kumpulan->nama_pengerusi,
+                pemohonNama: $user->name,
+                pemohonEmail: $user->email,
+                jumlahTarikh: $semuaTarikh->count(),
+                jumlahSesi: count($sesiList),
+            ));
+        } catch (\Throwable) {
+            // Kegagalan emel tidak patut batalkan tempahan yang berjaya dibuat
+        }
+
+        // 5. Log audit
+        AuditLogger::catat('buat_tempahan_berulang', $kumpulan, [
+            'kumpulan_id' => $kumpulan->id,
             'jumlah_tarikh' => $semuaTarikh->count(),
-            'jumlah_sesi' => count($validated['sesi']),
+            'jumlah_sesi' => count($sesiList),
         ]);
 
-        // Hantar e-mel — kegagalan tidak patut halang aliran tempahan
-        $this->hantarEmelBerulang($validated, $bilik, $semuaTarikh->count(), $jumlahSesi);
-
-        return redirect()->route('tempahan.index', ['tarikh_filter' => 'akan_datang'])
-            ->with('success', "Tempahan berulang berjaya dibuat — {$jumlahSesi} sesi dijadualkan.");
+        return redirect('/tempahan?tarikh_filter=akan_datang')
+            ->with('success', 'Tempahan berulang berjaya dibuat ('.$semuaTarikh->count().' tarikh).');
     }
 
-    // ── UPDATE — kemaskini satu atau semua dalam kumpulan ───────────
-
-    public function update(Request $request, TempahanBerulang $kumpulan)
+    /**
+     * Kemaskini medan bukan-slot untuk semua tempahan dalam kumpulan.
+     * PUT /tempahan-berulang/{kumpulan}
+     */
+    public function update(Request $request, TempahanBerulang $kumpulan): RedirectResponse
     {
-        // Authorize: semak menggunakan tempahan pertama dalam kumpulan
-        $tempahanContoh = $kumpulan->tempahan()->firstOrFail();
-        $this->authorize('update', $tempahanContoh);
+        $user = $request->user();
+
+        // Hanya pemilik kumpulan atau pentadbir boleh kemaskini
+        if ((int) $kumpulan->user_id !== (int) $user->id && ! $user->isPentadbir()) {
+            abort(403, 'Anda tidak dibenarkan mengemaskini kumpulan ini.');
+        }
 
         $validated = $request->validate([
             'nama_mesyuarat' => ['required', 'string', 'max:255'],
             'bilangan_peserta' => ['required', 'integer', 'min:1'],
-            'kategori' => ['required', 'string'],
+            'kategori' => ['required', 'string', 'max:255'],
             'nama_pengerusi' => ['required', 'string', 'max:255'],
             'tujuan' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        // Semak kapasiti bilik — bilangan peserta tidak boleh melebihi kapasiti
-        $bilik = $kumpulan->bilik;
-        if ($bilik && $validated['bilangan_peserta'] > $bilik->kapasiti) {
-            return back()->withErrors([
-                'bilangan_peserta' => "Bilangan peserta ({$validated['bilangan_peserta']}) melebihi kapasiti bilik {$bilik->nama} ({$bilik->kapasiti} orang).",
-            ])->withInput();
-        }
-
-        DB::transaction(function () use ($kumpulan, $validated) {
+        DB::transaction(function () use ($kumpulan, $validated): void {
+            // Kemaskini rekod kumpulan induk
             $kumpulan->update($validated);
-            $kumpulan->tempahan()
-                ->where('status', '!=', Tempahan::STATUS_DITOLAK)
-                ->update([
-                    'nama_mesyuarat' => $validated['nama_mesyuarat'],
-                    'bilangan_peserta' => $validated['bilangan_peserta'],
-                    'kategori' => $validated['kategori'],
-                    'nama_pengerusi' => $validated['nama_pengerusi'],
-                    'tujuan' => $validated['tujuan'] ?? null,
-                    'dikemaskini_oleh' => Auth::id(),
-                    'dikemaskini_pada' => now(),
-                    'updated_at' => now(),
-                ]);
+
+            // Kemaskini semua tempahan aktif (yang belum ditolak)
+            $kumpulan->tempahanAktif()->update([
+                'nama_mesyuarat' => $validated['nama_mesyuarat'],
+                'bilangan_peserta' => $validated['bilangan_peserta'],
+                'kategori' => $validated['kategori'],
+                'nama_pengerusi' => $validated['nama_pengerusi'],
+                'tujuan' => $validated['tujuan'] ?? null,
+            ]);
         });
 
-        $this->bumpKalendarCache();
-        AuditLogger::catat('kemaskini_kumpulan_berulang', $kumpulan, ['skop' => 'semua']);
+        AuditLogger::catat('kemaskini_kumpulan_berulang', $kumpulan, [
+            'kumpulan_id' => $kumpulan->id,
+        ]);
 
         return redirect()->route('tempahan.index')
             ->with('success', 'Semua tempahan dalam kumpulan berjaya dikemaskini.');
     }
 
-    // ── DESTROY — padam satu atau semua dalam kumpulan ──────────────
-
-    public function destroy(Request $request, Tempahan $tempahan)
+    /**
+     * Padam tempahan berulang dengan skop (ini sahaja / semua dalam kumpulan).
+     * DELETE /tempahan/{tempahan}/padam-berulang
+     */
+    public function destroy(Request $request, Tempahan $tempahan): RedirectResponse
     {
         $this->authorize('delete', $tempahan);
 
         $skop = $request->input('skop', 'ini');
         $kumpulan = $tempahan->kumpulanBerulang;
 
-        DB::transaction(function () use ($tempahan, $kumpulan, $skop) {
+        DB::transaction(function () use ($tempahan, $kumpulan, $skop): void {
             if ($skop === 'semua' && $kumpulan) {
-                // Padam semua tempahan dalam kumpulan, kemudian kumpulan itu sendiri
+                // Padam semua tempahan individu, kemudian kumpulan induk
                 $kumpulan->tempahan()->delete();
                 $kumpulan->delete();
             } else {
                 // Padam tempahan ini sahaja
                 $tempahan->delete();
-                // Jika ini adalah satu-satunya yang tinggal, padam kumpulan juga
-                if ($kumpulan && $kumpulan->tempahan()->count() === 0) {
+
+                // Jika kumpulan kini tiada tempahan langsung, buang juga rekod kumpulan
+                if ($kumpulan && $kumpulan->tempahan()->doesntExist()) {
                     $kumpulan->delete();
                 }
             }
         });
 
-        $this->bumpKalendarCache();
-        AuditLogger::catat('padam_tempahan', $tempahan, ['skop' => $skop]);
-
-        return redirect()->route('tempahan.index')
-            ->with('success', $skop === 'semua'
-                ? 'Semua tempahan dalam kumpulan berjaya dipadam.'
-                : 'Tempahan berjaya dipadam.');
-    }
-
-    // ── PRATONTON — AJAX pratonton tarikh yang akan dijana ──────────
-
-    public function pratonton(Request $request)
-    {
-        $request->validate([
-            'jenis' => ['required', 'in:mingguan,bulanan'],
-            'setiap_n' => ['required', 'integer', 'min:1', 'max:12'],
-            'hari_dalam_minggu' => ['nullable', 'array'],
-            'hari_dalam_minggu.*' => ['integer', 'between:0,6'],
-            'tarikh_mula' => ['required', 'date'],
-            'tarikh_tamat' => ['required', 'date', 'after:tarikh_mula'],
+        AuditLogger::catat('padam_tempahan', $tempahan, [
+            'skop' => $skop,
+            'kumpulan_id' => $kumpulan?->id,
         ]);
 
-        $kumpulan = new TempahanBerulang([
-            'jenis' => $request->jenis,
-            'setiap_n' => $request->setiap_n,
-            'hari_dalam_minggu' => $request->hari_dalam_minggu,
-            'tarikh_mula' => $request->tarikh_mula,
-            'tarikh_tamat' => $request->tarikh_tamat,
-            'sesi' => ['pagi'], // placeholder — tarikh tidak bergantung pada sesi
-        ]);
+        $mesej = $skop === 'semua'
+            ? 'Semua tempahan dalam kumpulan berjaya dipadam.'
+            : 'Tempahan berjaya dipadam.';
 
-        $senaraiTarikh = $kumpulan->janaTarikh()->map(fn ($t) => [
-            'tarikh' => $t->toDateString(),
-            'label' => $t->locale('ms')->isoFormat('dddd, D MMMM YYYY'),
-        ]);
-
-        return response()->json([
-            'tarikh' => $senaraiTarikh,
-            'jumlah' => $senaraiTarikh->count(),
-            'had' => TempahanBerulang::MAX_KEJADIAN,
-            'tercapai_had' => $senaraiTarikh->count() >= TempahanBerulang::MAX_KEJADIAN,
-        ]);
-    }
-
-    // ── Helper ───────────────────────────────────────────────────────
-
-    private function hantarEmelBerulang(array $validated, BilikMesyuarat $bilik, int $jumlahTarikh, int $jumlahSesi): void
-    {
-        $user = Auth::user();
-        $jenisLabel = $validated['jenis'] === 'mingguan' ? 'Mingguan' : 'Bulanan';
-        $mulaLabel = Carbon::parse($validated['tarikh_mula'])->locale('ms')->isoFormat('D MMMM YYYY');
-        $tamatLabel = Carbon::parse($validated['tarikh_tamat'])->locale('ms')->isoFormat('D MMMM YYYY');
-        $kategoriLabel = Tempahan::KATEGORI[$validated['kategori']] ?? $validated['kategori'];
-        $tarikhLabel = $mulaLabel.' — '.$tamatLabel;
-
-        // 1. Pengesahan kepada pemohon
-        if (Tetapan::get('notif_kelulusan', '1') === '1' && $user->email) {
-            try {
-                Mail::to($user->email)->send(new PengesahanTempahanBerulang(
-                    namaMesyuarat: $validated['nama_mesyuarat'],
-                    jenisLabel: $jenisLabel,
-                    tarikhMulaLabel: $mulaLabel,
-                    tarikhTamatLabel: $tamatLabel,
-                    semuaSesi: $validated['sesi'],
-                    bilikNama: $bilik->nama,
-                    bilanganPeserta: $validated['bilangan_peserta'],
-                    kategoriLabel: $kategoriLabel,
-                    namaPengerusi: $validated['nama_pengerusi'],
-                    pemohonNama: $user->name,
-                    pemohonEmail: $user->email,
-                    jumlahTarikh: $jumlahTarikh,
-                    jumlahSesi: $jumlahSesi,
-                ));
-            } catch (\Throwable $e) {
-                Log::warning('E-mel pengesahan tempahan berulang gagal: '.$e->getMessage());
-            }
-        }
-
-        // 2. Notifikasi kepada Urus Setia
-        if (Tetapan::get('notif_tempahan_baru', '1') === '1') {
-            $emelNotifikasi = Tetapan::get('emel_notifikasi');
-            if ($emelNotifikasi) {
-                try {
-                    Mail::to($emelNotifikasi)->send(new NotifikasiTempahanBaharu(
-                        namaMesyuarat: $validated['nama_mesyuarat'],
-                        tarikhLabel: $tarikhLabel,
-                        semuaSesi: $validated['sesi'],
-                        bilikNama: $bilik->nama,
-                        pemohonNama: $user->name,
-                        pemohonJabatan: $user->jabatan ?? '',
-                        noRujukan: strtoupper($validated['jenis']).' / '.$mulaLabel,
-                        berulang: true,
-                        jumlahSesi: $jumlahSesi,
-                    ));
-                } catch (\Throwable $e) {
-                    Log::warning('E-mel notifikasi berulang Urus Setia gagal: '.$e->getMessage());
-                }
-            }
-        }
-    }
-
-    private function bumpKalendarCache(): void
-    {
-        Cache::add('kalendar:events:version', 1, now()->addDays(30));
-        Cache::increment('kalendar:events:version');
-        Cache::add('kalendar:public-events:version', 1, now()->addDays(30));
-        Cache::increment('kalendar:public-events:version');
+        return redirect()->route('tempahan.index')->with('success', $mesej);
     }
 }
