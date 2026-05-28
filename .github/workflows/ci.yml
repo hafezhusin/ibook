@@ -17,16 +17,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── 2. PHP 8.3 + PCOV (lebih pantas daripada Xdebug untuk coverage) ────
+      # ── 2. PHP 8.3 + Xdebug ──────────────────────────────────────────────────
       #    composer.lock dijana dengan PHP 8.3 (Laragon) — pakej seperti
       #    maennchen/zipstream-php 3.2.2 memerlukan php-64bit ^8.3.
+      #    Xdebug digunakan (bukan PCOV) supaya peratusan coverage konsisten
+      #    dengan persekitaran tempatan — elak false negative pada --min=70.
       - name: Setup PHP 8.3
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.3'
           extensions: pdo_sqlite, sqlite3, intl, mbstring
-          coverage: pcov
-          ini-values: pcov.enabled=1
+          coverage: xdebug
 
       # ── 3. Cache vendor/ ─────────────────────────────────────────────────────
       - name: Get Composer cache directory
@@ -44,11 +45,15 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      # ── 5. Sedia persekitaran (APP_KEY diperlukan oleh artisan) ─────────────
+      # ── 5. Sedia persekitaran ─────────────────────────────────────────────────
       - name: Prepare environment
         run: |
           cp .env.example .env
           php artisan key:generate
+          # Pastikan direktori storage wujud (fresh checkout mungkin tiada subdirektori)
+          mkdir -p storage/framework/{sessions,views,cache/data}
+          mkdir -p storage/logs
+          chmod -R 755 storage bootstrap/cache
 
       # ── 6. PHPUnit + coverage (ambang minimum 70%) ───────────────────────────
       #    phpunit.xml mengecualikan Mail/, Notifications/, BackupService dll.
