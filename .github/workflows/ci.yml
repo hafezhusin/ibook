@@ -17,11 +17,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── 2. PHP 8.2 + PCOV (lebih pantas daripada Xdebug untuk coverage) ────
-      - name: Setup PHP 8.2
+      # ── 2. PHP 8.3 + PCOV (lebih pantas daripada Xdebug untuk coverage) ────
+      #    composer.lock dijana dengan PHP 8.3 (Laragon) — pakej seperti
+      #    maennchen/zipstream-php 3.2.2 memerlukan php-64bit ^8.3.
+      - name: Setup PHP 8.3
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.3'
           extensions: pdo_sqlite, sqlite3, intl, mbstring
           coverage: pcov
           ini-values: pcov.enabled=1
