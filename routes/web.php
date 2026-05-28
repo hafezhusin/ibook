@@ -54,9 +54,19 @@ Route::middleware('throttle:60,1')->group(function () {
 });
 
 // ── Health Check — semak status sistem (DB + storan) ───────────────────────
-// Respons diminimumkan: hanya status pass/fail & timestamp.
-// Butiran komponen (db/disk) tidak didedahkan untuk elak enumeration.
+// Dilindungi token: GET /health?token=<HEALTH_TOKEN>
+// Tanpa token yang sah → 404 (elak enumeration endpoint).
+// Respons diminimumkan: hanya status ok/degraded & timestamp.
 Route::get('/health', function () {
+    $expected = env('HEALTH_TOKEN', '');
+
+    // Tolak jika token kosong dalam config atau tidak dihantar / tidak sepadan.
+    // hash_equals() mengelak timing-attack.
+    $provided = (string) request()->query('token', '');
+    if ($expected === '' || ! hash_equals($expected, $provided)) {
+        abort(404);
+    }
+
     $dbOk = false;
     $diskOk = is_writable(storage_path());
 
