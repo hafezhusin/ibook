@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Http\Controllers;
 
@@ -43,7 +43,7 @@ class TempahanController extends Controller
      */
     private function unitQuery()
     {
-        $user  = Auth::user();
+        $user = Auth::user();
         $query = Tempahan::query();
 
         if ($user->isStaf()) {
@@ -60,7 +60,7 @@ class TempahanController extends Controller
 
     public function index(Request $request)
     {
-        $user  = Auth::user();
+        $user = Auth::user();
         $query = $this->unitQuery()
             ->select([
                 'id',
@@ -92,40 +92,40 @@ class TempahanController extends Controller
         // Isih: mengikut tarikh mesyuarat apabila ada tarikh_filter aktif,
         // selain itu isih mengikut tarikh dibuat (terbaru dahulu) supaya
         // tempahan baharu mudah dijumpai tanpa perlu tapis.
-        $tarikhFilterAktif = in_array($request->get('tarikh_filter'), ['hari_ini','esok','7_hari','bulan_ini','akan_datang']);
+        $tarikhFilterAktif = in_array($request->get('tarikh_filter'), ['hari_ini', 'esok', '7_hari', 'bulan_ini', 'akan_datang']);
         if ($tarikhFilterAktif) {
             $query->orderBy('tarikh')->orderBy('masa_mula');
         } else {
             $query->orderByDesc('created_at');
         }
-        $tempahan  = $query->paginate(20)->withQueryString();
-        $bilik     = BilikMesyuarat::where('status', 'aktif')->get();
-        $kategori  = Tempahan::KATEGORI;
+        $tempahan = $query->paginate(20)->withQueryString();
+        $bilik = BilikMesyuarat::where('status', 'aktif')->get();
+        $kategori = Tempahan::KATEGORI;
 
         // ── Worklist ringkasan ────────────────────────────────────────
         // Dikira berdasarkan skop unit (unit untuk staf, semua untuk admin/urus setia)
-        $today    = today()->toDateString();
-        $esok     = today()->addDay()->toDateString();
+        $today = today()->toDateString();
+        $esok = today()->addDay()->toDateString();
         $sub24Jam = now()->subHours(24);
         // Guna julat tarikh mula/akhir bulan supaya berfungsi pada MySQL DAN SQLite
         // (MONTH() dan YEAR() tidak tersedia dalam SQLite)
-        $mulaBulan  = now()->startOfMonth()->toDateString();
+        $mulaBulan = now()->startOfMonth()->toDateString();
         $akhirBulan = now()->endOfMonth()->toDateString();
 
         $ringkasanAgg = $this->unitQuery()
             ->selectRaw(
-                "SUM(CASE WHEN tarikh = ? AND status = ? THEN 1 ELSE 0 END) AS hari_ini,
+                'SUM(CASE WHEN tarikh = ? AND status = ? THEN 1 ELSE 0 END) AS hari_ini,
                  SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS baharu,
                  SUM(CASE WHEN tarikh = ? AND status = ? THEN 1 ELSE 0 END) AS esok,
-                 SUM(CASE WHEN tarikh >= ? AND tarikh <= ? THEN 1 ELSE 0 END) AS bulan_ini",
+                 SUM(CASE WHEN tarikh >= ? AND tarikh <= ? THEN 1 ELSE 0 END) AS bulan_ini',
                 [$today, Tempahan::STATUS_DILULUSKAN, $sub24Jam, $esok, Tempahan::STATUS_DILULUSKAN, $mulaBulan, $akhirBulan]
             )
             ->first();
 
         $ringkasan = [
-            'hari_ini'  => (int) ($ringkasanAgg->hari_ini ?? 0),
-            'baharu'    => (int) ($ringkasanAgg->baharu ?? 0),
-            'esok'      => (int) ($ringkasanAgg->esok ?? 0),
+            'hari_ini' => (int) ($ringkasanAgg->hari_ini ?? 0),
+            'baharu' => (int) ($ringkasanAgg->baharu ?? 0),
+            'esok' => (int) ($ringkasanAgg->esok ?? 0),
             'bulan_ini' => (int) ($ringkasanAgg->bulan_ini ?? 0),
         ];
 
@@ -134,9 +134,9 @@ class TempahanController extends Controller
 
     public function create(Request $request)
     {
-        $bilik    = BilikMesyuarat::where('status', 'aktif')->get();
+        $bilik = BilikMesyuarat::where('status', 'aktif')->get();
         $kategori = Tempahan::KATEGORI;
-        $sesi     = Tempahan::MASA_SESI;
+        $sesi = Tempahan::MASA_SESI;
 
         $duplikat = null;
         if ($request->filled('duplikat_id')) {
@@ -144,20 +144,20 @@ class TempahanController extends Controller
             // Semak pengguna berhak akses tempahan asal sebelum duplikat
             if ($asal && $asal->bolehDiEditOleh(Auth::user())) {
                 $duplikat = [
-                    'nama_mesyuarat'   => $asal->nama_mesyuarat,
-                    'bilik_id'         => $asal->bilik_id,
+                    'nama_mesyuarat' => $asal->nama_mesyuarat,
+                    'bilik_id' => $asal->bilik_id,
                     'bilangan_peserta' => $asal->bilangan_peserta,
-                    'kategori'         => $asal->kategori,
-                    'nama_pengerusi'   => $asal->nama_pengerusi,
-                    'tujuan'           => $asal->tujuan,
+                    'kategori' => $asal->kategori,
+                    'nama_pengerusi' => $asal->nama_pengerusi,
+                    'tujuan' => $asal->tujuan,
                 ];
             }
         } elseif ($request->hasAny(['bilik_id', 'tarikh'])) {
             // Pre-isi dari pautan luar (cth: klik slot kosong dalam Jadual Minggu)
             $duplikat = [
                 'bilik_id' => $request->bilik_id,
-                'tarikh'   => $request->tarikh,
-                'sesi'     => array_values(array_filter((array) $request->input('sesi', []))),
+                'tarikh' => $request->tarikh,
+                'sesi' => array_values(array_filter((array) $request->input('sesi', []))),
             ];
         }
 
@@ -171,14 +171,14 @@ class TempahanController extends Controller
         $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
         if ($validated['bilangan_peserta'] > $bilik->kapasiti) {
             return back()->withInput()->withErrors([
-                'bilangan_peserta' => "Bilangan peserta melebihi kapasiti bilik ({$bilik->kapasiti} orang)."
+                'bilangan_peserta' => "Bilangan peserta melebihi kapasiti bilik ({$bilik->kapasiti} orang).",
             ]);
         }
 
         // Semak konflik & cipta tempahan dalam satu transaksi atomik
         // lockForUpdate() mengunci baris yang berkaitan supaya dua permintaan
         // serentak tidak boleh melalui semakan konflik secara bersamaan.
-        $konflikSesi    = [];
+        $konflikSesi = [];
         $tempahanDibuat = [];
 
         try {
@@ -195,7 +195,7 @@ class TempahanController extends Controller
                     }
                 }
 
-                if (!empty($konflikSesi)) {
+                if (! empty($konflikSesi)) {
                     // Lempar exception untuk rollback transaksi & keluar
                     throw new \RuntimeException('konflik_sesi');
                 }
@@ -203,25 +203,25 @@ class TempahanController extends Controller
                 foreach ($validated['sesi'] as $sesi) {
                     $masaSesi = Tempahan::MASA_SESI[$sesi];
                     $tempahanDibuat[] = Tempahan::create([
-                        'nama_mesyuarat'   => $validated['nama_mesyuarat'],
-                        'tarikh'           => $validated['tarikh'],
-                        'bilik_id'         => $validated['bilik_id'],
-                        'sesi'             => $sesi,
-                        'masa_mula'        => $masaSesi['mula'],
-                        'masa_tamat'       => $masaSesi['tamat'],
+                        'nama_mesyuarat' => $validated['nama_mesyuarat'],
+                        'tarikh' => $validated['tarikh'],
+                        'bilik_id' => $validated['bilik_id'],
+                        'sesi' => $sesi,
+                        'masa_mula' => $masaSesi['mula'],
+                        'masa_tamat' => $masaSesi['tamat'],
                         'bilangan_peserta' => $validated['bilangan_peserta'],
-                        'kategori'         => $validated['kategori'],
-                        'nama_pengerusi'   => $validated['nama_pengerusi'],
-                        'tujuan'           => $validated['tujuan'] ?? null,
-                        'user_id'          => Auth::id(),
-                        'status'           => Tempahan::STATUS_DILULUSKAN,
+                        'kategori' => $validated['kategori'],
+                        'nama_pengerusi' => $validated['nama_pengerusi'],
+                        'tujuan' => $validated['tujuan'] ?? null,
+                        'user_id' => Auth::id(),
+                        'status' => Tempahan::STATUS_DILULUSKAN,
                     ]);
                 }
             });
         } catch (\RuntimeException $e) {
             if ($e->getMessage() === 'konflik_sesi') {
                 return back()->withInput()->withErrors([
-                    'sesi' => 'Bilik telah ditempah untuk sesi: ' . implode(', ', $konflikSesi)
+                    'sesi' => 'Bilik telah ditempah untuk sesi: '.implode(', ', $konflikSesi),
                 ]);
             }
             throw $e;
@@ -231,15 +231,16 @@ class TempahanController extends Controller
 
         AuditLogger::catat('buat_tempahan', null, [
             'nama_mesyuarat' => $validated['nama_mesyuarat'],
-            'tarikh'         => $validated['tarikh'],
-            'bilik_id'       => $validated['bilik_id'],
-            'sesi'           => $validated['sesi'],
+            'tarikh' => $validated['tarikh'],
+            'bilik_id' => $validated['bilik_id'],
+            'sesi' => $validated['sesi'],
         ]);
 
         // Hantar e-mel — kegagalan tidak patut halang aliran tempahan
         $this->hantarEmelTempahan($tempahanDibuat, $validated, $bilik);
 
         $jumlahSesi = count($validated['sesi']);
+
         return redirect()->route('tempahan.index', ['tarikh_filter' => 'baharu'])
             ->with('success', $jumlahSesi > 1
                 ? "Tempahan ({$jumlahSesi} sesi) berjaya dibuat."
@@ -251,6 +252,7 @@ class TempahanController extends Controller
         $this->authorize('view', $tempahan);
 
         $tempahan->load(['bilik', 'pengguna', 'pelulus', 'pengubah']);
+
         return view('tempahan.show', compact('tempahan'));
     }
 
@@ -258,9 +260,9 @@ class TempahanController extends Controller
     {
         $this->authorize('update', $tempahan);
 
-        $bilik    = BilikMesyuarat::where('status', 'aktif')->get();
+        $bilik = BilikMesyuarat::where('status', 'aktif')->get();
         $kategori = Tempahan::KATEGORI;
-        $sesi     = Tempahan::MASA_SESI;
+        $sesi = Tempahan::MASA_SESI;
 
         return view('tempahan.edit', compact('tempahan', 'bilik', 'kategori', 'sesi'));
     }
@@ -268,13 +270,13 @@ class TempahanController extends Controller
     public function update(UpdateTempahanRequest $request, Tempahan $tempahan)
     {
         // Autoriti dikendalikan oleh UpdateTempahanRequest::authorize()
-        $user      = Auth::user();
+        $user = Auth::user();
         $validated = $request->validated();
 
         $bilik = BilikMesyuarat::findOrFail($validated['bilik_id']);
         if ($validated['bilangan_peserta'] > $bilik->kapasiti) {
             return back()->withInput()->withErrors([
-                'bilangan_peserta' => "Bilangan peserta melebihi kapasiti bilik ({$bilik->kapasiti} orang)."
+                'bilangan_peserta' => "Bilangan peserta melebihi kapasiti bilik ({$bilik->kapasiti} orang).",
             ]);
         }
 
@@ -287,7 +289,7 @@ class TempahanController extends Controller
 
         if ($konflik) {
             return back()->withInput()->withErrors([
-                'sesi' => 'Bilik telah ditempah untuk sesi ini pada tarikh tersebut.'
+                'sesi' => 'Bilik telah ditempah untuk sesi ini pada tarikh tersebut.',
             ]);
         }
 
@@ -296,16 +298,16 @@ class TempahanController extends Controller
 
         $masaSesi = Tempahan::MASA_SESI[$validated['sesi']];
         $tempahan->update([
-            'nama_mesyuarat'   => $validated['nama_mesyuarat'],
-            'tarikh'           => $validated['tarikh'],
-            'bilik_id'         => $validated['bilik_id'],
-            'sesi'             => $validated['sesi'],
-            'masa_mula'        => $masaSesi['mula'],
-            'masa_tamat'       => $masaSesi['tamat'],
+            'nama_mesyuarat' => $validated['nama_mesyuarat'],
+            'tarikh' => $validated['tarikh'],
+            'bilik_id' => $validated['bilik_id'],
+            'sesi' => $validated['sesi'],
+            'masa_mula' => $masaSesi['mula'],
+            'masa_tamat' => $masaSesi['tamat'],
             'bilangan_peserta' => $validated['bilangan_peserta'],
-            'kategori'         => $validated['kategori'],
-            'nama_pengerusi'   => $validated['nama_pengerusi'],
-            'tujuan'           => $validated['tujuan'] ?? null,
+            'kategori' => $validated['kategori'],
+            'nama_pengerusi' => $validated['nama_pengerusi'],
+            'tujuan' => $validated['tujuan'] ?? null,
             'dikemaskini_oleh' => $user->id,
             'dikemaskini_pada' => now(),
         ]);
@@ -327,11 +329,11 @@ class TempahanController extends Controller
     {
         $request->validate([
             'bilik_id' => ['required', 'integer', 'exists:bilik_mesyuarat,id'],
-            'tarikh'   => ['required', 'date'],
+            'tarikh' => ['required', 'date'],
         ]);
 
         $bilikId = (int) $request->bilik_id;
-        $tarikh  = $request->tarikh;
+        $tarikh = $request->tarikh;
 
         // Satu query — ambil semua sesi yang berkonflik sekaligus
         $sesiKonflik = Tempahan::where('bilik_id', $bilikId)
@@ -343,8 +345,8 @@ class TempahanController extends Controller
         $bilik = BilikMesyuarat::find($bilikId);
 
         return response()->json([
-            'pagi'     => $sesiKonflik->contains('pagi'),
-            'petang'   => $sesiKonflik->contains('petang'),
+            'pagi' => $sesiKonflik->contains('pagi'),
+            'petang' => $sesiKonflik->contains('petang'),
             // @phpstan-ignore-next-line nullsafe.neverNull — find() boleh null jika bilik_id tidak sah
             'kapasiti' => $bilik?->kapasiti ?? 0,
         ]);
@@ -358,15 +360,17 @@ class TempahanController extends Controller
         $tempahan = $query->orderByDesc('tarikh')->get();
         AuditLogger::catat('eksport_pdf', null, [
             'jumlah_rekod' => $tempahan->count(),
-            'parameter'    => $request->only(['bilik_id', 'status', 'tarikh_dari', 'tarikh_hingga', 'tarikh_filter', 'kategori', 'carian']),
+            'parameter' => $request->only(['bilik_id', 'status', 'tarikh_dari', 'tarikh_hingga', 'tarikh_filter', 'kategori', 'carian']),
         ]);
         $pdf = Pdf::loadView('tempahan.pdf', compact('tempahan'));
+
         return $pdf->download('senarai-tempahan.pdf');
     }
 
     public function exportExcel(Request $request)
     {
         AuditLogger::catat('eksport_excel', null, ['parameter' => $request->only(['bilik_id', 'status', 'tarikh_dari', 'tarikh_hingga'])]);
+
         return Excel::download(new TempahanExport($request->all()), 'senarai-tempahan.xlsx');
     }
 
@@ -383,9 +387,8 @@ class TempahanController extends Controller
      * Hantar e-mel pengesahan kepada pemohon dan notifikasi kepada Urus Setia.
      * Dibungkus dalam try/catch — kegagalan e-mel tidak patut halang aliran tempahan.
      *
-     * @param Tempahan[]      $tempahanDibuat rekod yang baru dicipta
-     * @param array           $validated      data dari FormRequest
-     * @param BilikMesyuarat  $bilik
+     * @param  Tempahan[]  $tempahanDibuat  rekod yang baru dicipta
+     * @param  array  $validated  data dari FormRequest
      */
     private function hantarEmelTempahan(array $tempahanDibuat, array $validated, BilikMesyuarat $bilik): void
     {
@@ -393,29 +396,29 @@ class TempahanController extends Controller
             return;
         }
 
-        $user         = Auth::user();
-        $tarikhLabel  = Carbon::parse($validated['tarikh'])->locale('ms')->isoFormat('dddd, D MMMM YYYY');
+        $user = Auth::user();
+        $tarikhLabel = Carbon::parse($validated['tarikh'])->locale('ms')->isoFormat('dddd, D MMMM YYYY');
         $kategoriLabel = Tempahan::KATEGORI[$validated['kategori']] ?? $validated['kategori'];
-        $noRujukan    = $tempahanDibuat[0]->no_rujukan;
+        $noRujukan = $tempahanDibuat[0]->no_rujukan;
 
         // 1. Pengesahan kepada pemohon
         if (Tetapan::get('notif_kelulusan', '1') === '1' && $user->email) {
             try {
                 Mail::to($user->email)->send(new PengesahanTempahan(
-                    noRujukan:        $noRujukan,
-                    namaMesyuarat:    $validated['nama_mesyuarat'],
-                    tarikhLabel:      $tarikhLabel,
-                    semuaSesi:        $validated['sesi'],
-                    bilikNama:        $bilik->nama,
-                    bilanganPeserta:  $validated['bilangan_peserta'],
-                    kategoriLabel:    $kategoriLabel,
-                    namaPengerusi:    $validated['nama_pengerusi'],
-                    tujuan:           $validated['tujuan'] ?? '',
-                    pemohonNama:      $user->name,
-                    pemohonEmail:     $user->email,
+                    noRujukan: $noRujukan,
+                    namaMesyuarat: $validated['nama_mesyuarat'],
+                    tarikhLabel: $tarikhLabel,
+                    semuaSesi: $validated['sesi'],
+                    bilikNama: $bilik->nama,
+                    bilanganPeserta: $validated['bilangan_peserta'],
+                    kategoriLabel: $kategoriLabel,
+                    namaPengerusi: $validated['nama_pengerusi'],
+                    tujuan: $validated['tujuan'] ?? '',
+                    pemohonNama: $user->name,
+                    pemohonEmail: $user->email,
                 ));
             } catch (\Throwable $e) {
-                Log::warning('E-mel pengesahan tempahan gagal dihantar: ' . $e->getMessage());
+                Log::warning('E-mel pengesahan tempahan gagal dihantar: '.$e->getMessage());
             }
         }
 
@@ -425,18 +428,18 @@ class TempahanController extends Controller
             if ($emelNotifikasi) {
                 try {
                     Mail::to($emelNotifikasi)->send(new NotifikasiTempahanBaharu(
-                        namaMesyuarat:  $validated['nama_mesyuarat'],
-                        tarikhLabel:    $tarikhLabel,
-                        semuaSesi:      $validated['sesi'],
-                        bilikNama:      $bilik->nama,
-                        pemohonNama:    $user->name,
+                        namaMesyuarat: $validated['nama_mesyuarat'],
+                        tarikhLabel: $tarikhLabel,
+                        semuaSesi: $validated['sesi'],
+                        bilikNama: $bilik->nama,
+                        pemohonNama: $user->name,
                         pemohonJabatan: $user->jabatan ?? '',
-                        noRujukan:      $noRujukan,
-                        berulang:       false,
-                        jumlahSesi:     count($tempahanDibuat),
+                        noRujukan: $noRujukan,
+                        berulang: false,
+                        jumlahSesi: count($tempahanDibuat),
                     ));
                 } catch (\Throwable $e) {
-                    Log::warning('E-mel notifikasi Urus Setia gagal dihantar: ' . $e->getMessage());
+                    Log::warning('E-mel notifikasi Urus Setia gagal dihantar: '.$e->getMessage());
                 }
             }
         }
@@ -450,4 +453,3 @@ class TempahanController extends Controller
         Cache::increment('kalendar:public-events:version');
     }
 }
-

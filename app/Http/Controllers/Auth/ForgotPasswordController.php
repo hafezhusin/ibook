@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -11,16 +12,15 @@
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
 
-
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
-use App\Models\User;
 
 class ForgotPasswordController extends Controller
 {
@@ -36,7 +36,7 @@ class ForgotPasswordController extends Controller
             ['email' => 'required|email'],
             [
                 'email.required' => 'Sila masukkan emel anda.',
-                'email.email'    => 'Format emel tidak sah.',
+                'email.email' => 'Format emel tidak sah.',
             ]
         );
 
@@ -45,7 +45,7 @@ class ForgotPasswordController extends Controller
             Password::sendResetLink($request->only('email'));
         } catch (\Exception $e) {
             // Log ralat tapi jangan dedahkan kepada pengguna
-            logger()->error('Reset password mail failed: ' . $e->getMessage());
+            logger()->error('Reset password mail failed: '.$e->getMessage());
         }
 
         // Mesej generik — tidak mendedahkan sama ada emel wujud atau tidak
@@ -64,22 +64,22 @@ class ForgotPasswordController extends Controller
     public function reset(Request $request)
     {
         $request->validate([
-            'token'                 => 'required',
-            'email'                 => 'required|email',
-            'password'              => ['required', 'confirmed', Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'token' => 'required',
+            'email' => 'required|email',
+            'password' => ['required', 'confirmed', Rules\Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
         ], [
-            'token.required'    => 'Token tidak sah.',
-            'email.required'    => 'Sila masukkan emel.',
+            'token.required' => 'Token tidak sah.',
+            'email.required' => 'Sila masukkan emel.',
             'password.required' => 'Sila masukkan kata laluan baharu.',
             'password.confirmed' => 'Pengesahan kata laluan tidak sepadan.',
-            'password.min'      => 'Kata laluan mestilah sekurang-kurangnya 8 aksara.',
+            'password.min' => 'Kata laluan mestilah sekurang-kurangnya 8 aksara.',
         ]);
 
         $status = Password::reset(
             $request->only('email', 'password', 'password_confirmation', 'token'),
             function (User $user, string $password) {
                 $user->forceFill([
-                    'password'       => Hash::make($password),
+                    'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
                 ])->save();
             }
@@ -91,10 +91,10 @@ class ForgotPasswordController extends Controller
         }
 
         return back()->withErrors(['email' => match ($status) {
-            Password::INVALID_TOKEN   => 'Pautan ini telah tamat tempoh atau tidak sah. Sila mohon pautan baharu.',
-            Password::INVALID_USER    => 'Pautan tidak sah atau telah tamat tempoh. Sila mohon pautan baharu.',
+            Password::INVALID_TOKEN => 'Pautan ini telah tamat tempoh atau tidak sah. Sila mohon pautan baharu.',
+            Password::INVALID_USER => 'Pautan tidak sah atau telah tamat tempoh. Sila mohon pautan baharu.',
             Password::RESET_THROTTLED => 'Terlalu banyak percubaan. Sila cuba sebentar lagi.',
-            default                   => 'Ralat berlaku. Sila cuba semula.',
+            default => 'Ralat berlaku. Sila cuba semula.',
         }]);
     }
 }

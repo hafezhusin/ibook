@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Http\Controllers;
 
@@ -35,19 +35,19 @@ class PenggunaController extends Controller
 
         // Menunggu Kelulusan — SSO baru, belum pernah log masuk
         $queryPending = User::where('aktif', false)
-                            ->whereNull('last_login_at')
-                            ->orderByDesc('created_at');
+            ->whereNull('last_login_at')
+            ->orderByDesc('created_at');
 
         // Dinyahaktifkan — pernah aktif, kemudian dinyahaktifkan
         $queryNyahaktif = User::where('aktif', false)
-                              ->whereNotNull('last_login_at')
-                              ->orderBy('name');
+            ->whereNotNull('last_login_at')
+            ->orderBy('name');
 
         if ($cari !== '') {
             $filter = function ($q) use ($cari) {
                 $q->where('name', 'like', "%{$cari}%")
-                  ->orWhere('email', 'like', "%{$cari}%")
-                  ->orWhere('jabatan', 'like', "%{$cari}%");
+                    ->orWhere('email', 'like', "%{$cari}%")
+                    ->orWhere('jabatan', 'like', "%{$cari}%");
             };
             $queryAktif->where($filter);
             $queryPending->where($filter);
@@ -60,10 +60,10 @@ class PenggunaController extends Controller
             $queryNyahaktif->where('jabatan', $unit);
         }
 
-        $appends = array_filter(['cari' => $cari, 'unit' => $unit], fn($v) => $v !== '');
+        $appends = array_filter(['cari' => $cari, 'unit' => $unit], fn ($v) => $v !== '');
 
-        $penggunaAktif     = $queryAktif->paginate(25, ['*'], 'page_aktif')->appends($appends);
-        $penggunaPending   = $queryPending->paginate(25, ['*'], 'page_pending')->appends($appends);
+        $penggunaAktif = $queryAktif->paginate(25, ['*'], 'page_aktif')->appends($appends);
+        $penggunaPending = $queryPending->paginate(25, ['*'], 'page_pending')->appends($appends);
         $penggunaNyahaktif = $queryNyahaktif->paginate(25, ['*'], 'page_nyahaktif')->appends($appends);
 
         $units = User::SENARAI_UNIT;
@@ -76,16 +76,16 @@ class PenggunaController extends Controller
         $validated = $request->validated();
 
         $pengguna = User::create([
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
-            'jabatan'  => $validated['jabatan'] ?? null,
-            'peranan'  => $validated['peranan'],
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'jabatan' => $validated['jabatan'] ?? null,
+            'peranan' => $validated['peranan'],
             'password' => Hash::make($validated['password']),
-            'aktif'    => true,
+            'aktif' => true,
         ]);
 
         AuditLogger::catat('tambah_pengguna', $pengguna, [
-            'email'   => $pengguna->email,
+            'email' => $pengguna->email,
             'peranan' => $pengguna->peranan,
         ]);
 
@@ -98,7 +98,7 @@ class PenggunaController extends Controller
         $validated = $request->validated();
 
         // Lindungi — pentadbir tidak boleh nyahaktifkan akaun sendiri
-        if ($pengguna->id === auth()->id() && isset($validated['aktif']) && !$validated['aktif']) {
+        if ($pengguna->id === auth()->id() && isset($validated['aktif']) && ! $validated['aktif']) {
             return back()->with('error', 'Anda tidak boleh menyahaktifkan akaun anda sendiri.');
         }
 
@@ -116,7 +116,7 @@ class PenggunaController extends Controller
 
         AuditLogger::catat('kemaskini_pengguna', $pengguna, [
             'peranan' => $pengguna->peranan,
-            'aktif'   => $pengguna->aktif,
+            'aktif' => $pengguna->aktif,
         ]);
 
         return redirect()->route('pengguna.index')
@@ -137,10 +137,10 @@ class PenggunaController extends Controller
             ],
             'sebab' => 'required|string|max:255',
         ], [
-            'password.required'  => 'Sila masukkan kata laluan baru.',
+            'password.required' => 'Sila masukkan kata laluan baru.',
             'password.confirmed' => 'Pengesahan kata laluan tidak sepadan.',
-            'password.min'       => 'Kata laluan mestilah sekurang-kurangnya 8 aksara.',
-            'sebab.required'     => 'Sila berikan sebab penukaran kata laluan.',
+            'password.min' => 'Kata laluan mestilah sekurang-kurangnya 8 aksara.',
+            'sebab.required' => 'Sila berikan sebab penukaran kata laluan.',
         ]);
 
         $pengguna->update([
@@ -175,14 +175,14 @@ class PenggunaController extends Controller
             $sebab = $request->sebab;
         }
 
-        $pengguna->update(['aktif' => !$pengguna->aktif]);
+        $pengguna->update(['aktif' => ! $pengguna->aktif]);
 
         // Paksa log keluar sesi aktif pengguna (terutama bila dinyahaktifkan)
         Cache::put("paksa_log_keluar_{$pengguna->id}", true, now()->addHours(24));
 
-        $kodTindakan   = $pengguna->aktif ? 'aktifkan_pengguna' : 'nyahaktifkan_pengguna';
+        $kodTindakan = $pengguna->aktif ? 'aktifkan_pengguna' : 'nyahaktifkan_pengguna';
         $labelTindakan = $pengguna->aktif ? 'diaktifkan' : 'dinyahaktifkan';
-        $butiran       = $sebab !== '' ? ['sebab' => $sebab] : [];
+        $butiran = $sebab !== '' ? ['sebab' => $sebab] : [];
         AuditLogger::catat($kodTindakan, $pengguna, $butiran);
 
         return back()->with('success', "Akaun {$pengguna->name} berjaya {$labelTindakan}.");
@@ -192,26 +192,26 @@ class PenggunaController extends Controller
     public function bulkAktif(Request $request)
     {
         $request->validate([
-            'ids'      => 'required|array|min:1',
-            'ids.*'    => 'integer|exists:users,id',
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:users,id',
             'tindakan' => 'required|in:aktifkan,nyahaktifkan',
         ]);
 
-        $ids      = $request->ids;
+        $ids = $request->ids;
         $tindakan = $request->tindakan;
 
         // Keluarkan ID pentadbir semasa jika tindakan nyahaktifkan
         if ($tindakan === 'nyahaktifkan') {
-            $ids = array_filter($ids, fn($id) => $id !== auth()->id());
+            $ids = array_filter($ids, fn ($id) => $id !== auth()->id());
         }
 
         if (empty($ids)) {
             return back()->with('error', 'Tiada pengguna yang boleh diproses — anda tidak boleh menyahaktifkan akaun sendiri.');
         }
 
-        $nilaiAktif    = ($tindakan === 'aktifkan') ? true : false;
-        $jumlah        = User::whereIn('id', $ids)->count();
-        $kodTindakan   = $nilaiAktif ? 'bulk_aktifkan' : 'bulk_nyahaktifkan';
+        $nilaiAktif = ($tindakan === 'aktifkan') ? true : false;
+        $jumlah = User::whereIn('id', $ids)->count();
+        $kodTindakan = $nilaiAktif ? 'bulk_aktifkan' : 'bulk_nyahaktifkan';
 
         User::whereIn('id', $ids)->update(['aktif' => $nilaiAktif]);
 

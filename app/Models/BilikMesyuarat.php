@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -11,19 +12,19 @@
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
 
-
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 /**
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Tempahan> $tempahan      Semua tempahan untuk bilik ini
- * @property      float|null $peratus_penggunaan  Dikira dari query agregat (bukan lajur DB)
- * @property      int|null   $tempahan_bulan_ini  Dikira dari query agregat (bukan lajur DB)
+ * @property-read Collection<int, Tempahan> $tempahan      Semua tempahan untuk bilik ini
+ * @property float|null $peratus_penggunaan Dikira dari query agregat (bukan lajur DB)
+ * @property int|null $tempahan_bulan_ini Dikira dari query agregat (bukan lajur DB)
  */
 class BilikMesyuarat extends Model
 {
@@ -75,7 +76,10 @@ class BilikMesyuarat extends Model
 
     public function getKemudahanListAttribute(): string
     {
-        if (empty($this->kemudahan)) return '-';
+        if (empty($this->kemudahan)) {
+            return '-';
+        }
+
         return implode(', ', $this->kemudahan);
     }
 

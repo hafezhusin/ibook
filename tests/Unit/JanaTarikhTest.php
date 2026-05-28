@@ -3,6 +3,7 @@
 namespace Tests\Unit;
 
 use App\Models\TempahanBerulang;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -22,12 +23,12 @@ class JanaTarikhTest extends TestCase
     {
         // Jun 2026: 5 Isnin — 1, 8, 15, 22, 29 Jun
         $berulang = new TempahanBerulang([
-            'jenis'             => 'mingguan',
-            'setiap_n'          => 1,
+            'jenis' => 'mingguan',
+            'setiap_n' => 1,
             'hari_dalam_minggu' => [1], // 1 = Isnin
-            'tarikh_mula'       => '2026-06-01',
-            'tarikh_tamat'      => '2026-06-30',
-            'sesi'              => ['pagi'],
+            'tarikh_mula' => '2026-06-01',
+            'tarikh_tamat' => '2026-06-30',
+            'sesi' => ['pagi'],
         ]);
 
         $tarikh = $berulang->janaTarikh();
@@ -42,12 +43,12 @@ class JanaTarikhTest extends TestCase
     {
         // Isnin + Khamis, 2 minggu = 4 tarikh: 1, 4, 8, 11 Jun
         $berulang = new TempahanBerulang([
-            'jenis'             => 'mingguan',
-            'setiap_n'          => 1,
+            'jenis' => 'mingguan',
+            'setiap_n' => 1,
             'hari_dalam_minggu' => [1, 4], // Isnin + Khamis
-            'tarikh_mula'       => '2026-06-01',
-            'tarikh_tamat'      => '2026-06-14',
-            'sesi'              => ['pagi', 'petang'],
+            'tarikh_mula' => '2026-06-01',
+            'tarikh_tamat' => '2026-06-14',
+            'sesi' => ['pagi', 'petang'],
         ]);
 
         $tarikh = $berulang->janaTarikh();
@@ -63,11 +64,11 @@ class JanaTarikhTest extends TestCase
     public function bulanan_jana_12_tarikh_dalam_setahun(): void
     {
         $berulang = new TempahanBerulang([
-            'jenis'       => 'bulanan',
-            'setiap_n'    => 1,
+            'jenis' => 'bulanan',
+            'setiap_n' => 1,
             'tarikh_mula' => '2026-01-15',
             'tarikh_tamat' => '2026-12-31',
-            'sesi'         => ['pagi'],
+            'sesi' => ['pagi'],
         ]);
 
         $tarikh = $berulang->janaTarikh();
@@ -82,11 +83,11 @@ class JanaTarikhTest extends TestCase
     {
         // Jan, Mar, Mei, Jul, Sep, Nov 2026 = 6 tarikh
         $berulang = new TempahanBerulang([
-            'jenis'       => 'bulanan',
-            'setiap_n'    => 2,
+            'jenis' => 'bulanan',
+            'setiap_n' => 2,
             'tarikh_mula' => '2026-01-01',
             'tarikh_tamat' => '2026-12-31',
-            'sesi'         => ['pagi'],
+            'sesi' => ['pagi'],
         ]);
 
         $tarikh = $berulang->janaTarikh();
@@ -101,12 +102,12 @@ class JanaTarikhTest extends TestCase
     {
         // Mingguan semua hari dalam seminggu sepanjang setahun → mesti cap pada 12
         $berulang = new TempahanBerulang([
-            'jenis'             => 'mingguan',
-            'setiap_n'          => 1,
+            'jenis' => 'mingguan',
+            'setiap_n' => 1,
             'hari_dalam_minggu' => [0, 1, 2, 3, 4, 5, 6], // semua 7 hari
-            'tarikh_mula'       => '2026-01-01',
-            'tarikh_tamat'      => '2026-12-31',
-            'sesi'              => ['pagi'],
+            'tarikh_mula' => '2026-01-01',
+            'tarikh_tamat' => '2026-12-31',
+            'sesi' => ['pagi'],
         ]);
 
         $tarikh = $berulang->janaTarikh();
@@ -120,12 +121,12 @@ class JanaTarikhTest extends TestCase
     {
         // Hanya 3 hari dalam julat: 1, 2, 3 Jan
         $berulang = new TempahanBerulang([
-            'jenis'             => 'mingguan',
-            'setiap_n'          => 1,
+            'jenis' => 'mingguan',
+            'setiap_n' => 1,
             'hari_dalam_minggu' => [1, 2, 3], // Isnin, Selasa, Rabu
-            'tarikh_mula'       => '2026-01-01', // Khamis — bermula dari sini
-            'tarikh_tamat'      => '2026-01-07',
-            'sesi'              => ['pagi'],
+            'tarikh_mula' => '2026-01-01', // Khamis — bermula dari sini
+            'tarikh_tamat' => '2026-01-07',
+            'sesi' => ['pagi'],
         ]);
 
         $tarikh = $berulang->janaTarikh();
@@ -134,8 +135,8 @@ class JanaTarikhTest extends TestCase
         // Isnin(5), Selasa(6), Rabu(7) — semua dalam julat
         $this->assertCount(3, $tarikh);
         foreach ($tarikh as $t) {
-            $this->assertTrue($t->gte(\Carbon\Carbon::parse('2026-01-01')));
-            $this->assertTrue($t->lte(\Carbon\Carbon::parse('2026-01-07')));
+            $this->assertTrue($t->gte(Carbon::parse('2026-01-01')));
+            $this->assertTrue($t->lte(Carbon::parse('2026-01-07')));
         }
     }
 }

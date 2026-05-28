@@ -16,9 +16,12 @@ namespace App\Providers;
 
 use App\Models\Tempahan;
 use App\Models\TempahanBerulang;
+use App\Models\Tetapan;
 use App\Policies\TempahanPolicy;
 use App\Services\CspNonce;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -30,24 +33,24 @@ class AppServiceProvider extends ServiceProvider
         // ── Domain Lock — hanya aktif dalam HTTP request production ──────────
         // Perisian ini berlesen hanya untuk domain yang didaftarkan.
         // runningInConsole() = false semasa artisan migrate, queue, dll — jangan blok CLI.
-        if (app()->environment('production') && !app()->runningInConsole()) {
+        if (app()->environment('production') && ! app()->runningInConsole()) {
             $domainDibenar = [
                 'ibookbptm.great-site.net', // production
                 'localhost',                // development lokal
                 '127.0.0.1',               // development lokal (IP)
             ];
-            $domainSemasa  = request()->getHost();
-            if (!in_array($domainSemasa, $domainDibenar, true)) {
+            $domainSemasa = request()->getHost();
+            if (! in_array($domainSemasa, $domainDibenar, true)) {
                 abort(403, 'Perisian iBook tidak berlesen untuk domain ini. '
-                    . 'Hubungi Bahagian Pengurusan Teknologi Maklumat (BPTM) untuk maklumat lanjut.');
+                    .'Hubungi Bahagian Pengurusan Teknologi Maklumat (BPTM) untuk maklumat lanjut.');
             }
         }
 
         // Kongsi tetapan sistem ke semua view
-        \Illuminate\Support\Facades\View::share('tetapan', \App\Models\Tetapan::getAll());
+        View::share('tetapan', Tetapan::getAll());
 
         // Kongsi CSP nonce ke semua view — untuk <script nonce="{{ $cspNonce }}">
-        \Illuminate\Support\Facades\View::share('cspNonce', CspNonce::get());
+        View::share('cspNonce', CspNonce::get());
 
         // Daftarkan Policy
         Gate::policy(Tempahan::class, TempahanPolicy::class);
@@ -56,12 +59,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Route model binding Tempahan menggunakan ULID (bukan integer ID awam)
         // URL: /tempahan/{ulid} — selamat, tidak sequential, tidak boleh diramal
-        \Illuminate\Support\Facades\Route::bind('tempahan', function (string $nilai) {
+        Route::bind('tempahan', function (string $nilai) {
             return Tempahan::where('ulid', $nilai)->firstOrFail();
         });
 
         // Route model binding TempahanBerulang menggunakan ULID
-        \Illuminate\Support\Facades\Route::bind('kumpulan', function (string $nilai) {
+        Route::bind('kumpulan', function (string $nilai) {
             return TempahanBerulang::where('ulid', $nilai)->firstOrFail();
         });
     }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Exports;
 
@@ -59,7 +59,7 @@ trait LaporanHeaderStyle
 
 // ─── Sheet 1: Ringkasan ───────────────────────────────────────────────────────
 
-class LaporanRingkasanSheet implements FromArray, WithTitle, WithColumnWidths, WithStyles
+class LaporanRingkasanSheet implements FromArray, WithColumnWidths, WithStyles, WithTitle
 {
     public function __construct(private array $data, private int $tahun) {}
 
@@ -83,7 +83,7 @@ class LaporanRingkasanSheet implements FromArray, WithTitle, WithColumnWidths, W
             ['Tempahan Unit Paling Aktif', $up?->jumlah ?? '—'],
             ['Bilik Paling Digunakan', $bp ? $bp['nama'] : '—'],
             ['Tempahan Bilik Paling Digunakan', $bp ? $bp['jumlah_tempahan'] : '—'],
-            ['Purata Kadar Penggunaan Bilik', ($this->data['purataPenggunaan'] ?? 0) . '%'],
+            ['Purata Kadar Penggunaan Bilik', ($this->data['purataPenggunaan'] ?? 0).'%'],
         ];
     }
 
@@ -95,14 +95,20 @@ class LaporanRingkasanSheet implements FromArray, WithTitle, WithColumnWidths, W
         ];
     }
 
-    public function title(): string { return 'Ringkasan'; }
+    public function title(): string
+    {
+        return 'Ringkasan';
+    }
 
-    public function columnWidths(): array { return ['A' => 42, 'B' => 32]; }
+    public function columnWidths(): array
+    {
+        return ['A' => 42, 'B' => 32];
+    }
 }
 
 // ─── Sheet 2: Mengikut Bulan ──────────────────────────────────────────────────
 
-class LaporanBulanSheet implements FromArray, WithTitle, WithHeadings, WithStyles, WithColumnWidths
+class LaporanBulanSheet implements FromArray, WithColumnWidths, WithHeadings, WithStyles, WithTitle
 {
     use LaporanHeaderStyle;
 
@@ -113,16 +119,19 @@ class LaporanBulanSheet implements FromArray, WithTitle, WithHeadings, WithStyle
 
     public function __construct(private array $data, private int $tahun) {}
 
-    public function headings(): array { return ['Bulan', 'Pagi', 'Petang', 'Jumlah']; }
+    public function headings(): array
+    {
+        return ['Bulan', 'Pagi', 'Petang', 'Jumlah'];
+    }
 
     public function array(): array
     {
-        $pagi   = $this->data['dataBulanSesi']['pagi'];
+        $pagi = $this->data['dataBulanSesi']['pagi'];
         $petang = $this->data['dataBulanSesi']['petang'];
-        $rows   = [];
+        $rows = [];
 
         foreach (self::$NAMA_BULAN as $i => $nama) {
-            $p  = $pagi[$i]   ?? 0;
+            $p = $pagi[$i] ?? 0;
             $pt = $petang[$i] ?? 0;
             $rows[] = [$nama, $p, $pt, $p + $pt];
         }
@@ -132,20 +141,29 @@ class LaporanBulanSheet implements FromArray, WithTitle, WithHeadings, WithStyle
         return $rows;
     }
 
-    public function title(): string { return "Mengikut Bulan {$this->tahun}"; }
+    public function title(): string
+    {
+        return "Mengikut Bulan {$this->tahun}";
+    }
 
-    public function columnWidths(): array { return ['A' => 16, 'B' => 12, 'C' => 12, 'D' => 12]; }
+    public function columnWidths(): array
+    {
+        return ['A' => 16, 'B' => 12, 'C' => 12, 'D' => 12];
+    }
 }
 
 // ─── Sheet 3: Mengikut Kategori ───────────────────────────────────────────────
 
-class LaporanKategoriSheet implements FromArray, WithTitle, WithHeadings, WithStyles, WithColumnWidths
+class LaporanKategoriSheet implements FromArray, WithColumnWidths, WithHeadings, WithStyles, WithTitle
 {
     use LaporanHeaderStyle;
 
     public function __construct(private array $data, private int $tahun) {}
 
-    public function headings(): array { return ['#', 'Kategori', 'Bilangan Tempahan']; }
+    public function headings(): array
+    {
+        return ['#', 'Kategori', 'Bilangan Tempahan'];
+    }
 
     public function array(): array
     {
@@ -155,20 +173,29 @@ class LaporanKategoriSheet implements FromArray, WithTitle, WithHeadings, WithSt
             ->all();
     }
 
-    public function title(): string { return "Mengikut Kategori {$this->tahun}"; }
+    public function title(): string
+    {
+        return "Mengikut Kategori {$this->tahun}";
+    }
 
-    public function columnWidths(): array { return ['A' => 6, 'B' => 36, 'C' => 20]; }
+    public function columnWidths(): array
+    {
+        return ['A' => 6, 'B' => 36, 'C' => 20];
+    }
 }
 
 // ─── Sheet 4: Mengikut Unit ───────────────────────────────────────────────────
 
-class LaporanUnitSheet implements FromArray, WithTitle, WithHeadings, WithStyles, WithColumnWidths
+class LaporanUnitSheet implements FromArray, WithColumnWidths, WithHeadings, WithStyles, WithTitle
 {
     use LaporanHeaderStyle;
 
     public function __construct(private array $data, private int $tahun) {}
 
-    public function headings(): array { return ['#', 'Unit / Seksyen', 'Bilangan Tempahan (Diluluskan)']; }
+    public function headings(): array
+    {
+        return ['#', 'Unit / Seksyen', 'Bilangan Tempahan (Diluluskan)'];
+    }
 
     public function array(): array
     {
@@ -178,14 +205,20 @@ class LaporanUnitSheet implements FromArray, WithTitle, WithHeadings, WithStyles
             ->all();
     }
 
-    public function title(): string { return "Mengikut Unit {$this->tahun}"; }
+    public function title(): string
+    {
+        return "Mengikut Unit {$this->tahun}";
+    }
 
-    public function columnWidths(): array { return ['A' => 6, 'B' => 52, 'C' => 30]; }
+    public function columnWidths(): array
+    {
+        return ['A' => 6, 'B' => 52, 'C' => 30];
+    }
 }
 
 // ─── Sheet 5: Penggunaan Bilik ────────────────────────────────────────────────
 
-class LaporanBilikSheet implements FromArray, WithTitle, WithHeadings, WithStyles, WithColumnWidths
+class LaporanBilikSheet implements FromArray, WithColumnWidths, WithHeadings, WithStyles, WithTitle
 {
     use LaporanHeaderStyle;
 
@@ -204,19 +237,25 @@ class LaporanBilikSheet implements FromArray, WithTitle, WithHeadings, WithStyle
                 $b['nama'],
                 $b['kapasiti'],
                 $b['jumlah_tempahan'],
-                $b['peratusan'] . '%',
+                $b['peratusan'].'%',
             ])
             ->all();
     }
 
-    public function title(): string { return "Penggunaan Bilik {$this->tahun}"; }
+    public function title(): string
+    {
+        return "Penggunaan Bilik {$this->tahun}";
+    }
 
-    public function columnWidths(): array { return ['A' => 34, 'B' => 12, 'C' => 22, 'D' => 22]; }
+    public function columnWidths(): array
+    {
+        return ['A' => 34, 'B' => 12, 'C' => 22, 'D' => 22];
+    }
 }
 
 // ─── Sheet 6: Top 10 Pemohon ──────────────────────────────────────────────────
 
-class LaporanTop10Sheet implements FromArray, WithTitle, WithHeadings, WithStyles, WithColumnWidths
+class LaporanTop10Sheet implements FromArray, WithColumnWidths, WithHeadings, WithStyles, WithTitle
 {
     use LaporanHeaderStyle;
 
@@ -242,7 +281,13 @@ class LaporanTop10Sheet implements FromArray, WithTitle, WithHeadings, WithStyle
             ->all();
     }
 
-    public function title(): string { return "Top 10 Pemohon {$this->tahun}"; }
+    public function title(): string
+    {
+        return "Top 10 Pemohon {$this->tahun}";
+    }
 
-    public function columnWidths(): array { return ['A' => 6, 'B' => 30, 'C' => 52, 'D' => 18, 'E' => 14, 'F' => 10]; }
+    public function columnWidths(): array
+    {
+        return ['A' => 6, 'B' => 30, 'C' => 52, 'D' => 18, 'E' => 14, 'F' => 10];
+    }
 }

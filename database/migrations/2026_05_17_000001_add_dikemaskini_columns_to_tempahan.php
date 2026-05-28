@@ -13,9 +13,9 @@ return new class extends Migration
             $table->timestamp('dikemaskini_pada')->nullable()->after('dikemaskini_oleh');
 
             $table->foreign('dikemaskini_oleh')
-                  ->references('id')
-                  ->on('users')
-                  ->nullOnDelete();
+                ->references('id')
+                ->on('users')
+                ->nullOnDelete();
         });
     }
 

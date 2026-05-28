@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Services;
 
@@ -32,7 +32,8 @@ class DashboardService
         // Sertakan versi supaya luputkanSemuaCache() benar-benar buang semua entri cache.
         // Setiap kali versi dinaikkan, kunci berubah → cache lama diabaikan secara automatik.
         $versi = Cache::get('dashboard.cache.version', 1);
-        $skop  = $user->isStaf() ? "staf.{$user->id}" : "admin.{$user->peranan}";
+        $skop = $user->isStaf() ? "staf.{$user->id}" : "admin.{$user->peranan}";
+
         return "dashboard.v{$versi}.{$skop}";
     }
 
@@ -72,8 +73,8 @@ class DashboardService
      */
     private function kiraData(User $user): array
     {
-        $bulanIni   = now()->month;
-        $tahunIni   = now()->year;
+        $bulanIni = now()->month;
+        $tahunIni = now()->year;
         $bulanLepas = now()->subMonth()->month;
         $tahunLepas = now()->subMonth()->year;
 
@@ -105,31 +106,31 @@ class DashboardService
 
         // Statistik bilik
         $bilik = BilikMesyuarat::where('status', 'aktif')->get();
-        $esok  = today()->addDay();
+        $esok = today()->addDay();
 
         // Satu query untuk semua slot hari ini + esok — ganti 4 query berasingan
         $slotDitempah = Tempahan::whereIn('tarikh', [today(), $esok])
             ->where('status', Tempahan::STATUS_DILULUSKAN)
             ->select('tarikh', 'sesi', 'bilik_id')
             ->get()
-            ->groupBy(fn ($r) => $r->tarikh->toDateString() . '|' . $r->sesi);
+            ->groupBy(fn ($r) => $r->tarikh->toDateString().'|'.$r->sesi);
 
         $ambilSlot = fn ($hari, $sesi) => $slotDitempah
-            ->get($hari->toDateString() . '|' . $sesi, collect())
+            ->get($hari->toDateString().'|'.$sesi, collect())
             ->pluck('bilik_id');
 
-        $bilikDitempahPagi       = $ambilSlot(today(), 'pagi');
-        $bilikDitempahPetang     = $ambilSlot(today(), 'petang');
-        $bilikDitempahPagiEsok   = $ambilSlot($esok, 'pagi');
+        $bilikDitempahPagi = $ambilSlot(today(), 'pagi');
+        $bilikDitempahPetang = $ambilSlot(today(), 'petang');
+        $bilikDitempahPagiEsok = $ambilSlot($esok, 'pagi');
         $bilikDitempahPetangEsok = $ambilSlot($esok, 'petang');
-        $bilikPenuh              = $bilikDitempahPagi->intersect($bilikDitempahPetang);
+        $bilikPenuh = $bilikDitempahPagi->intersect($bilikDitempahPetang);
 
-        $jumlahBilikAktif    = $bilik->count();
+        $jumlahBilikAktif = $bilik->count();
         $jumlahBilikTersedia = max(0, $jumlahBilikAktif - $bilikPenuh->count());
 
         // Pra-kira penggunaan bilik bulan ini dalam SATU query (elak N+1 daripada accessor)
-        $maxSesiSebulan  = now()->daysInMonth * 2; // 2 sesi × bilangan hari
-        $penggunaanMap   = Tempahan::selectRaw('bilik_id, COUNT(*) as jumlah')
+        $maxSesiSebulan = now()->daysInMonth * 2; // 2 sesi × bilangan hari
+        $penggunaanMap = Tempahan::selectRaw('bilik_id, COUNT(*) as jumlah')
             ->whereMonth('tarikh', $bulanIni)
             ->whereYear('tarikh', $tahunIni)
             ->where('status', Tempahan::STATUS_DILULUSKAN)
@@ -140,7 +141,7 @@ class DashboardService
         // Kadar penggunaan purata bulan ini (%)
         $kadarPenggunaan = 0;
         if ($bilik->count() > 0 && $maxSesiSebulan > 0) {
-            $totalPossible   = $maxSesiSebulan * $bilik->count();
+            $totalPossible = $maxSesiSebulan * $bilik->count();
             $kadarPenggunaan = (int) round($penggunaanMap->sum() / $totalPossible * 100);
         }
 
@@ -158,7 +159,7 @@ class DashboardService
 
         // Penggunaan bilik untuk bar chart (guna $penggunaanMap — tanpa query tambahan)
         $penggunaanBilik = $bilik->map(fn ($b) => [
-            'nama'      => $b->nama,
+            'nama' => $b->nama,
             'peratusan' => $maxSesiSebulan > 0
                 ? (int) round(($penggunaanMap->get($b->id, 0) / $maxSesiSebulan) * 100)
                 : 0,
@@ -166,10 +167,10 @@ class DashboardService
 
         // Ketersediaan bilik hari ini — pagi & petang (guna data yang dah dikira, tiada query baru)
         $ketersediaanHariIni = $bilik->map(fn ($b) => [
-            'nama'     => $b->nama,
+            'nama' => $b->nama,
             'kapasiti' => $b->kapasiti,
-            'pagi'     => !$bilikDitempahPagi->contains($b->id),
-            'petang'   => !$bilikDitempahPetang->contains($b->id),
+            'pagi' => ! $bilikDitempahPagi->contains($b->id),
+            'petang' => ! $bilikDitempahPetang->contains($b->id),
         ]);
 
         // Mesyuarat seterusnya milik pengguna ini (sentiasa user-scoped, tanpa mengira peranan)
@@ -182,8 +183,8 @@ class DashboardService
             ->first();
 
         // Ketersediaan esok — data sudah ada dari query konsolidasi di atas
-        $bilikKosongEsokPagi   = $bilik->filter(fn ($b) => !$bilikDitempahPagiEsok->contains($b->id))->count();
-        $bilikKosongEsokPetang = $bilik->filter(fn ($b) => !$bilikDitempahPetangEsok->contains($b->id))->count();
+        $bilikKosongEsokPagi = $bilik->filter(fn ($b) => ! $bilikDitempahPagiEsok->contains($b->id))->count();
+        $bilikKosongEsokPetang = $bilik->filter(fn ($b) => ! $bilikDitempahPetangEsok->contains($b->id))->count();
 
         // ── Trend 6 bulan ─────────────────────────────────────────────
         $trendBulanan = $this->kiraTrendBulanan($query, 6);
@@ -192,27 +193,27 @@ class DashboardService
         $statistikKategori = $this->kiraKategori($query, $bulanIni, $tahunIni);
 
         return [
-            'jumlahTempahan'      => $jumlahTempahan,
+            'jumlahTempahan' => $jumlahTempahan,
             'jumlahTempahanLepas' => $jumlahTempahanLepas,
-            'trend'               => $trend,
-            'trendNaik'           => $trendNaik,
-            'mesyuaratHariIni'    => $mesyuaratHariIni,
+            'trend' => $trend,
+            'trendNaik' => $trendNaik,
+            'mesyuaratHariIni' => $mesyuaratHariIni,
             'jumlahBilikTersedia' => $jumlahBilikTersedia,
-            'jumlahBilikAktif'    => $jumlahBilikAktif,
-            'bilikAdaSesiKosong'  => $bilik->filter(fn ($b) => !$bilikPenuh->contains($b->id))->count(),
-            'kadarPenggunaan'     => $kadarPenggunaan,
-            'mesyuaratAkanDatang'  => $mesyuaratAkanDatang,
-            'penggunaanBilik'      => $penggunaanBilik,
-            'ketersediaanHariIni'  => $ketersediaanHariIni,
-            'mesyuaratSeterusnya'  => $mesyuaratSeterusnya,
-            'bilikKosongEsokPagi'  => $bilikKosongEsokPagi,
-            'bilikKosongEsokPetang'=> $bilikKosongEsokPetang,
-            'bulanIni'             => $bulanIni,
-            'tahunIni'            => $tahunIni,
-            'bulanLepas'          => $bulanLepas,
-            'tahunLepas'          => $tahunLepas,
-            'trendBulanan'        => $trendBulanan,
-            'statistikKategori'   => $statistikKategori,
+            'jumlahBilikAktif' => $jumlahBilikAktif,
+            'bilikAdaSesiKosong' => $bilik->filter(fn ($b) => ! $bilikPenuh->contains($b->id))->count(),
+            'kadarPenggunaan' => $kadarPenggunaan,
+            'mesyuaratAkanDatang' => $mesyuaratAkanDatang,
+            'penggunaanBilik' => $penggunaanBilik,
+            'ketersediaanHariIni' => $ketersediaanHariIni,
+            'mesyuaratSeterusnya' => $mesyuaratSeterusnya,
+            'bilikKosongEsokPagi' => $bilikKosongEsokPagi,
+            'bilikKosongEsokPetang' => $bilikKosongEsokPetang,
+            'bulanIni' => $bulanIni,
+            'tahunIni' => $tahunIni,
+            'bulanLepas' => $bulanLepas,
+            'tahunLepas' => $tahunLepas,
+            'trendBulanan' => $trendBulanan,
+            'statistikKategori' => $statistikKategori,
         ];
     }
 
@@ -224,16 +225,16 @@ class DashboardService
      */
     private function kiraTrendBulanan($baseQuery, int $bulan): array
     {
-        $namaBulan = ['','Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'];
-        $dari      = Carbon::now()->subMonths($bulan - 1)->startOfMonth();
+        $namaBulan = ['', 'Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogos', 'Sep', 'Okt', 'Nov', 'Dis'];
+        $dari = Carbon::now()->subMonths($bulan - 1)->startOfMonth();
 
         // Satu query: kumpulkan semua bulan dalam julat sekaligus
         // Guna ekspresi DB-agnostik supaya ujian SQLite dan produksi MySQL sama-sama berjalan.
-        $isSqlite   = DB::connection()->getDriverName() === 'sqlite';
+        $isSqlite = DB::connection()->getDriverName() === 'sqlite';
         $selectExpr = $isSqlite
             ? "CAST(strftime('%Y', tarikh) AS INTEGER) AS tahun, CAST(strftime('%m', tarikh) AS INTEGER) AS bulan_num, COUNT(*) AS jumlah"
             : 'YEAR(tarikh) AS tahun, MONTH(tarikh) AS bulan_num, COUNT(*) AS jumlah';
-        $groupExpr  = $isSqlite
+        $groupExpr = $isSqlite
             ? "strftime('%Y', tarikh), strftime('%m', tarikh)"
             : 'YEAR(tarikh), MONTH(tarikh)';
 
@@ -242,15 +243,15 @@ class DashboardService
             ->selectRaw($selectExpr)
             ->groupByRaw($groupExpr)
             ->get()
-            ->keyBy(fn ($r) => $r->tahun . '-' . $r->bulan_num);
+            ->keyBy(fn ($r) => $r->tahun.'-'.$r->bulan_num);
 
         $hasil = [];
         for ($i = $bulan - 1; $i >= 0; $i--) {
             $tarikh = Carbon::now()->subMonths($i);
-            $kunci  = $tarikh->year . '-' . $tarikh->month;
+            $kunci = $tarikh->year.'-'.$tarikh->month;
 
             $hasil[] = [
-                'label'  => $namaBulan[$tarikh->month] . ' ' . $tarikh->year,
+                'label' => $namaBulan[$tarikh->month].' '.$tarikh->year,
                 // @phpstan-ignore-next-line nullsafe.neverNull — keyBy collection mungkin tiada kunci bulan ini
                 'jumlah' => (int) ($baris->get($kunci)?->jumlah ?? 0),
             ];
@@ -275,7 +276,7 @@ class DashboardService
             ->get();
 
         return $rows->map(fn ($r) => [
-            'label'  => $labelKategori[$r->kategori] ?? $r->kategori,
+            'label' => $labelKategori[$r->kategori] ?? $r->kategori,
             'jumlah' => $r->jumlah,
         ])->values()->toArray();
     }
@@ -283,14 +284,14 @@ class DashboardService
     private function kiraTrend(int $sekarang, int $lepas): array
     {
         if ($lepas > 0) {
-            $trend   = (int) round((($sekarang - $lepas) / $lepas) * 100);
-            $naik    = $trend >= 0;
+            $trend = (int) round((($sekarang - $lepas) / $lepas) * 100);
+            $naik = $trend >= 0;
         } elseif ($sekarang > 0) {
             $trend = 100;
-            $naik  = true;
+            $naik = true;
         } else {
             $trend = 0;
-            $naik  = true;
+            $naik = true;
         }
 
         return [$trend, $naik];

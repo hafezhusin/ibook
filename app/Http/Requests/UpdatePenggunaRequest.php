@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Http\Requests;
 
@@ -28,19 +28,19 @@ class UpdatePenggunaRequest extends FormRequest
     {
         // Nama optional — diabaikan pada server jika pengguna ada google_id (SSO)
         return [
-            'name'    => ['sometimes', 'string', 'max:255'],
+            'name' => ['sometimes', 'string', 'max:255'],
             'jabatan' => ['nullable', 'string', 'max:255'],
-            'peranan' => ['required', 'in:' . PerananPengguna::validasiIn()],
-            'aktif'   => ['boolean'],
+            'peranan' => ['required', 'in:'.PerananPengguna::validasiIn()],
+            'aktif' => ['boolean'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'name.required'    => 'Sila masukkan nama pengguna.',
+            'name.required' => 'Sila masukkan nama pengguna.',
             'peranan.required' => 'Sila pilih peranan.',
-            'peranan.in'       => 'Peranan yang dipilih tidak sah.',
+            'peranan.in' => 'Peranan yang dipilih tidak sah.',
         ];
     }
 }

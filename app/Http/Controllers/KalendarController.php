@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -11,21 +12,21 @@
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
 
-
 namespace App\Http\Controllers;
 
-use App\Models\Tempahan;
 use App\Models\BilikMesyuarat;
+use App\Models\Tempahan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Carbon;
 
 class KalendarController extends Controller
 {
     public function index()
     {
         $bilik = BilikMesyuarat::where('status', 'aktif')->orderBy('nama')->get();
+
         return response()
             ->view('kalendar.index', compact('bilik'))
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
@@ -165,22 +166,22 @@ class KalendarController extends Controller
                 // IDOR mitigation: jangan dedah tempahan_id (DB integer PK).
                 // Guna ID bukan-sequential yang hanya bermakna untuk FullCalendar.
                 // Format: b{bilik_id}_{sesi}_{tarikh} — tidak boleh digunakan untuk enumeration.
-                $idAwam = 'b' . $t->bilik_id . '_' . $t->sesi . '_' . $t->tarikh->format('Ymd');
+                $idAwam = 'b'.$t->bilik_id.'_'.$t->sesi.'_'.$t->tarikh->format('Ymd');
 
                 return [
-                    'id'    => $idAwam,
+                    'id' => $idAwam,
                     'title' => $t->nama_mesyuarat,
-                    'start' => $t->tarikh->format('Y-m-d') . 'T' . $t->masa_mula,
-                    'end'   => $t->tarikh->format('Y-m-d') . 'T' . $t->masa_tamat,
+                    'start' => $t->tarikh->format('Y-m-d').'T'.$t->masa_mula,
+                    'end' => $t->tarikh->format('Y-m-d').'T'.$t->masa_tamat,
                     'color' => '#dc2626',
                     // extendedProps awam: hanya maklumat minimum untuk paparan
                     // TIADA tempahan_id, TIADA nama pemohon, TIADA kategori
                     'extendedProps' => [
-                        'nama'     => $t->nama_mesyuarat,
-                        'bilik'    => $t->bilik->nama ?? '-',
+                        'nama' => $t->nama_mesyuarat,
+                        'bilik' => $t->bilik->nama ?? '-',
                         'bilik_id' => $t->bilik_id,
                         'sesi_key' => $t->sesi,
-                        'tarikh'   => $t->tarikh->format('Y-m-d'),
+                        'tarikh' => $t->tarikh->format('Y-m-d'),
                     ],
                 ];
             }
@@ -189,27 +190,27 @@ class KalendarController extends Controller
             $warna = $isOwn ? '#16a34a' : '#2563eb'; // hijau=sendiri, biru=orang lain
 
             return [
-                'id'    => $t->id,
+                'id' => $t->id,
                 'title' => $t->nama_mesyuarat,
-                'start' => $t->tarikh->format('Y-m-d') . 'T' . $t->masa_mula,
-                'end'   => $t->tarikh->format('Y-m-d') . 'T' . $t->masa_tamat,
+                'start' => $t->tarikh->format('Y-m-d').'T'.$t->masa_mula,
+                'end' => $t->tarikh->format('Y-m-d').'T'.$t->masa_tamat,
                 'color' => $warna,
                 'extendedProps' => [
-                    'tempahan_id'    => $t->id,
-                    'tempahan_ulid'  => $t->ulid,
-                    'bilik'          => $t->bilik->nama ?? '-',
-                    'lokasi'         => $t->bilik->lokasi ?? '',
-                    'bilik_id'       => $t->bilik_id,
-                    'status'         => $t->status,
-                    'sesi'           => $t->sesi === 'pagi' ? 'Sesi Pagi (9:00 - 13:00)' : 'Sesi Petang (14:00 - 18:00)',
-                    'sesi_key'       => $t->sesi,
-                    'tarikh'         => $t->tarikh->format('Y-m-d'),
-                    'peserta'        => $t->bilangan_peserta,
-                    'kategori'       => $t->kategori,
+                    'tempahan_id' => $t->id,
+                    'tempahan_ulid' => $t->ulid,
+                    'bilik' => $t->bilik->nama ?? '-',
+                    'lokasi' => $t->bilik->lokasi ?? '',
+                    'bilik_id' => $t->bilik_id,
+                    'status' => $t->status,
+                    'sesi' => $t->sesi === 'pagi' ? 'Sesi Pagi (9:00 - 13:00)' : 'Sesi Petang (14:00 - 18:00)',
+                    'sesi_key' => $t->sesi,
+                    'tarikh' => $t->tarikh->format('Y-m-d'),
+                    'peserta' => $t->bilangan_peserta,
+                    'kategori' => $t->kategori,
                     'nama_pengerusi' => $t->nama_pengerusi,
-                    'pemohon'        => $t->pengguna->name ?? '-',
-                    'tujuan'         => $t->tujuan ?? '',
-                    'is_own'         => $isOwn,
+                    'pemohon' => $t->pengguna->name ?? '-',
+                    'tujuan' => $t->tujuan ?? '',
+                    'is_own' => $isOwn,
                 ],
             ];
         })->toArray();

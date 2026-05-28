@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Models;
 
@@ -40,7 +40,7 @@ class ActivityLog extends Model
     ];
 
     protected $casts = [
-        'butiran'      => 'array',
+        'butiran' => 'array',
         'dicipta_pada' => 'datetime',
     ];
 

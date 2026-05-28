@@ -1,5 +1,8 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+use Illuminate\Support\ServiceProvider;
+
 return [
     'name' => env('APP_NAME', 'iBook 2.0'),
     'env' => env('APP_ENV', 'production'),
@@ -19,7 +22,7 @@ return [
     'maintenance' => [
         'driver' => 'file',
     ],
-    'providers' => \Illuminate\Support\ServiceProvider::defaultProviders()->merge([
-        App\Providers\AppServiceProvider::class,
+    'providers' => ServiceProvider::defaultProviders()->merge([
+        AppServiceProvider::class,
     ])->toArray(),
 ];

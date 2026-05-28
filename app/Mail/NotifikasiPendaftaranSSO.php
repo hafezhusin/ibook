@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -24,7 +25,7 @@ class NotifikasiPendaftaranSSO extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '[iBook] Pendaftaran Baharu Menunggu Kelulusan — ' . $this->emelPengguna,
+            subject: '[iBook] Pendaftaran Baharu Menunggu Kelulusan — '.$this->emelPengguna,
         );
     }
 

@@ -20,9 +20,9 @@ class AwamTest extends TestCase
         $response = $this->getJson('/awam/bilik');
 
         $response->assertStatus(200)
-                 ->assertJsonStructure([
-                     '*' => ['id', 'nama', 'kapasiti'],
-                 ]);
+            ->assertJsonStructure([
+                '*' => ['id', 'nama', 'kapasiti'],
+            ]);
 
         // Hanya bilik aktif dikembalikan
         $this->assertCount(3, $response->json());

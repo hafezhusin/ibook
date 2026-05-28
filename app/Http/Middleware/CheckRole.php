@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -11,7 +12,6 @@
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
 
-
 namespace App\Http\Middleware;
 
 use Closure;
@@ -23,13 +23,13 @@ class CheckRole
 {
     public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login');
         }
 
         $user = Auth::user();
 
-        if (!in_array($user->peranan, $roles)) {
+        if (! in_array($user->peranan, $roles)) {
             abort(403, 'Anda tidak mempunyai kebenaran untuk mengakses halaman ini.');
         }
 

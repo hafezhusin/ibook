@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -11,11 +12,11 @@
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
 
-
 namespace App\Http\Controllers;
 
 use App\Models\BilikMesyuarat;
 use App\Models\Tempahan;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -24,30 +25,31 @@ class KetersediaanController extends Controller
     public function index()
     {
         $bilikAktif = BilikMesyuarat::where('status', 'aktif')->orderBy('nama')->get();
+
         return view('ketersediaan.index', compact('bilikAktif'));
     }
 
     public function cek(Request $request)
     {
         $request->validate([
-            'tarikh'  => ['required', 'date'],
-            'sesi'    => ['nullable', 'in:pagi,petang,semua'],
+            'tarikh' => ['required', 'date'],
+            'sesi' => ['nullable', 'in:pagi,petang,semua'],
             'peserta' => ['nullable', 'integer', 'min:1', 'max:1000'],
         ], [
             'tarikh.required' => 'Tarikh diperlukan.',
-            'tarikh.date'     => 'Format tarikh tidak sah.',
-            'sesi.in'         => 'Nilai sesi tidak sah.',
+            'tarikh.date' => 'Format tarikh tidak sah.',
+            'sesi.in' => 'Nilai sesi tidak sah.',
             'peserta.integer' => 'Bilangan peserta tidak sah.',
         ]);
 
-        $tarikh      = $request->tarikh;
+        $tarikh = $request->tarikh;
         $sesiPilihan = $request->sesi ?? 'semua';
-        $peserta     = max(1, (int) $request->peserta);
+        $peserta = max(1, (int) $request->peserta);
 
-        $sesiList = match($sesiPilihan) {
-            'pagi'   => ['pagi'],
+        $sesiList = match ($sesiPilihan) {
+            'pagi' => ['pagi'],
             'petang' => ['petang'],
-            default  => ['pagi', 'petang'],
+            default => ['pagi', 'petang'],
         };
 
         $bilikList = BilikMesyuarat::where('status', 'aktif')
@@ -57,7 +59,7 @@ class KetersediaanController extends Controller
         // Satu query sahaja untuk semua bilik + sesi pada tarikh tersebut.
         // Cache 60 saat — mengelak query berulang untuk tarikh/sesi yang sama.
         // Cache dikosongkan apabila tempahan baharu dicipta (bumpKalendarCacheVersion).
-        $cacheKey = 'ketersediaan_' . $tarikh . '_' . $sesiPilihan;
+        $cacheKey = 'ketersediaan_'.$tarikh.'_'.$sesiPilihan;
 
         $ditempahMap = Cache::remember($cacheKey, 60, function () use ($tarikh, $sesiList) {
             return Tempahan::where('tarikh', $tarikh)
@@ -65,7 +67,7 @@ class KetersediaanController extends Controller
                 ->where('status', '!=', Tempahan::STATUS_DITOLAK)
                 ->get(['bilik_id', 'sesi'])
                 ->groupBy('bilik_id')
-                ->map(fn($rows) => $rows->pluck('sesi')->all());
+                ->map(fn ($rows) => $rows->pluck('sesi')->all());
         });
 
         $hasil = $bilikList->map(function ($bilik) use ($sesiList, $peserta, $ditempahMap) {
@@ -73,41 +75,48 @@ class KetersediaanController extends Controller
 
             $statusSesi = [];
             foreach ($sesiList as $sesi) {
-                $statusSesi[$sesi] = !in_array($sesi, $sesiDitempah);
+                $statusSesi[$sesi] = ! in_array($sesi, $sesiDitempah);
             }
 
-            $semuaTersedia   = !in_array(false, $statusSesi, true);
+            $semuaTersedia = ! in_array(false, $statusSesi, true);
             $adaYangTersedia = in_array(true, $statusSesi, true);
-            $kapasitiBoleh   = $bilik->kapasiti >= $peserta;
+            $kapasitiBoleh = $bilik->kapasiti >= $peserta;
 
             return [
-                'id'             => $bilik->id,
-                'nama'           => $bilik->nama,
-                'kapasiti'       => $bilik->kapasiti,
-                'lokasi'         => $bilik->lokasi,
-                'kemudahan'      => $bilik->kemudahan ?? [],
-                'gambar'         => $bilik->gambar,
-                'status_sesi'    => $statusSesi,
+                'id' => $bilik->id,
+                'nama' => $bilik->nama,
+                'kapasiti' => $bilik->kapasiti,
+                'lokasi' => $bilik->lokasi,
+                'kemudahan' => $bilik->kemudahan ?? [],
+                'gambar' => $bilik->gambar,
+                'status_sesi' => $statusSesi,
                 'semua_tersedia' => $semuaTersedia,
-                'ada_tersedia'   => $adaYangTersedia,
+                'ada_tersedia' => $adaYangTersedia,
                 'kapasiti_cukup' => $kapasitiBoleh,
-                'boleh_tempah'   => $semuaTersedia && $kapasitiBoleh,
+                'boleh_tempah' => $semuaTersedia && $kapasitiBoleh,
             ];
         });
 
         // Susun: sepenuhnya tersedia & cukup kapasiti → sebahagian → tidak boleh
         $sorted = $hasil->sortByDesc(function ($b) {
-            if ($b['boleh_tempah']) return 3;
-            if ($b['ada_tersedia'] && $b['kapasiti_cukup']) return 2;
-            if ($b['ada_tersedia']) return 1;
+            if ($b['boleh_tempah']) {
+                return 3;
+            }
+            if ($b['ada_tersedia'] && $b['kapasiti_cukup']) {
+                return 2;
+            }
+            if ($b['ada_tersedia']) {
+                return 1;
+            }
+
             return 0;
         })->values();
 
         return response()->json([
-            'tarikh'  => $tarikh,
-            'sesi'    => $sesiPilihan,
+            'tarikh' => $tarikh,
+            'sesi' => $sesiPilihan,
             'peserta' => $peserta,
-            'bilik'   => $sorted,
+            'bilik' => $sorted,
         ]);
     }
 
@@ -119,17 +128,17 @@ class KetersediaanController extends Controller
     {
         $request->validate([
             'tarikh_mula' => ['nullable', 'date'],
-            'peserta'     => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'peserta' => ['nullable', 'integer', 'min:1', 'max:1000'],
         ]);
 
         $peserta = max(1, (int) ($request->peserta ?? 1));
 
         // Mula dari Isnin minggu yang mengandungi tarikh_mula
         $mula = $request->tarikh_mula
-            ? \Carbon\Carbon::parse($request->tarikh_mula)->startOfWeek(\Carbon\Carbon::MONDAY)
-            : now()->startOfWeek(\Carbon\Carbon::MONDAY);
+            ? Carbon::parse($request->tarikh_mula)->startOfWeek(Carbon::MONDAY)
+            : now()->startOfWeek(Carbon::MONDAY);
 
-        $tamat = $mula->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
+        $tamat = $mula->copy()->endOfWeek(Carbon::SUNDAY);
 
         // Jana 7 hari: Isnin → Ahad
         $hari = [];
@@ -140,7 +149,7 @@ class KetersediaanController extends Controller
         $bilikList = BilikMesyuarat::where('status', 'aktif')->orderBy('nama')->get();
 
         // Ambil semua tempahan untuk minggu ini — satu query sahaja
-        $cacheKey = 'ketersediaan_minggu_' . $mula->toDateString();
+        $cacheKey = 'ketersediaan_minggu_'.$mula->toDateString();
         $ditempahMap = Cache::remember($cacheKey, 60, function () use ($mula, $tamat) {
             $rows = Tempahan::whereBetween('tarikh', [$mula->toDateString(), $tamat->toDateString()])
                 ->where('status', '!=', Tempahan::STATUS_DITOLAK)
@@ -154,6 +163,7 @@ class KetersediaanController extends Controller
                 $t = $row->tarikh->toDateString();
                 $map[$bilikId][$t][] = $row->sesi;
             }
+
             return $map;
         });
 
@@ -163,25 +173,26 @@ class KetersediaanController extends Controller
             foreach ($hari as $tarikh) {
                 $ditempah = $ditempahMap[$bilik->id][$tarikh] ?? [];
                 $slots[$tarikh] = [
-                    'pagi'   => !in_array('pagi',   $ditempah),
-                    'petang' => !in_array('petang', $ditempah),
+                    'pagi' => ! in_array('pagi', $ditempah),
+                    'petang' => ! in_array('petang', $ditempah),
                 ];
             }
+
             return [
-                'id'             => $bilik->id,
-                'nama'           => $bilik->nama,
-                'kapasiti'       => $bilik->kapasiti,
+                'id' => $bilik->id,
+                'nama' => $bilik->nama,
+                'kapasiti' => $bilik->kapasiti,
                 'kapasiti_cukup' => $kapasitiBoleh,
-                'slot'           => $slots,
+                'slot' => $slots,
             ];
         })->values();
 
         return response()->json([
-            'tarikh_mula'  => $mula->toDateString(),
+            'tarikh_mula' => $mula->toDateString(),
             'tarikh_tamat' => $tamat->toDateString(),
-            'hari'         => $hari,
-            'peserta'      => $peserta,
-            'bilik'        => $hasil,
+            'hari' => $hari,
+            'peserta' => $peserta,
+            'bilik' => $hasil,
         ]);
     }
 }

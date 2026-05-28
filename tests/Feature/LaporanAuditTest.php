@@ -89,14 +89,14 @@ class LaporanAuditTest extends TestCase
     public function pengguna_boleh_tukar_kata_laluan_profil(): void
     {
         $staf = User::factory()->staf()->create([
-            'password'  => bcrypt('KataLaluan@Lama1'),
+            'password' => bcrypt('KataLaluan@Lama1'),
             'google_id' => null,
         ]);
 
         $response = $this->actingAs($staf)->post('/profil/kata-laluan', [
-            'kata_laluan_semasa'      => 'KataLaluan@Lama1',
-            'password'                => 'KataLaluanBaru@2!',
-            'password_confirmation'   => 'KataLaluanBaru@2!',
+            'kata_laluan_semasa' => 'KataLaluan@Lama1',
+            'password' => 'KataLaluanBaru@2!',
+            'password_confirmation' => 'KataLaluanBaru@2!',
         ]);
 
         // ProfilController::updatePassword() pulang back() selepas berjaya
@@ -108,14 +108,14 @@ class LaporanAuditTest extends TestCase
     public function tukar_kata_laluan_gagal_jika_semasa_salah(): void
     {
         $staf = User::factory()->staf()->create([
-            'password'  => bcrypt('KataLaluan@Betul1'),
+            'password' => bcrypt('KataLaluan@Betul1'),
             'google_id' => null,
         ]);
 
         $response = $this->actingAs($staf)->post('/profil/kata-laluan', [
-            'kata_laluan_semasa'      => 'KataLaluanSalah!',
-            'password'                => 'KataLaluanBaru@2!',
-            'password_confirmation'   => 'KataLaluanBaru@2!',
+            'kata_laluan_semasa' => 'KataLaluanSalah!',
+            'password' => 'KataLaluanBaru@2!',
+            'password_confirmation' => 'KataLaluanBaru@2!',
         ]);
 
         $response->assertRedirect();
@@ -131,14 +131,14 @@ class LaporanAuditTest extends TestCase
 
         $response->assertRedirect();
         $this->assertDatabaseHas('users', [
-            'id'               => $staf->id,
+            'id' => $staf->id,
             'dua_faktor_aktif' => true,
         ]);
 
         // Toggle sekali lagi — nyahaktifkan
         $this->actingAs($staf)->post('/profil/2fa-toggle');
         $this->assertDatabaseHas('users', [
-            'id'               => $staf->id,
+            'id' => $staf->id,
             'dua_faktor_aktif' => false,
         ]);
     }

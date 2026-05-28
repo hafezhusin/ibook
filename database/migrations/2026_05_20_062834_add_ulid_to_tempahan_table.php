@@ -15,12 +15,12 @@ return new class extends Migration
     {
         Schema::table('tempahan', function (Blueprint $table) {
             $table->string('ulid', 26)->nullable()->unique()->after('id')
-                  ->comment('ULID untuk rujukan URL awam — tidak menggantikan PK integer');
+                ->comment('ULID untuk rujukan URL awam — tidak menggantikan PK integer');
         });
 
         // Isi ULID untuk rekod sedia ada
-        \DB::table('tempahan')->orderBy('id')->each(function ($row) {
-            \DB::table('tempahan')
+        DB::table('tempahan')->orderBy('id')->each(function ($row) {
+            DB::table('tempahan')
                 ->where('id', $row->id)
                 ->update(['ulid' => (string) Str::ulid()]);
         });

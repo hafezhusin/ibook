@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Http\Requests;
 
@@ -33,13 +33,13 @@ class UpdateTetapanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama_sistem'       => ['nullable', 'string', 'max:120'],
-            'nama_jabatan'      => ['required', 'string', 'max:150'],
-            'logo_jabatan'      => ['nullable', 'string', 'max:500', 'regex:/^https?:\/\/.+/i'],
-            'emel_pentadbir'    => ['nullable', 'email:rfc', 'max:150'],
-            'emel_notifikasi'   => ['nullable', 'email:rfc', 'max:150'],
-            'notif_tempahan_baru'  => ['nullable', 'boolean'],
-            'notif_kelulusan'      => ['nullable', 'boolean'],
+            'nama_sistem' => ['nullable', 'string', 'max:120'],
+            'nama_jabatan' => ['required', 'string', 'max:150'],
+            'logo_jabatan' => ['nullable', 'string', 'max:500', 'regex:/^https?:\/\/.+/i'],
+            'emel_pentadbir' => ['nullable', 'email:rfc', 'max:150'],
+            'emel_notifikasi' => ['nullable', 'email:rfc', 'max:150'],
+            'notif_tempahan_baru' => ['nullable', 'boolean'],
+            'notif_kelulusan' => ['nullable', 'boolean'],
             'peringatan_mesyuarat' => ['nullable', 'boolean'],
         ];
     }
@@ -52,10 +52,10 @@ class UpdateTetapanRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'nama_sistem'     => trim((string) ($this->nama_sistem ?? '')),
-            'nama_jabatan'    => trim((string) ($this->nama_jabatan ?? '')),
-            'logo_jabatan'    => trim((string) ($this->logo_jabatan ?? '')),
-            'emel_pentadbir'  => strtolower(trim((string) ($this->emel_pentadbir ?? ''))),
+            'nama_sistem' => trim((string) ($this->nama_sistem ?? '')),
+            'nama_jabatan' => trim((string) ($this->nama_jabatan ?? '')),
+            'logo_jabatan' => trim((string) ($this->logo_jabatan ?? '')),
+            'emel_pentadbir' => strtolower(trim((string) ($this->emel_pentadbir ?? ''))),
             'emel_notifikasi' => strtolower(trim((string) ($this->emel_notifikasi ?? ''))),
         ]);
     }
@@ -66,14 +66,14 @@ class UpdateTetapanRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'nama_jabatan.required'   => 'Nama bahagian/jabatan wajib diisi.',
-            'nama_jabatan.max'        => 'Nama bahagian tidak boleh melebihi 150 aksara.',
-            'nama_sistem.max'         => 'Nama sistem tidak boleh melebihi 120 aksara.',
-            'emel_pentadbir.email'    => 'Format emel paparan tidak sah. Contoh: admin@jabatan.gov.my',
-            'emel_notifikasi.email'   => 'Format emel notifikasi tidak sah. Contoh: notif@jabatan.gov.my',
-            'emel_pentadbir.max'      => 'Emel paparan tidak boleh melebihi 150 aksara.',
-            'emel_notifikasi.max'     => 'Emel notifikasi tidak boleh melebihi 150 aksara.',
-            'logo_jabatan.regex'      => 'URL logo mesti bermula dengan https:// atau http://',
+            'nama_jabatan.required' => 'Nama bahagian/jabatan wajib diisi.',
+            'nama_jabatan.max' => 'Nama bahagian tidak boleh melebihi 150 aksara.',
+            'nama_sistem.max' => 'Nama sistem tidak boleh melebihi 120 aksara.',
+            'emel_pentadbir.email' => 'Format emel paparan tidak sah. Contoh: admin@jabatan.gov.my',
+            'emel_notifikasi.email' => 'Format emel notifikasi tidak sah. Contoh: notif@jabatan.gov.my',
+            'emel_pentadbir.max' => 'Emel paparan tidak boleh melebihi 150 aksara.',
+            'emel_notifikasi.max' => 'Emel notifikasi tidak boleh melebihi 150 aksara.',
+            'logo_jabatan.regex' => 'URL logo mesti bermula dengan https:// atau http://',
         ];
     }
 }

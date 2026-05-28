@@ -1,5 +1,6 @@
 name: CI
 
+# Jalankan pada setiap push ke main dan setiap pull request
 on:
   push:
     branches: [main]
@@ -7,59 +8,67 @@ on:
     branches: [main]
 
 jobs:
-  build:
-    name: PHP ${{ matrix.php }} — Syntax, Style & Tests
+  ci:
+    name: Tests · PHPStan · Pint · Audit
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        php: ['8.3']
-
     steps:
-      - name: Checkout code
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup PHP
+      # ── 2. PHP 8.2 + PCOV (lebih pantas daripada Xdebug untuk coverage) ────
+      - name: Setup PHP 8.2
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php }}
-          extensions: mbstring, pdo, pdo_mysql, tokenizer, xml, ctype, json, bcmath
-          coverage: none
+          php-version: '8.2'
+          extensions: pdo_sqlite, sqlite3, intl, mbstring
+          coverage: pcov
+          ini-values: pcov.enabled=1
 
-      - name: Validate composer.json
-        run: composer validate --strict
-
-      - name: Cache Composer packages
+      # ── 3. Cache vendor/ ─────────────────────────────────────────────────────
+      - name: Get Composer cache directory
         id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
-          path: vendor
-          key: ${{ runner.os }}-php-${{ matrix.php }}-${{ hashFiles('composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php-${{ matrix.php }}-
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
 
+      # ── 4. Install dependencies ───────────────────────────────────────────────
       - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Prepare Laravel environment
+      # ── 5. Sedia persekitaran (APP_KEY diperlukan oleh artisan) ─────────────
+      - name: Prepare environment
         run: |
           cp .env.example .env
           php artisan key:generate
-          # phpunit.xml uses SQLite :memory: — no separate DB setup needed
-          # RefreshDatabase trait runs migrations before each test automatically
 
-      - name: Check PHP syntax (all source files)
-        run: |
-          find app config database routes -name "*.php" | \
-          xargs -P4 -I{} php -l {} | grep -v "No syntax errors" || true
-          find app config database routes -name "*.php" | \
-          xargs -P4 php -l | grep -c "No syntax errors"
+      # ── 6. PHPUnit + coverage (ambang minimum 70%) ───────────────────────────
+      #    phpunit.xml mengecualikan Mail/, Notifications/, BackupService dll.
+      #    daripada kiraan coverage. --min=70 akan fail jika di bawah ambang.
+      - name: Run PHPUnit (>= 70% line coverage)
+        run: php artisan test --coverage --min=70
 
-      - name: Run Laravel Pint (code style check)
-        run: ./vendor/bin/pint --test
+      # ── 7. PHPStan Level 5 ────────────────────────────────────────────────────
+      #    phpstan-baseline.neon hanya mengandungi 2 ralat Socialite (library).
+      #    Semua ralat baharu akan menyebabkan CI gagal.
+      - name: PHPStan – Level 5
+        run: vendor/bin/phpstan analyse --no-progress
 
-      - name: Run PHPStan (static analysis)
-        run: ./vendor/bin/phpstan analyse --memory-limit=512M --no-progress
+      # ── 8. Laravel Pint – semak gaya kod ─────────────────────────────────────
+      #    --test = dry run; gagal jika ada fail yang perlu diformat semula.
+      - name: Laravel Pint – style check
+        run: vendor/bin/pint --test
 
-      - name: Run Feature Tests
-        run: php artisan test --stop-on-failure
+      # ── 9. composer audit – imbasan CVE ──────────────────────────────────────
+      #    Semak dependency PRODUKSI terhadap pangkalan data kerentanan PHP.
+      #    --no-dev: pakej dev (PHPUnit dll.) dikecualikan — kami peduli
+      #    tentang apa yang berjalan di pelayan, bukan alat pembangunan.
+      #    CI gagal (exit 3) jika ada CVE; exit 2 (abandoned-only) diabaikan.
+      - name: Security audit (composer audit)
+        run: composer audit --no-dev

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Models;
 
@@ -59,9 +59,9 @@ class TempahanBerulang extends Model
 
     protected $casts = [
         'hari_dalam_minggu' => 'array',
-        'sesi'              => 'array',
-        'tarikh_mula'       => 'date',
-        'tarikh_tamat'      => 'date',
+        'sesi' => 'array',
+        'tarikh_mula' => 'date',
+        'tarikh_tamat' => 'date',
     ];
 
     /**
@@ -117,9 +117,9 @@ class TempahanBerulang extends Model
     public function janaTarikh(): Collection
     {
         $tarikh = collect();
-        $mula   = $this->tarikh_mula->copy()->startOfDay();
-        $tamat  = $this->tarikh_tamat->copy()->endOfDay();
-        $n      = max(1, (int) $this->setiap_n);
+        $mula = $this->tarikh_mula->copy()->startOfDay();
+        $tamat = $this->tarikh_tamat->copy()->endOfDay();
+        $n = max(1, (int) $this->setiap_n);
 
         if ($this->jenis === 'mingguan') {
             // Hari dalam minggu: 0=Ahad, 1=Isnin, ..., 6=Sabtu

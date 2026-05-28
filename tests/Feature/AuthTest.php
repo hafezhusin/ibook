@@ -15,13 +15,13 @@ class AuthTest extends TestCase
     public function pengguna_aktif_boleh_log_masuk_dengan_kelayakan_betul(): void
     {
         $pengguna = User::factory()->create([
-            'email'    => 'staf@bptm.gov.my',
+            'email' => 'staf@bptm.gov.my',
             'password' => bcrypt('Rahsia@123'),
-            'aktif'    => true,
+            'aktif' => true,
         ]);
 
         $response = $this->post('/login', [
-            'email'    => 'staf@bptm.gov.my',
+            'email' => 'staf@bptm.gov.my',
             'password' => 'Rahsia@123',
         ]);
 
@@ -33,13 +33,13 @@ class AuthTest extends TestCase
     public function pengguna_tidak_boleh_log_masuk_dengan_kata_laluan_salah(): void
     {
         User::factory()->create([
-            'email'    => 'staf@bptm.gov.my',
+            'email' => 'staf@bptm.gov.my',
             'password' => bcrypt('Rahsia@123'),
-            'aktif'    => true,
+            'aktif' => true,
         ]);
 
         $response = $this->post('/login', [
-            'email'    => 'staf@bptm.gov.my',
+            'email' => 'staf@bptm.gov.my',
             'password' => 'kata-laluan-salah',
         ]);
 

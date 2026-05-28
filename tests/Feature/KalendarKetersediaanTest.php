@@ -28,17 +28,17 @@ class KalendarKetersediaanTest extends TestCase
     #[Test]
     public function events_api_kembalikan_json_untuk_pengguna_log_masuk(): void
     {
-        $staf  = User::factory()->staf()->create();
+        $staf = User::factory()->staf()->create();
         $bilik = BilikMesyuarat::factory()->create();
 
         Tempahan::factory()->pagi()->create([
-            'user_id'  => $staf->id,
+            'user_id' => $staf->id,
             'bilik_id' => $bilik->id,
-            'tarikh'   => now()->addDay()->format('Y-m-d'),
-            'status'   => Tempahan::STATUS_DILULUSKAN,
+            'tarikh' => now()->addDay()->format('Y-m-d'),
+            'status' => Tempahan::STATUS_DILULUSKAN,
         ]);
 
-        $mula  = now()->startOfMonth()->format('Y-m-d');
+        $mula = now()->startOfMonth()->format('Y-m-d');
         $akhir = now()->endOfMonth()->format('Y-m-d');
 
         $response = $this->actingAs($staf)
@@ -63,15 +63,15 @@ class KalendarKetersediaanTest extends TestCase
     #[Test]
     public function cek_ketersediaan_kembalikan_status_bilik(): void
     {
-        $staf  = User::factory()->staf()->create();
+        $staf = User::factory()->staf()->create();
         $bilik = BilikMesyuarat::factory()->kapasiti(20)->create();
         $tarikh = now()->addDay()->format('Y-m-d');
 
         // Bilik ini ada tempahan sesi pagi
         Tempahan::factory()->pagi()->create([
             'bilik_id' => $bilik->id,
-            'tarikh'   => $tarikh,
-            'status'   => Tempahan::STATUS_DILULUSKAN,
+            'tarikh' => $tarikh,
+            'status' => Tempahan::STATUS_DILULUSKAN,
         ]);
 
         $response = $this->actingAs($staf)

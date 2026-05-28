@@ -1,1 +1,3 @@
-<?php echo "Apache + PHP OK — " . phpversion();
+<?php
+
+echo 'Apache + PHP OK — '.phpversion();

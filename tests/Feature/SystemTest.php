@@ -68,9 +68,9 @@ class SystemTest extends TestCase
 
         // GET params mesti dalam URL (bukan header) — pratonton = AJAX GET endpoint
         $url = '/tempahan-berulang/pratonton?'
-            . 'jenis=mingguan&setiap_n=1'
-            . '&hari_dalam_minggu[]=1'   // Isnin
-            . '&tarikh_mula=2026-06-01&tarikh_tamat=2026-06-30';
+            .'jenis=mingguan&setiap_n=1'
+            .'&hari_dalam_minggu[]=1'   // Isnin
+            .'&tarikh_mula=2026-06-01&tarikh_tamat=2026-06-30';
 
         $response = $this->actingAs($staf)->get($url);
 

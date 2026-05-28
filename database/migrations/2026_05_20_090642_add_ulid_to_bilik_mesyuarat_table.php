@@ -14,8 +14,8 @@ return new class extends Migration
         });
 
         // Backfill existing records
-        \DB::table('bilik_mesyuarat')->orderBy('id')->each(function ($bilik) {
-            \DB::table('bilik_mesyuarat')
+        DB::table('bilik_mesyuarat')->orderBy('id')->each(function ($bilik) {
+            DB::table('bilik_mesyuarat')
                 ->where('id', $bilik->id)
                 ->update(['ulid' => (string) Str::ulid()]);
         });

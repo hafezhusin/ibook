@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Http\Middleware;
 
@@ -46,11 +46,11 @@ class AuditLog
         if (in_array($request->method(), $kaedahTulis) && $statusGagal) {
             Log::channel('stack')->warning('HTTP_TULIS_GAGAL', [
                 'user_id' => Auth::id() ?? 'tetamu',
-                'method'  => $request->method(),
-                'path'    => $request->path(),
-                'ip'      => $request->ip(),
-                'status'  => $response->getStatusCode(),
-                'agent'   => substr($request->userAgent() ?? '', 0, 100),
+                'method' => $request->method(),
+                'path' => $request->path(),
+                'ip' => $request->ip(),
+                'status' => $response->getStatusCode(),
+                'agent' => substr($request->userAgent() ?? '', 0, 100),
             ]);
         }
 

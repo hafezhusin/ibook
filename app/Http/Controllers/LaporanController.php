@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Http\Controllers;
 
@@ -25,26 +25,29 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class LaporanController extends Controller
 {
     /** Cache TTL: 24 jam untuk tahun lalu (data frozen), 15 minit untuk tahun semasa */
     const CACHE_LALU_TTL = 86400;
-    const CACHE_INI_TTL  = 900;
+
+    const CACHE_INI_TTL = 900;
 
     public function index(Request $request)
     {
-        $tahun       = (int) $request->get('tahun', now()->year);
+        $tahun = (int) $request->get('tahun', now()->year);
         $bilikFilter = $request->filled('bilik_id') ? (int) $request->bilik_id : null;
-        $user        = Auth::user();
-        $isStaf      = $user->isStaf();
+        $user = Auth::user();
+        $isStaf = $user->isStaf();
         $isPentadbir = $user->isPentadbir();
         $senaraiTahun = range(now()->year, now()->year - 4);
         $senaraibilik = BilikMesyuarat::where('status', 'aktif')->orderBy('nama')->get(['id', 'nama']);
 
         // ── Item 5: Log audit akses laporan ──
         AuditLogger::catat('akses_laporan', null, [
-            'tahun'   => $tahun,
+            'tahun' => $tahun,
             'peranan' => $user->peranan,
         ]);
 
@@ -52,11 +55,11 @@ class LaporanController extends Controller
         // PAPARAN STAF — statistik unit sendiri sahaja
         // =============================================
         if ($isStaf) {
-            $jabatan    = $user->jabatan;
+            $jabatan = $user->jabatan;
             $userIdUnit = DB::table('users')->where('jabatan', $jabatan)->pluck('id')->toArray();
 
-            $dataBulan        = $this->kiraBulan($tahun, $userIdUnit);
-            $dataBulanSesi    = $this->kiraBulanSesi($tahun, $userIdUnit);
+            $dataBulan = $this->kiraBulan($tahun, $userIdUnit);
+            $dataBulanSesi = $this->kiraBulanSesi($tahun, $userIdUnit);
             $mengikutKategori = Tempahan::selectRaw('kategori, COUNT(*) as jumlah')
                 ->whereYear('tarikh', $tahun)
                 ->whereIn('user_id', $userIdUnit)
@@ -80,29 +83,29 @@ class LaporanController extends Controller
         // PAPARAN ADMIN / URUS SETIA — dengan cache (Item 6)
         // =============================================
         $isTahunSemasa = ($tahun === now()->year);
-        $ttl      = $isTahunSemasa ? self::CACHE_INI_TTL : self::CACHE_LALU_TTL;
-        $cacheKey = "laporan_v2_admin_{$tahun}" . ($bilikFilter ? "_b{$bilikFilter}" : '');
+        $ttl = $isTahunSemasa ? self::CACHE_INI_TTL : self::CACHE_LALU_TTL;
+        $cacheKey = "laporan_v2_admin_{$tahun}".($bilikFilter ? "_b{$bilikFilter}" : '');
 
         // Data dikira sekali dan dicache (tidak bergantung kepada pengguna)
         $data = Cache::remember($cacheKey, $ttl, fn () => $this->kiraLaporanAdmin($tahun, $bilikFilter));
 
         // Tambah nilai yang bergantung kepada pengguna (tidak boleh dicache)
-        $data['isPentadbir']  = $isPentadbir;
-        $data['isStaf']       = false;
-        $data['tahun']        = $tahun;
+        $data['isPentadbir'] = $isPentadbir;
+        $data['isStaf'] = false;
+        $data['tahun'] = $tahun;
         $data['senaraiTahun'] = $senaraiTahun;
         $data['senaraibilik'] = $senaraibilik;
-        $data['bilikFilter']  = $bilikFilter;
+        $data['bilikFilter'] = $bilikFilter;
 
         return view('laporan.index', $data);
     }
 
-    public function exportPdf(Request $request): \Symfony\Component\HttpFoundation\Response
+    public function exportPdf(Request $request): Response
     {
-        $tahun       = (int) $request->get('tahun', now()->year);
+        $tahun = (int) $request->get('tahun', now()->year);
         $bilikFilter = $request->filled('bilik_id') ? (int) $request->bilik_id : null;
 
-        $data          = $this->kiraLaporanAdmin($tahun, $bilikFilter);
+        $data = $this->kiraLaporanAdmin($tahun, $bilikFilter);
         $data['tahun'] = $tahun;
 
         AuditLogger::catat('eksport_laporan_pdf', null, ['tahun' => $tahun]);
@@ -110,19 +113,19 @@ class LaporanController extends Controller
         $pdf = Pdf::loadView('laporan.pdf', $data)
             ->setPaper('a4', 'portrait')
             ->setOption([
-                'defaultFont'          => 'DejaVu Sans',
-                'isRemoteEnabled'      => false,
+                'defaultFont' => 'DejaVu Sans',
+                'isRemoteEnabled' => false,
                 'isHtml5ParserEnabled' => true,
-                'chroot'               => public_path(),
-                'dpi'                  => 96,
+                'chroot' => public_path(),
+                'dpi' => 96,
             ]);
 
         return $pdf->download("Laporan_Statistik_iBook_{$tahun}.pdf");
     }
 
-    public function exportExcel(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function exportExcel(Request $request): BinaryFileResponse
     {
-        $tahun       = (int) $request->get('tahun', now()->year);
+        $tahun = (int) $request->get('tahun', now()->year);
         $bilikFilter = $request->filled('bilik_id') ? (int) $request->bilik_id : null;
 
         $data = $this->kiraLaporanAdmin($tahun, $bilikFilter);
@@ -141,8 +144,8 @@ class LaporanController extends Controller
     private function kiraLaporanAdmin(int $tahun, ?int $bilikId = null): array
     {
         // ── 1. Tempahan mengikut bulan ──
-        $dataBulan       = $this->kiraBulan($tahun, [], $bilikId);
-        $dataBulanSesi   = $this->kiraBulanSesi($tahun, [], $bilikId);
+        $dataBulan = $this->kiraBulan($tahun, [], $bilikId);
+        $dataBulanSesi = $this->kiraBulanSesi($tahun, [], $bilikId);
         $totalDiluluskan = array_sum($dataBulan);
 
         // ── 2. Tempahan mengikut kategori ──
@@ -185,32 +188,33 @@ class LaporanController extends Controller
         // Sebelum ini: $b->penggunaan_bulan_ini memanggil accessor → N+1 query,
         // dan nilai salah kerana berasaskan bulan semasa, bukan tahun yang dipilih.
         // Sekarang: dikira terus dalam map() menggunakan eager-loaded collection.
-        $isKabisat     = Carbon::createFromDate($tahun, 1, 1)->isLeapYear();
-        $maxSesiTahun  = ($isKabisat ? 366 : 365) * 2;
+        $isKabisat = Carbon::createFromDate($tahun, 1, 1)->isLeapYear();
+        $maxSesiTahun = ($isKabisat ? 366 : 365) * 2;
 
         $bilik = BilikMesyuarat::with(['tempahan' => function ($q) use ($tahun) {
             $q->whereYear('tarikh', $tahun)
-              ->where('status', Tempahan::STATUS_DILULUSKAN);
+                ->where('status', Tempahan::STATUS_DILULUSKAN);
         }])->get()->map(function ($b) use ($maxSesiTahun) {
-            $jumlah    = $b->tempahan->count();
+            $jumlah = $b->tempahan->count();
             // $maxSesiTahun adalah 730 atau 732 — sentiasa > 0, bahagi terus.
             $peratusan = (int) round(($jumlah / $maxSesiTahun) * 100);
+
             return [
-                'nama'            => $b->nama,
-                'kapasiti'        => $b->kapasiti,
+                'nama' => $b->nama,
+                'kapasiti' => $b->kapasiti,
                 'jumlah_tempahan' => $jumlah,
-                'peratusan'       => $peratusan,
+                'peratusan' => $peratusan,
             ];
         })->sortByDesc('jumlah_tempahan')->values();
 
         // ── 6. KPI eksekutif + Insight sentences (Items 2 & 7) ──
-        $unitPalingAktif  = $mengikutUnit->first();
-        $bilikPalingGuna  = $bilik->first();
+        $unitPalingAktif = $mengikutUnit->first();
+        $bilikPalingGuna = $bilik->first();
         $purataPenggunaan = $bilik->isNotEmpty()
             ? (int) round($bilik->avg('peratusan'))
             : 0;
 
-        $insightUnit  = $unitPalingAktif
+        $insightUnit = $unitPalingAktif
             ? "{$unitPalingAktif->unit} mencatatkan {$unitPalingAktif->jumlah} tempahan — unit paling aktif tahun {$tahun}."
             : null;
         $insightBilik = $bilikPalingGuna && $bilikPalingGuna['jumlah_tempahan'] > 0
@@ -231,16 +235,16 @@ class LaporanController extends Controller
     // ─────────────────────────────────────────────────────────
     private function kiraBulan(int $tahun, array $userIds = [], ?int $bilikId = null): array
     {
-        $isSqlite   = DB::connection()->getDriverName() === 'sqlite';
+        $isSqlite = DB::connection()->getDriverName() === 'sqlite';
         $selectExpr = $isSqlite
             ? "CAST(strftime('%m', tarikh) AS INTEGER) AS bulan, COUNT(*) AS jumlah"
             : 'MONTH(tarikh) AS bulan, COUNT(*) AS jumlah';
-        $groupExpr  = $isSqlite ? "strftime('%m', tarikh)" : 'MONTH(tarikh)';
+        $groupExpr = $isSqlite ? "strftime('%m', tarikh)" : 'MONTH(tarikh)';
 
         $query = Tempahan::selectRaw($selectExpr)
             ->whereYear('tarikh', $tahun)
             ->where('status', Tempahan::STATUS_DILULUSKAN)
-            ->when(!empty($userIds), fn ($q) => $q->whereIn('user_id', $userIds))
+            ->when(! empty($userIds), fn ($q) => $q->whereIn('user_id', $userIds))
             ->when($bilikId, fn ($q) => $q->where('bilik_id', $bilikId))
             ->groupByRaw($groupExpr)
             ->orderByRaw($groupExpr);
@@ -251,6 +255,7 @@ class LaporanController extends Controller
             // @phpstan-ignore-next-line nullsafe.neverNull, property.notFound — jumlah dari selectRaw
             $data[] = $mengikutBulan->get($i)?->jumlah ?? 0;
         }
+
         return $data;
     }
 
@@ -260,31 +265,38 @@ class LaporanController extends Controller
      */
     private function kiraBulanSesi(int $tahun, array $userIds = [], ?int $bilikId = null): array
     {
-        $isSqlite   = DB::connection()->getDriverName() === 'sqlite';
+        $isSqlite = DB::connection()->getDriverName() === 'sqlite';
         $selectExpr = $isSqlite
             ? "CAST(strftime('%m', tarikh) AS INTEGER) AS bulan, sesi, COUNT(*) AS jumlah"
             : 'MONTH(tarikh) AS bulan, sesi, COUNT(*) AS jumlah';
-        $groupExpr  = $isSqlite ? "strftime('%m', tarikh), sesi" : 'MONTH(tarikh), sesi';
+        $groupExpr = $isSqlite ? "strftime('%m', tarikh), sesi" : 'MONTH(tarikh), sesi';
 
         $rows = Tempahan::selectRaw($selectExpr)
             ->whereYear('tarikh', $tahun)
             ->where('status', Tempahan::STATUS_DILULUSKAN)
-            ->when(!empty($userIds), fn ($q) => $q->whereIn('user_id', $userIds))
+            ->when(! empty($userIds), fn ($q) => $q->whereIn('user_id', $userIds))
             ->when($bilikId, fn ($q) => $q->where('bilik_id', $bilikId))
             ->groupByRaw($groupExpr)
             ->orderByRaw($groupExpr)
             ->get();
 
-        $pagi   = array_fill(0, 12, 0);
+        $pagi = array_fill(0, 12, 0);
         $petang = array_fill(0, 12, 0);
 
         foreach ($rows as $r) {
-            // @phpstan-ignore-next-line property.notFound — bulan/jumlah dari selectRaw dinamik
-            $idx = $r->bulan - 1;
+            // bulan/jumlah adalah sifat dinamik dari selectRaw — PHPStan tidak dapat infernya
             // @phpstan-ignore-next-line property.notFound
-            if ($r->sesi === 'pagi')   $pagi[$idx]   = $r->jumlah;
+            $idx = (int) $r->bulan - 1;
+            $sesi = (string) $r->sesi;
             // @phpstan-ignore-next-line property.notFound
-            if ($r->sesi === 'petang') $petang[$idx] = $r->jumlah;
+            $jumlah = (int) $r->jumlah;
+
+            if ($sesi === 'pagi') {
+                $pagi[$idx] = $jumlah;
+            }
+            if ($sesi === 'petang') {
+                $petang[$idx] = $jumlah;
+            }
         }
 
         return ['pagi' => $pagi, 'petang' => $petang];

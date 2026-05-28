@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Mail;
 
@@ -26,25 +26,17 @@ class PengesahanTempahan extends Mailable
     use Queueable, SerializesModels;
 
     /**
-     * @param string $noRujukan     e.g. TMP-2026-A3F9B2C1
-     * @param string $namaMesyuarat
-     * @param string $tarikhLabel   formatted date string
-     * @param array  $semuaSesi     ['pagi'] or ['pagi','petang']
-     * @param string $bilikNama
-     * @param int    $bilanganPeserta
-     * @param string $kategoriLabel
-     * @param string $namaPengerusi
-     * @param string $tujuan
-     * @param string $pemohonNama
-     * @param string $pemohonEmail
+     * @param  string  $noRujukan  e.g. TMP-2026-A3F9B2C1
+     * @param  string  $tarikhLabel  formatted date string
+     * @param  array  $semuaSesi  ['pagi'] or ['pagi','petang']
      */
     public function __construct(
         public string $noRujukan,
         public string $namaMesyuarat,
         public string $tarikhLabel,
-        public array  $semuaSesi,
+        public array $semuaSesi,
         public string $bilikNama,
-        public int    $bilanganPeserta,
+        public int $bilanganPeserta,
         public string $kategoriLabel,
         public string $namaPengerusi,
         public string $tujuan,
@@ -55,7 +47,7 @@ class PengesahanTempahan extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '[iBook] Pengesahan Tempahan — ' . $this->noRujukan,
+            subject: '[iBook] Pengesahan Tempahan — '.$this->noRujukan,
         );
     }
 

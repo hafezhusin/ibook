@@ -8,6 +8,7 @@ use App\Models\Tempahan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -21,13 +22,14 @@ class TempahanFilterTest extends TestCase
     use RefreshDatabase;
 
     private User $pentadbir;
+
     private BilikMesyuarat $bilik;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->pentadbir = User::factory()->pentadbir()->create();
-        $this->bilik     = BilikMesyuarat::factory()->kapasiti(20)->create();
+        $this->bilik = BilikMesyuarat::factory()->kapasiti(20)->create();
     }
 
     /** Bina request kosong atau dengan parameter tertentu. */
@@ -37,7 +39,7 @@ class TempahanFilterTest extends TestCase
     }
 
     /** Jalankan filter dan kembalikan hasil. */
-    private function filter(array $params = []): \Illuminate\Support\Collection
+    private function filter(array $params = []): Collection
     {
         $this->actingAs($this->pentadbir);
         $query = Tempahan::query();
@@ -51,7 +53,7 @@ class TempahanFilterTest extends TestCase
     {
         Tempahan::factory()->count(3)->create([
             'bilik_id' => $this->bilik->id,
-            'user_id'  => $this->pentadbir->id,
+            'user_id' => $this->pentadbir->id,
         ]);
 
         $hasil = $this->filter([]);
@@ -64,13 +66,13 @@ class TempahanFilterTest extends TestCase
     {
         Tempahan::factory()->count(2)->create([
             'bilik_id' => $this->bilik->id,
-            'user_id'  => $this->pentadbir->id,
-            'status'   => Tempahan::STATUS_DILULUSKAN,
+            'user_id' => $this->pentadbir->id,
+            'status' => Tempahan::STATUS_DILULUSKAN,
         ]);
         Tempahan::factory()->create([
             'bilik_id' => $this->bilik->id,
-            'user_id'  => $this->pentadbir->id,
-            'status'   => Tempahan::STATUS_DITOLAK,
+            'user_id' => $this->pentadbir->id,
+            'status' => Tempahan::STATUS_DITOLAK,
         ]);
 
         $hasil = $this->filter(['status' => Tempahan::STATUS_DILULUSKAN]);
@@ -86,11 +88,11 @@ class TempahanFilterTest extends TestCase
 
         Tempahan::factory()->count(2)->create([
             'bilik_id' => $this->bilik->id,
-            'user_id'  => $this->pentadbir->id,
+            'user_id' => $this->pentadbir->id,
         ]);
         Tempahan::factory()->create([
             'bilik_id' => $bilikLain->id,
-            'user_id'  => $this->pentadbir->id,
+            'user_id' => $this->pentadbir->id,
         ]);
 
         $hasil = $this->filter(['bilik_id' => $this->bilik->id]);
@@ -103,13 +105,13 @@ class TempahanFilterTest extends TestCase
     public function filter_carian_nama_mesyuarat_menapis_dengan_betul(): void
     {
         Tempahan::factory()->create([
-            'bilik_id'       => $this->bilik->id,
-            'user_id'        => $this->pentadbir->id,
+            'bilik_id' => $this->bilik->id,
+            'user_id' => $this->pentadbir->id,
             'nama_mesyuarat' => 'Mesyuarat Pengurusan Kewangan',
         ]);
         Tempahan::factory()->create([
-            'bilik_id'       => $this->bilik->id,
-            'user_id'        => $this->pentadbir->id,
+            'bilik_id' => $this->bilik->id,
+            'user_id' => $this->pentadbir->id,
             'nama_mesyuarat' => 'Taklimat ICT 2026',
         ]);
 
@@ -124,25 +126,25 @@ class TempahanFilterTest extends TestCase
     {
         Tempahan::factory()->create([
             'bilik_id' => $this->bilik->id,
-            'user_id'  => $this->pentadbir->id,
-            'tarikh'   => '2026-06-10',
-            'sesi'     => 'pagi',
+            'user_id' => $this->pentadbir->id,
+            'tarikh' => '2026-06-10',
+            'sesi' => 'pagi',
         ]);
         Tempahan::factory()->create([
             'bilik_id' => $this->bilik->id,
-            'user_id'  => $this->pentadbir->id,
-            'tarikh'   => '2026-07-15',
-            'sesi'     => 'pagi',
+            'user_id' => $this->pentadbir->id,
+            'tarikh' => '2026-07-15',
+            'sesi' => 'pagi',
         ]);
         Tempahan::factory()->create([
             'bilik_id' => $this->bilik->id,
-            'user_id'  => $this->pentadbir->id,
-            'tarikh'   => '2026-08-20',
-            'sesi'     => 'petang',
+            'user_id' => $this->pentadbir->id,
+            'tarikh' => '2026-08-20',
+            'sesi' => 'petang',
         ]);
 
         $hasil = $this->filter([
-            'tarikh_dari'   => '2026-06-01',
+            'tarikh_dari' => '2026-06-01',
             'tarikh_hingga' => '2026-07-31',
         ]);
 
@@ -154,15 +156,15 @@ class TempahanFilterTest extends TestCase
     {
         Tempahan::factory()->create([
             'bilik_id' => $this->bilik->id,
-            'user_id'  => $this->pentadbir->id,
-            'tarikh'   => today()->toDateString(),
-            'sesi'     => 'pagi',
+            'user_id' => $this->pentadbir->id,
+            'tarikh' => today()->toDateString(),
+            'sesi' => 'pagi',
         ]);
         Tempahan::factory()->create([
             'bilik_id' => $this->bilik->id,
-            'user_id'  => $this->pentadbir->id,
-            'tarikh'   => today()->addDays(5)->toDateString(),
-            'sesi'     => 'pagi',
+            'user_id' => $this->pentadbir->id,
+            'tarikh' => today()->addDays(5)->toDateString(),
+            'sesi' => 'pagi',
         ]);
 
         $hasil = $this->filter(['tarikh_filter' => 'hari_ini']);

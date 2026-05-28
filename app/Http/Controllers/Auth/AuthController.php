@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -11,14 +12,13 @@
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
 
-
 namespace App\Http\Controllers\Auth;
 
 use App\Enums\PerananPengguna;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Auth\DuaFaktorController;
 use App\Mail\AmaranKeselamatan;
 use App\Mail\KodOTP;
+use App\Mail\NotifikasiPendaftaranSSO;
 use App\Models\ActivityLog;
 use App\Models\Tetapan;
 use App\Models\User;
@@ -37,6 +37,7 @@ class AuthController extends Controller
 {
     // Maksimum percubaan sebelum dikunci
     protected int $maxAttempts = 5;
+
     // Tempoh kunci (minit)
     protected int $decayMinutes = 15;
 
@@ -56,14 +57,15 @@ class AuthController extends Controller
      */
     public function callbackGoogle(Request $request)
     {
-        Log::info('CALLBACK_GOOGLE_HIT params=' . json_encode($request->only(['code','error','state'])));
+        Log::info('CALLBACK_GOOGLE_HIT params='.json_encode($request->only(['code', 'error', 'state'])));
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
-            Log::info('CALLBACK_GOOGLE_USER email=' . $googleUser->email);
+            Log::info('CALLBACK_GOOGLE_USER email='.$googleUser->email);
         } catch (\Throwable $e) {
-            Log::warning('Google SSO callback gagal: [' . get_class($e) . '] ' . $e->getMessage() . ' | ' . $e->getFile() . ':' . $e->getLine());
+            Log::warning('Google SSO callback gagal: ['.get_class($e).'] '.$e->getMessage().' | '.$e->getFile().':'.$e->getLine());
+
             return redirect()->route('login')
-                ->with('error', 'Log masuk Google gagal: ' . $e->getMessage());
+                ->with('error', 'Log masuk Google gagal: '.$e->getMessage());
         }
 
         // ── Semak domain @anm.gov.my ──────────────────────────────────
@@ -76,17 +78,17 @@ class AuthController extends Controller
 
         // ── Cari atau cipta pengguna ──────────────────────────────────
         $user = User::where('google_id', $googleUser->id)
-                    ->orWhere('email', $googleUser->email)
-                    ->first();
+            ->orWhere('email', $googleUser->email)
+            ->first();
 
         if ($user) {
             // Kemas kini google_id jika belum ada (akaun lama sebelum SSO)
-            if (!$user->google_id) {
+            if (! $user->google_id) {
                 $user->update(['google_id' => $googleUser->id]);
             }
 
             // Semak akaun aktif
-            if (!$user->aktif) {
+            if (! $user->aktif) {
                 // Bezakan: belum pernah login = menunggu kelulusan, pernah login = dinyahaktifkan
                 $msg = is_null($user->last_login_at)
                     ? 'Akaun Google anda sedang menunggu kelulusan pentadbir BPTM. Sila hubungi pentadbir untuk mengaktifkan akaun.'
@@ -94,7 +96,7 @@ class AuthController extends Controller
 
                 AuditLogger::catat('percubaan_akaun_nyahaktif', null, [
                     'email_dicuba' => $googleUser->email,
-                    'user_agent'   => substr($request->userAgent() ?? '', 0, 200),
+                    'user_agent' => substr($request->userAgent() ?? '', 0, 200),
                 ], "Percubaan SSO akaun tidak aktif — {$googleUser->email}");
 
                 return redirect()->route('login')->with('error', $msg);
@@ -102,30 +104,30 @@ class AuthController extends Controller
         } else {
             // Pengguna baharu — cipta akaun dengan aktif=false (menunggu kelulusan pentadbir)
             $user = User::create([
-                'name'      => $googleUser->name,
-                'email'     => $googleUser->email,
+                'name' => $googleUser->name,
+                'email' => $googleUser->email,
                 'google_id' => $googleUser->id,
-                'password'  => Hash::make(Str::random(32)),
-                'peranan'   => PerananPengguna::Staf->value,
-                'aktif'     => false,
+                'password' => Hash::make(Str::random(32)),
+                'peranan' => PerananPengguna::Staf->value,
+                'aktif' => false,
             ]);
 
             AuditLogger::catat('pendaftaran_sso_baharu', null, [
-                'email'      => $googleUser->email,
-                'name'       => $googleUser->name,
+                'email' => $googleUser->email,
+                'name' => $googleUser->name,
                 'user_agent' => substr($request->userAgent() ?? '', 0, 200),
             ], "Pendaftaran SSO baharu menunggu kelulusan — {$googleUser->email}");
 
             // Hantar notifikasi kepada pentadbir
             try {
-                $emelAdmin = \App\Models\Tetapan::get('emel_notifikasi');
+                $emelAdmin = Tetapan::get('emel_notifikasi');
                 if ($emelAdmin) {
                     Mail::to($emelAdmin)->send(
-                        new \App\Mail\NotifikasiPendaftaranSSO($googleUser->name, $googleUser->email)
+                        new NotifikasiPendaftaranSSO($googleUser->name, $googleUser->email)
                     );
                 }
             } catch (\Throwable $e) {
-                Log::warning('Gagal hantar notifikasi pendaftaran SSO: ' . $e->getMessage());
+                Log::warning('Gagal hantar notifikasi pendaftaran SSO: '.$e->getMessage());
             }
 
             return redirect()->route('login')
@@ -140,7 +142,7 @@ class AuthController extends Controller
 
         AuditLogger::catat('log_masuk_google', null, [
             'user_agent' => substr($request->userAgent() ?? '', 0, 200),
-        ], $user->name . ' log masuk melalui Google SSO');
+        ], $user->name.' log masuk melalui Google SSO');
 
         return redirect()->route('dashboard');
     }
@@ -150,17 +152,18 @@ class AuthController extends Controller
         if (Auth::check()) {
             return redirect()->route('dashboard');
         }
+
         return view('auth.login');
     }
 
     public function login(Request $request)
     {
         $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required',
         ], [
-            'email.required'    => 'Sila masukkan emel.',
-            'email.email'       => 'Format emel tidak sah.',
+            'email.required' => 'Sila masukkan emel.',
+            'email.email' => 'Format emel tidak sah.',
             'password.required' => 'Sila masukkan kata laluan.',
         ]);
 
@@ -169,7 +172,8 @@ class AuthController extends Controller
 
         if (RateLimiter::tooManyAttempts($throttleKey, $this->maxAttempts)) {
             $seconds = RateLimiter::availableIn($throttleKey);
-            $minit   = ceil($seconds / 60);
+            $minit = ceil($seconds / 60);
+
             return back()->withErrors([
                 'email' => "Terlalu banyak percubaan log masuk. Cuba lagi dalam {$minit} minit.",
             ])->onlyInput('email');
@@ -177,17 +181,17 @@ class AuthController extends Controller
         // ─────────────────────────────────────────────────────────────
 
         $credentials = $request->only('email', 'password');
-        $remember    = $request->boolean('remember');
+        $remember = $request->boolean('remember');
 
         if (Auth::attempt($credentials, $remember)) {
-            if (!Auth::user()->aktif) {
+            if (! Auth::user()->aktif) {
                 Auth::logout();
                 RateLimiter::hit($throttleKey, $this->decayMinutes * 60);
 
                 // Audit: percubaan log masuk akaun dinyahaktifkan
                 AuditLogger::catat('percubaan_akaun_nyahaktif', null, [
                     'email_dicuba' => $request->email,
-                    'user_agent'   => substr($request->userAgent() ?? '', 0, 200),
+                    'user_agent' => substr($request->userAgent() ?? '', 0, 200),
                 ], "Percubaan log masuk akaun dinyahaktif — {$request->email}");
 
                 return back()->withErrors([
@@ -210,18 +214,18 @@ class AuthController extends Controller
 
                 // Jana dan hantar OTP (kegagalan hantar tidak halang navigasi ke halaman OTP)
                 try {
-                    $otp    = DuaFaktorController::janaOtp();
+                    $otp = DuaFaktorController::janaOtp();
                     $expiry = now()->addMinutes(10);
-                    Cache::put('2fa_otp_' . $user->id, [
+                    Cache::put('2fa_otp_'.$user->id, [
                         // OTP disimpan sebagai HMAC-SHA256 — bukan plain text
                         // Elak pendedahan nilai OTP jika cache dibaca secara tidak sah
-                        'kod_hash'   => hash_hmac('sha256', $otp, config('app.key')),
-                        'percubaan'  => 0,
+                        'kod_hash' => hash_hmac('sha256', $otp, config('app.key')),
+                        'percubaan' => 0,
                         'expires_at' => $expiry->timestamp, // expiry eksplisit — TTL tidak akan dilanjut pada gagal
                     ], $expiry);
                     Mail::to($user->email)->send(new KodOTP($user->name, $otp));
                 } catch (\Throwable $e) {
-                    Log::warning('2FA OTP hantar gagal: ' . $e->getMessage());
+                    Log::warning('2FA OTP hantar gagal: '.$e->getMessage());
                 }
 
                 return redirect()->route('dua-faktor.show');
@@ -236,7 +240,7 @@ class AuthController extends Controller
             // Audit: log masuk berjaya
             AuditLogger::catat('log_masuk_berjaya', null, [
                 'user_agent' => substr($request->userAgent() ?? '', 0, 200),
-            ], Auth::user()->name . ' log masuk ke sistem');
+            ], Auth::user()->name.' log masuk ke sistem');
 
             return redirect()->intended(route('dashboard'));
         }
@@ -247,7 +251,7 @@ class AuthController extends Controller
         // Audit: log masuk gagal
         AuditLogger::catat('log_masuk_gagal', null, [
             'email_dicuba' => $request->email,
-            'user_agent'   => substr($request->userAgent() ?? '', 0, 200),
+            'user_agent' => substr($request->userAgent() ?? '', 0, 200),
         ], "Percubaan log masuk gagal — {$request->email}");
 
         // Semak ancaman: banyak kegagalan dari IP sama
@@ -267,11 +271,12 @@ class AuthController extends Controller
         // Audit: log keluar (sebelum Auth::logout() supaya pengguna masih ada)
         AuditLogger::catat('log_keluar', null, [
             'user_agent' => substr($request->userAgent() ?? '', 0, 200),
-        ], Auth::user()?->name . ' log keluar dari sistem');
+        ], Auth::user()?->name.' log keluar dari sistem');
 
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect()->route('login');
     }
 
@@ -282,8 +287,8 @@ class AuthController extends Controller
      */
     private function semakAncaman(Request $request): void
     {
-        $ip       = $request->ip();
-        $cacheKey = 'amaran_keselamatan_' . md5($ip);
+        $ip = $request->ip();
+        $cacheKey = 'amaran_keselamatan_'.md5($ip);
 
         // Jika dah hantar amaran dalam 1 jam untuk IP ini, langkau
         if (Cache::has($cacheKey)) {
@@ -313,9 +318,9 @@ class AuthController extends Controller
                         ->all();
 
                     Mail::to($emelAdmin)->send(new AmaranKeselamatan(
-                        ip:          $ip,
-                        kiraan:      $kiraan,
-                        emelDicuba:  $emelDicuba,
+                        ip: $ip,
+                        kiraan: $kiraan,
+                        emelDicuba: $emelDicuba,
                     ));
 
                     // Jangan hantar lagi dalam 1 jam untuk IP ini
@@ -323,7 +328,7 @@ class AuthController extends Controller
                 }
             }
         } catch (\Throwable $e) {
-            Log::warning('semakAncaman: ' . $e->getMessage());
+            Log::warning('semakAncaman: '.$e->getMessage());
         }
     }
 
@@ -333,7 +338,7 @@ class AuthController extends Controller
     protected function throttleKey(Request $request): string
     {
         return Str::transliterate(
-            Str::lower($request->input('email')) . '|' . $request->ip()
+            Str::lower($request->input('email')).'|'.$request->ip()
         );
     }
 }

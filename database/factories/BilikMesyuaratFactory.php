@@ -12,12 +12,12 @@ class BilikMesyuaratFactory extends Factory
     public function definition(): array
     {
         return [
-            'nama'     => 'Bilik Mesyuarat ' . $this->faker->unique()->word(),
+            'nama' => 'Bilik Mesyuarat '.$this->faker->unique()->word(),
             'kapasiti' => $this->faker->numberBetween(10, 50),
-            'lokasi'   => 'Tingkat ' . $this->faker->numberBetween(1, 10),
-            'status'   => 'aktif',
+            'lokasi' => 'Tingkat '.$this->faker->numberBetween(1, 10),
+            'status' => 'aktif',
             'kemudahan' => ['Papan Putih', 'Sistem Audio'],
-            'gambar'   => null,
+            'gambar' => null,
         ];
     }
 

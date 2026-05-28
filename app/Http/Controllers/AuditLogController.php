@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Http\Controllers;
 
@@ -45,9 +45,9 @@ class AuditLogController extends Controller
         }
         if ($request->filled('carian')) {
             $query->where(function ($q) use ($request) {
-                $q->where('penerangan', 'like', '%' . $request->carian . '%')
-                  ->orWhere('tindakan', 'like', '%' . $request->carian . '%')
-                  ->orWhere('ip_address', 'like', '%' . $request->carian . '%');
+                $q->where('penerangan', 'like', '%'.$request->carian.'%')
+                    ->orWhere('tindakan', 'like', '%'.$request->carian.'%')
+                    ->orWhere('ip_address', 'like', '%'.$request->carian.'%');
             });
         }
 
@@ -68,9 +68,9 @@ class AuditLogController extends Controller
 
         // Kiraan peristiwa keselamatan dalam 24 jam — untuk banner amaran
         $amalanBahaya = ActivityLog::whereIn('tindakan', [
-                'log_masuk_gagal',
-                'percubaan_akaun_nyahaktif',
-            ])
+            'log_masuk_gagal',
+            'percubaan_akaun_nyahaktif',
+        ])
             ->where('dicipta_pada', '>=', now()->subHours(24))
             ->count();
 
@@ -107,7 +107,7 @@ class AuditLogController extends Controller
 
         AuditLogger::catat('eksport_audit_excel', null, array_filter($filters));
 
-        $namafail = 'log-audit-' . now()->format('Ymd-His') . '.xlsx';
+        $namafail = 'log-audit-'.now()->format('Ymd-His').'.xlsx';
 
         return Excel::download(new AuditLogExport($filters), $namafail);
     }

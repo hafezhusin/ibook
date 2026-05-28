@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Http\Controllers;
 
@@ -28,9 +28,9 @@ class CarianController extends Controller
 
         if (strlen($q) < 2) {
             return view('carian.index', [
-                'q'        => $q,
+                'q' => $q,
                 'tempahan' => collect(),
-                'bilik'    => collect(),
+                'bilik' => collect(),
                 'pengguna' => collect(),
             ]);
         }
@@ -41,9 +41,9 @@ class CarianController extends Controller
         $queryTempahan = Tempahan::with(['bilik', 'pengguna'])
             ->where(function ($query) use ($q) {
                 $query->where('nama_mesyuarat', 'like', "%{$q}%")
-                      ->orWhere('nama_pengerusi', 'like', "%{$q}%")
-                      ->orWhere('tujuan', 'like', "%{$q}%")
-                      ->orWhereHas('bilik', fn($b) => $b->where('nama', 'like', "%{$q}%"));
+                    ->orWhere('nama_pengerusi', 'like', "%{$q}%")
+                    ->orWhere('tujuan', 'like', "%{$q}%")
+                    ->orWhereHas('bilik', fn ($b) => $b->where('nama', 'like', "%{$q}%"));
             });
 
         if ($user->isStaf()) {

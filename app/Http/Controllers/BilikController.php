@@ -18,8 +18,8 @@ use App\Http\Requests\StoreBilikRequest;
 use App\Http\Requests\UpdateBilikRequest;
 use App\Models\BilikMesyuarat;
 use App\Services\AuditLogger;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class BilikController extends Controller
 {
@@ -28,6 +28,7 @@ class BilikController extends Controller
     {
         $bilik = BilikMesyuarat::where('status', 'aktif')
             ->get(['id', 'nama', 'kapasiti', 'kemudahan', 'lokasi']);
+
         return response()->json($bilik);
     }
 
@@ -41,8 +42,8 @@ class BilikController extends Controller
         $bilik = BilikMesyuarat::withCount([
             'tempahan as tempahan_bulan_ini' => function ($q) use ($bulan, $tahun) {
                 $q->whereMonth('tarikh', $bulan)
-                  ->whereYear('tarikh', $tahun)
-                  ->where('status', 'diluluskan');
+                    ->whereYear('tarikh', $tahun)
+                    ->where('status', 'diluluskan');
             },
         ])->get();
 
@@ -109,7 +110,7 @@ class BilikController extends Controller
     private function simpanGambarBilik($file, ?string $lamaGambar = null): string
     {
         $dir = public_path('uploads/bilik');
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
 
@@ -122,15 +123,15 @@ class BilikController extends Controller
         }
 
         // Buat nama fail unik menggunakan ULID (lebih selamat dari uniqid)
-        $namaFail   = \Illuminate\Support\Str::ulid() . '.jpg';
-        $targetPath = $dir . '/' . $namaFail;
+        $namaFail = Str::ulid().'.jpg';
+        $targetPath = $dir.'/'.$namaFail;
 
         // Load imej sumber mengikut MIME
         $mime = $file->getMimeType();
-        $src  = match (true) {
-            str_contains($mime, 'png')  => imagecreatefrompng($file->getRealPath()),
+        $src = match (true) {
+            str_contains($mime, 'png') => imagecreatefrompng($file->getRealPath()),
             str_contains($mime, 'webp') => imagecreatefromwebp($file->getRealPath()),
-            default                     => imagecreatefromjpeg($file->getRealPath()),
+            default => imagecreatefromjpeg($file->getRealPath()),
         };
 
         $srcW = imagesx($src);
@@ -140,11 +141,11 @@ class BilikController extends Controller
         $targetH = 352;
 
         // Cover crop: skala supaya gambar memenuhi sasaran, kemudian potong tengah
-        $scale    = max($targetW / $srcW, $targetH / $srcH);
-        $cropW    = (int) ceil($targetW / $scale);
-        $cropH    = (int) ceil($targetH / $scale);
-        $offsetX  = (int) floor(($srcW - $cropW) / 2);
-        $offsetY  = (int) floor(($srcH - $cropH) / 2);
+        $scale = max($targetW / $srcW, $targetH / $srcH);
+        $cropW = (int) ceil($targetW / $scale);
+        $cropH = (int) ceil($targetH / $scale);
+        $offsetX = (int) floor(($srcW - $cropW) / 2);
+        $offsetY = (int) floor(($srcH - $cropH) / 2);
 
         $dst = imagecreatetruecolor($targetW, $targetH);
         // Latar putih (untuk PNG lutsinar)
@@ -163,7 +164,7 @@ class BilikController extends Controller
         imagedestroy($src);
         imagedestroy($dst);
 
-        return '/uploads/bilik/' . $namaFail;
+        return '/uploads/bilik/'.$namaFail;
     }
 
     public function destroy(BilikMesyuarat $bilik)
@@ -171,7 +172,7 @@ class BilikController extends Controller
         // Blok padam jika ada SEBARANG rekod tempahan (aktif ATAU sejarah)
         if ($bilik->tempahan()->exists()) {
             return back()->with('error',
-                'Bilik tidak boleh dipadam kerana mempunyai rekod tempahan. ' .
+                'Bilik tidak boleh dipadam kerana mempunyai rekod tempahan. '.
                 'Sila nyahaktifkan bilik ini sebagai gantinya.'
             );
         }
@@ -186,6 +187,7 @@ class BilikController extends Controller
 
         AuditLogger::catat('padam_bilik', null, ['nama' => $bilik->nama, 'id' => $bilik->id]);
         $bilik->delete(); // SoftDelete — rekod kekal dalam DB
+
         return redirect()->route('bilik.index')
             ->with('success', 'Bilik mesyuarat berjaya dipadam.');
     }

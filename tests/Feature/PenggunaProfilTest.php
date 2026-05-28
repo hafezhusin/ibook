@@ -47,19 +47,19 @@ class PenggunaProfilTest extends TestCase
         $pentadbir = User::factory()->pentadbir()->create();
 
         $response = $this->actingAs($pentadbir)->post('/pengguna', [
-            'name'     => 'Pekerja Baharu',
-            'email'    => 'baharu@anm.gov.my',
-            'jabatan'  => 'Unit Aplikasi Gunasama',
-            'peranan'  => User::PERANAN_STAF,
+            'name' => 'Pekerja Baharu',
+            'email' => 'baharu@anm.gov.my',
+            'jabatan' => 'Unit Aplikasi Gunasama',
+            'peranan' => User::PERANAN_STAF,
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
         ]);
 
         $response->assertRedirect('/pengguna');
         $this->assertDatabaseHas('users', [
-            'email'   => 'baharu@anm.gov.my',
+            'email' => 'baharu@anm.gov.my',
             'peranan' => User::PERANAN_STAF,
-            'aktif'   => true,
+            'aktif' => true,
         ]);
     }
 
@@ -67,7 +67,7 @@ class PenggunaProfilTest extends TestCase
     public function pentadbir_boleh_toggle_aktif_pengguna(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
-        $staf      = User::factory()->staf()->create(['aktif' => true]);
+        $staf = User::factory()->staf()->create(['aktif' => true]);
 
         // toggleAktif() mensyaratkan 'sebab' apabila pengguna sedang aktif.
         $response = $this->actingAs($pentadbir)->post("/pengguna/{$staf->id}/toggle-aktif", [
@@ -76,7 +76,7 @@ class PenggunaProfilTest extends TestCase
 
         $response->assertRedirect();
         $this->assertDatabaseHas('users', [
-            'id'    => $staf->id,
+            'id' => $staf->id,
             'aktif' => false, // dinyahaktifkan
         ]);
     }
@@ -85,18 +85,18 @@ class PenggunaProfilTest extends TestCase
     public function pentadbir_boleh_kemaskini_maklumat_pengguna(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
-        $staf      = User::factory()->staf()->create(['jabatan' => 'Unit Lama']);
+        $staf = User::factory()->staf()->create(['jabatan' => 'Unit Lama']);
 
         $response = $this->actingAs($pentadbir)->put("/pengguna/{$staf->id}", [
-            'name'    => $staf->name,
-            'email'   => $staf->email,
+            'name' => $staf->name,
+            'email' => $staf->email,
             'jabatan' => 'Unit Baharu',
             'peranan' => User::PERANAN_STAF,
         ]);
 
         $response->assertRedirect('/pengguna');
         $this->assertDatabaseHas('users', [
-            'id'      => $staf->id,
+            'id' => $staf->id,
             'jabatan' => 'Unit Baharu',
         ]);
     }
@@ -120,7 +120,7 @@ class PenggunaProfilTest extends TestCase
         // Staf tidak boleh kemas kini jabatan sendiri — controller buang medan itu.
         // Hanya nama yang boleh dikemaskini untuk pengguna bukan-SSO.
         $staf = User::factory()->staf()->create([
-            'jabatan'   => 'Unit Lama',
+            'jabatan' => 'Unit Lama',
             'google_id' => null,
         ]);
 
@@ -130,7 +130,7 @@ class PenggunaProfilTest extends TestCase
 
         $response->assertRedirect(); // back() — redirect ke mana-mana URL sebelumnya
         $this->assertDatabaseHas('users', [
-            'id'   => $staf->id,
+            'id' => $staf->id,
             'name' => 'Nama Dikemaskini',
         ]);
     }

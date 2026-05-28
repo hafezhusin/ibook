@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Exports;
 
@@ -25,13 +25,7 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class AuditLogExport implements
-    FromCollection,
-    WithHeadings,
-    WithMapping,
-    WithStyles,
-    WithTitle,
-    WithColumnWidths
+class AuditLogExport implements FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     private int $bil = 0;
 
@@ -43,23 +37,23 @@ class AuditLogExport implements
             ->orderByDesc('dicipta_pada')
             ->orderByDesc('id');
 
-        if (!empty($this->filters['tindakan'])) {
+        if (! empty($this->filters['tindakan'])) {
             $query->where('tindakan', $this->filters['tindakan']);
         }
-        if (!empty($this->filters['pengguna_id'])) {
+        if (! empty($this->filters['pengguna_id'])) {
             $query->where('pengguna_id', $this->filters['pengguna_id']);
         }
-        if (!empty($this->filters['tarikh_dari'])) {
+        if (! empty($this->filters['tarikh_dari'])) {
             $query->whereDate('dicipta_pada', '>=', $this->filters['tarikh_dari']);
         }
-        if (!empty($this->filters['tarikh_hingga'])) {
+        if (! empty($this->filters['tarikh_hingga'])) {
             $query->whereDate('dicipta_pada', '<=', $this->filters['tarikh_hingga']);
         }
-        if (!empty($this->filters['carian'])) {
+        if (! empty($this->filters['carian'])) {
             $query->where(function ($q) {
-                $q->where('penerangan', 'like', '%' . $this->filters['carian'] . '%')
-                  ->orWhere('tindakan',  'like', '%' . $this->filters['carian'] . '%')
-                  ->orWhere('ip_address','like', '%' . $this->filters['carian'] . '%');
+                $q->where('penerangan', 'like', '%'.$this->filters['carian'].'%')
+                    ->orWhere('tindakan', 'like', '%'.$this->filters['carian'].'%')
+                    ->orWhere('ip_address', 'like', '%'.$this->filters['carian'].'%');
             });
         }
 
@@ -93,8 +87,8 @@ class AuditLogExport implements
             $log->tindakan,
             $log->penerangan,
             $log->model_jenis ?? '-',
-            $log->model_id    ?? '-',
-            $log->ip_address  ?? '-',
+            $log->model_id ?? '-',
+            $log->ip_address ?? '-',
         ];
     }
 
@@ -103,11 +97,11 @@ class AuditLogExport implements
         return [
             1 => [
                 'font' => [
-                    'bold'  => true,
+                    'bold' => true,
                     'color' => ['argb' => 'FFFFFFFF'],
                 ],
                 'fill' => [
-                    'fillType'   => Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['argb' => 'FF1A1A2E'],
                 ],
             ],

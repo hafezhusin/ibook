@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Http\Middleware;
 
@@ -24,10 +24,11 @@ class Authenticate
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Tidak dibenarkan.'], 401);
             }
+
             return redirect()->route('login')->with('error', 'Sila log masuk untuk meneruskan.');
         }
 
@@ -38,6 +39,7 @@ class Authenticate
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+
             return redirect()->route('login')
                 ->with('error', 'Akaun anda telah dikemaskini oleh pentadbir. Sila log masuk semula.');
         }

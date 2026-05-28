@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -11,18 +12,17 @@
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
 
-
 namespace App\Enums;
 
 enum SesiTempahan: string
 {
-    case Pagi   = 'pagi';
+    case Pagi = 'pagi';
     case Petang = 'petang';
 
     public function label(): string
     {
         return match ($this) {
-            self::Pagi   => 'Sesi Pagi (9:00 AM – 1:00 PM)',
+            self::Pagi => 'Sesi Pagi (9:00 AM – 1:00 PM)',
             self::Petang => 'Sesi Petang (2:00 PM – 6:00 PM)',
         };
     }
@@ -30,7 +30,7 @@ enum SesiTempahan: string
     public function masaMula(): string
     {
         return match ($this) {
-            self::Pagi   => config('ibook.sesi.pagi.mula', '09:00'),
+            self::Pagi => config('ibook.sesi.pagi.mula', '09:00'),
             self::Petang => config('ibook.sesi.petang.mula', '14:00'),
         };
     }
@@ -38,7 +38,7 @@ enum SesiTempahan: string
     public function masaTamat(): string
     {
         return match ($this) {
-            self::Pagi   => config('ibook.sesi.pagi.tamat', '13:00'),
+            self::Pagi => config('ibook.sesi.pagi.tamat', '13:00'),
             self::Petang => config('ibook.sesi.petang.tamat', '18:00'),
         };
     }

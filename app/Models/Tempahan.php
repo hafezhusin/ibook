@@ -14,8 +14,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
 
@@ -25,10 +25,10 @@ use Illuminate\Support\Str;
  * @property-read User|null           $pelulus         Pegawai yang meluluskan
  * @property-read User|null           $pengubah        Pegawai yang mengemaskini
  * @property-read TempahanBerulang|null $kumpulanBerulang Kumpulan tempahan berulang (jika ada)
- * @property      string              $no_rujukan      Accessor: TMP-{tahun}-{ulid_suffix}
- * @property      string              $masa_label      Accessor: "HH:MM - HH:MM"
- * @property      string              $status_badge    Accessor: HTML badge
- * @property      string              $kategori_label  Accessor: label mesyuarat/bengkel/dll
+ * @property string $no_rujukan Accessor: TMP-{tahun}-{ulid_suffix}
+ * @property string $masa_label Accessor: "HH:MM - HH:MM"
+ * @property string $status_badge Accessor: HTML badge
+ * @property string $kategori_label Accessor: label mesyuarat/bengkel/dll
  */
 class Tempahan extends Model
 {
@@ -37,22 +37,24 @@ class Tempahan extends Model
     protected $table = 'tempahan';
 
     const STATUS_DILULUSKAN = 'diluluskan';
+
     const STATUS_DITOLAK = 'ditolak';
 
     const SESI_PAGI = 'pagi';
+
     const SESI_PETANG = 'petang';
 
     const MASA_SESI = [
-        'pagi'   => ['mula' => '09:00', 'tamat' => '13:00', 'label' => 'SESI PAGI (9:00 AM - 1:00 PM)'],
+        'pagi' => ['mula' => '09:00', 'tamat' => '13:00', 'label' => 'SESI PAGI (9:00 AM - 1:00 PM)'],
         'petang' => ['mula' => '14:00', 'tamat' => '18:00', 'label' => 'SESI PETANG (2:00 PM - 6:00 PM)'],
     ];
 
     const KATEGORI = [
-        'mesyuarat'    => 'Mesyuarat',
+        'mesyuarat' => 'Mesyuarat',
         'perbincangan' => 'Perbincangan',
-        'taklimat'     => 'Taklimat',
-        'bengkel'      => 'Bengkel/Workshop',
-        'latihan'      => 'Latihan/Kursus',
+        'taklimat' => 'Taklimat',
+        'bengkel' => 'Bengkel/Workshop',
+        'latihan' => 'Latihan/Kursus',
     ];
 
     /**
@@ -99,9 +101,9 @@ class Tempahan extends Model
     ];
 
     protected $casts = [
-        'tarikh'          => 'date',
+        'tarikh' => 'date',
         'diluluskan_pada' => 'datetime',
-        'dikemaskini_pada'=> 'datetime',
+        'dikemaskini_pada' => 'datetime',
     ];
 
     /**
@@ -147,8 +149,12 @@ class Tempahan extends Model
      */
     public function bolehDiEditOleh(User $user): bool
     {
-        if (!$user->isStaf()) return true;
-        if ($this->user_id === $user->id) return true;
+        if (! $user->isStaf()) {
+            return true;
+        }
+        if ($this->user_id === $user->id) {
+            return true;
+        }
 
         // Rakan seunit — semak jabatan pemohon asal
         return $user->jabatan &&
@@ -166,17 +172,19 @@ class Tempahan extends Model
     {
         // tarikh/created_at boleh null sebelum save — nullsafe dan coalesce adalah pertahanan defensif.
         // @phpstan-ignore-next-line nullsafe.neverNull, nullCoalesce.expr
-        $year   = $this->tarikh?->year ?? $this->created_at?->year ?? now()->year;
+        $year = $this->tarikh?->year ?? $this->created_at?->year ?? now()->year;
         $suffix = $this->ulid
             ? strtoupper(substr($this->ulid, -8))
-            : strtoupper(substr(hash('sha256', $this->id . 'ibook_ref'), 0, 8));
-        return 'TMP-' . $year . '-' . $suffix;
+            : strtoupper(substr(hash('sha256', $this->id.'ibook_ref'), 0, 8));
+
+        return 'TMP-'.$year.'-'.$suffix;
     }
 
     public function getMasaLabelAttribute(): string
     {
         $mula = substr($this->masa_mula, 0, 5);
         $tamat = substr($this->masa_tamat, 0, 5);
+
         return "$mula - $tamat";
     }
 
@@ -187,6 +195,7 @@ class Tempahan extends Model
         if ($this->status === self::STATUS_DILULUSKAN) {
             return '<span class="badge-lulus">Diluluskan</span>';
         }
+
         return '<span class="badge-tolak">Ditolak</span>';
     }
 

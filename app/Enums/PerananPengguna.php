@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -11,21 +12,20 @@
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
 
-
 namespace App\Enums;
 
 enum PerananPengguna: string
 {
     case PentadbirSistem = 'pentadbir_sistem';
-    case UrusSetia       = 'urus_setia';
-    case Staf            = 'staf';
+    case UrusSetia = 'urus_setia';
+    case Staf = 'staf';
 
     public function label(): string
     {
         return match ($this) {
             self::PentadbirSistem => 'Pentadbir Sistem',
-            self::UrusSetia       => 'Urus Setia',
-            self::Staf            => 'Staf',
+            self::UrusSetia => 'Urus Setia',
+            self::Staf => 'Staf',
         };
     }
 
@@ -33,8 +33,8 @@ enum PerananPengguna: string
     {
         return match ($this) {
             self::PentadbirSistem => 'bg-red-100 text-red-700',
-            self::UrusSetia       => 'bg-amber-100 text-amber-700',
-            self::Staf            => 'bg-blue-100 text-blue-700',
+            self::UrusSetia => 'bg-amber-100 text-amber-700',
+            self::Staf => 'bg-blue-100 text-blue-700',
         };
     }
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -11,7 +12,6 @@
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
 
-
 namespace App\Console\Commands;
 
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -19,7 +19,8 @@ use Illuminate\Console\Command;
 
 class JanaManualPengguna extends Command
 {
-    protected $signature   = 'manual:jana';
+    protected $signature = 'manual:jana';
+
     protected $description = 'Jana Manual Pengguna Staf PDF';
 
     public function handle(): int
@@ -35,9 +36,10 @@ class JanaManualPengguna extends Command
         ];
 
         foreach ($screenshots as $file) {
-            if (!file_exists(public_path("docs/screenshots/{$file}"))) {
+            if (! file_exists(public_path("docs/screenshots/{$file}"))) {
                 $this->error("Screenshot tidak dijumpai: {$file}");
                 $this->line('Jalankan: node capture-manual-screenshots.mjs');
+
                 return self::FAILURE;
             }
         }
@@ -45,15 +47,15 @@ class JanaManualPengguna extends Command
         $pdf = Pdf::loadView('manual.pengguna-staf')
             ->setPaper('a4', 'portrait')
             ->setOption([
-                'defaultFont'          => 'DejaVu Sans',
-                'isRemoteEnabled'      => false,
+                'defaultFont' => 'DejaVu Sans',
+                'isRemoteEnabled' => false,
                 'isHtml5ParserEnabled' => true,
-                'chroot'               => public_path(),
-                'dpi'                  => 96,
+                'chroot' => public_path(),
+                'dpi' => 96,
             ]);
 
         $output = $pdf->output();
-        $dest   = public_path('docs/Manual_Pengguna_Staf_iBook2.pdf');
+        $dest = public_path('docs/Manual_Pengguna_Staf_iBook2.pdf');
 
         file_put_contents($dest, $output);
 

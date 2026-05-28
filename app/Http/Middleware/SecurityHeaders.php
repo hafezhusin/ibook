@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Http\Middleware;
 
@@ -44,10 +44,10 @@ class SecurityHeaders
         // Content Security Policy
         // connect-src include http: & https: untuk sokong fetch API (awam/bilik, awam/events)
         // pada apa-apa port (localhost:8000 atau domain sebenar)
-        $host      = $request->getHost();
-        $port      = $request->getPort();
-        $scheme    = $request->getScheme();
-        $origin    = $scheme . '://' . $host . ($port && !in_array($port, [80, 443]) ? ':' . $port : '');
+        $host = $request->getHost();
+        $port = $request->getPort();
+        $scheme = $request->getScheme();
+        $origin = $scheme.'://'.$host.($port && ! in_array($port, [80, 443]) ? ':'.$port : '');
 
         $nonce = CspNonce::get();
 

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -11,19 +12,18 @@
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
 
-
 namespace App\Enums;
 
 enum StatusTempahan: string
 {
     case Diluluskan = 'diluluskan';
-    case Ditolak    = 'ditolak';
+    case Ditolak = 'ditolak';
 
     public function label(): string
     {
         return match ($this) {
             self::Diluluskan => 'Sah',
-            self::Ditolak    => 'Ditolak',
+            self::Ditolak => 'Ditolak',
         };
     }
 
@@ -31,7 +31,7 @@ enum StatusTempahan: string
     {
         return match ($this) {
             self::Diluluskan => 'bg-green-100 text-green-700',
-            self::Ditolak    => 'bg-red-100 text-red-700',
+            self::Ditolak => 'bg-red-100 text-red-700',
         };
     }
 
@@ -39,7 +39,7 @@ enum StatusTempahan: string
     {
         return match ($this) {
             self::Diluluskan => 'fa-circle-check',
-            self::Ditolak    => 'fa-ban',
+            self::Ditolak => 'fa-ban',
         };
     }
 

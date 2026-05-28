@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Policies;
 
@@ -53,7 +53,10 @@ class TempahanPolicy
      */
     public function update(User $user, Tempahan $tempahan): bool
     {
-        if (!$user->isStaf()) return true;
+        if (! $user->isStaf()) {
+            return true;
+        }
+
         return $tempahan->bolehDiEditOleh($user);
     }
 

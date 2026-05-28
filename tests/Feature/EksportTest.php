@@ -15,7 +15,7 @@ class EksportTest extends TestCase
     public function hanya_pentadbir_boleh_eksport_pdf(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
-        $staf      = User::factory()->staf()->create();
+        $staf = User::factory()->staf()->create();
 
         // Pentadbir — dibenarkan
         $this->actingAs($pentadbir)
@@ -33,7 +33,7 @@ class EksportTest extends TestCase
     public function hanya_pentadbir_boleh_eksport_excel(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
-        $staf      = User::factory()->staf()->create();
+        $staf = User::factory()->staf()->create();
 
         // Pentadbir — dibenarkan
         $this->actingAs($pentadbir)

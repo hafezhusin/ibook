@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -20,8 +21,8 @@ class BackupController extends Controller
 
     public function index()
     {
-        $tetapan   = $this->backup->bacaTetapan();
-        $sejarah   = BackupLog::with('dibuatOleh')->latest()->take(20)->get();
+        $tetapan = $this->backup->bacaTetapan();
+        $sejarah = BackupLog::with('dibuatOleh')->latest()->take(20)->get();
         $tertunggak = $this->backup->adaBackupTertunggak();
         $nextBackup = $this->backup->nextBackupCarbon();
 
@@ -36,25 +37,25 @@ class BackupController extends Controller
             $result = $this->backup->simpan('segera');
 
             BackupLog::create([
-                'nama_fail'  => $result['nama'],
+                'nama_fail' => $result['nama'],
                 'saiz_bytes' => $result['saiz'],
-                'checksum'   => $result['checksum'],
-                'jenis'      => 'segera',
-                'dibuat_oleh'=> auth()->id(),
+                'checksum' => $result['checksum'],
+                'jenis' => 'segera',
+                'dibuat_oleh' => auth()->id(),
             ]);
 
             $this->backup->rekodSelesai();
 
             AuditLogger::catat('backup_database', null, [
-                'jenis'     => 'segera',
+                'jenis' => 'segera',
                 'nama_fail' => $result['nama'],
-                'saiz'      => $result['saiz'],
+                'saiz' => $result['saiz'],
             ]);
 
             return Storage::disk('local')->download($result['path'], $result['nama']);
 
         } catch (\Throwable $e) {
-            return back()->with('error', 'Backup gagal: ' . $e->getMessage());
+            return back()->with('error', 'Backup gagal: '.$e->getMessage());
         }
     }
 
@@ -66,7 +67,7 @@ class BackupController extends Controller
             'jadual' => 'required|in:tiada,mingguan,bulanan',
         ], [
             'jadual.required' => 'Sila pilih jadual backup.',
-            'jadual.in'       => 'Pilihan jadual tidak sah.',
+            'jadual.in' => 'Pilihan jadual tidak sah.',
         ]);
 
         $this->backup->kemaskiniJadual($request->jadual);
@@ -77,8 +78,8 @@ class BackupController extends Controller
 
         $label = match ($request->jadual) {
             'mingguan' => 'Mingguan',
-            'bulanan'  => 'Bulanan',
-            default    => 'Tiada',
+            'bulanan' => 'Bulanan',
+            default => 'Tiada',
         };
 
         return back()->with('success', "Jadual backup berjaya ditetapkan kepada: {$label}.");
@@ -88,7 +89,7 @@ class BackupController extends Controller
 
     public function muatTurun(BackupLog $backup)
     {
-        if (!$this->backup->failWujud($backup->nama_fail)) {
+        if (! $this->backup->failWujud($backup->nama_fail)) {
             return back()->with('error', 'Fail backup tidak dijumpai di pelayan. Mungkin sudah dipadam.');
         }
 

@@ -27,36 +27,36 @@ class TempahanBerulangTest extends TestCase
     private function buatKumpulan(User $pengguna, BilikMesyuarat $bilik, int $bilangan = 3): TempahanBerulang
     {
         $kumpulan = TempahanBerulang::create([
-            'ulid'              => (string) Str::ulid(),
-            'jenis'             => 'bulanan',
-            'setiap_n'          => 1,
+            'ulid' => (string) Str::ulid(),
+            'jenis' => 'bulanan',
+            'setiap_n' => 1,
             'hari_dalam_minggu' => null,
-            'tarikh_mula'       => now()->addMonth()->startOfMonth()->toDateString(),
-            'tarikh_tamat'      => now()->addMonths($bilangan)->startOfMonth()->toDateString(),
-            'sesi'              => ['pagi'],
-            'bilik_id'          => $bilik->id,
-            'user_id'           => $pengguna->id,
-            'nama_mesyuarat'    => 'Mesyuarat Pengurusan Bulanan',
-            'bilangan_peserta'  => 10,
-            'kategori'          => 'mesyuarat',
-            'nama_pengerusi'    => 'Pengarah BPTM',
+            'tarikh_mula' => now()->addMonth()->startOfMonth()->toDateString(),
+            'tarikh_tamat' => now()->addMonths($bilangan)->startOfMonth()->toDateString(),
+            'sesi' => ['pagi'],
+            'bilik_id' => $bilik->id,
+            'user_id' => $pengguna->id,
+            'nama_mesyuarat' => 'Mesyuarat Pengurusan Bulanan',
+            'bilangan_peserta' => 10,
+            'kategori' => 'mesyuarat',
+            'nama_pengerusi' => 'Pengarah BPTM',
         ]);
 
         for ($i = 1; $i <= $bilangan; $i++) {
             Tempahan::create([
-                'ulid'                 => (string) Str::ulid(),
+                'ulid' => (string) Str::ulid(),
                 'tempahan_berulang_id' => $kumpulan->id,
-                'nama_mesyuarat'       => 'Mesyuarat Pengurusan Bulanan',
-                'tarikh'               => now()->addMonths($i)->startOfMonth()->toDateString(),
-                'sesi'                 => 'pagi',
-                'masa_mula'            => '09:00',
-                'masa_tamat'           => '13:00',
-                'bilik_id'             => $bilik->id,
-                'user_id'              => $pengguna->id,
-                'bilangan_peserta'     => 10,
-                'kategori'             => 'mesyuarat',
-                'nama_pengerusi'       => 'Pengarah BPTM',
-                'status'               => Tempahan::STATUS_DILULUSKAN,
+                'nama_mesyuarat' => 'Mesyuarat Pengurusan Bulanan',
+                'tarikh' => now()->addMonths($i)->startOfMonth()->toDateString(),
+                'sesi' => 'pagi',
+                'masa_mula' => '09:00',
+                'masa_tamat' => '13:00',
+                'bilik_id' => $bilik->id,
+                'user_id' => $pengguna->id,
+                'bilangan_peserta' => 10,
+                'kategori' => 'mesyuarat',
+                'nama_pengerusi' => 'Pengarah BPTM',
+                'status' => Tempahan::STATUS_DILULUSKAN,
             ]);
         }
 
@@ -68,23 +68,23 @@ class TempahanBerulangTest extends TestCase
     #[Test]
     public function staf_boleh_buat_tempahan_berulang_bulanan(): void
     {
-        $staf  = User::factory()->staf()->create();
+        $staf = User::factory()->staf()->create();
         $bilik = BilikMesyuarat::factory()->kapasiti(30)->create();
 
         $mulaBulan = now()->addMonth()->startOfMonth();
 
         $response = $this->actingAs($staf)->post('/tempahan-berulang', [
-            'nama_mesyuarat'   => 'Mesyuarat Pengurusan Q3',
-            'bilik_id'         => $bilik->id,
-            'sesi'             => ['pagi'],
+            'nama_mesyuarat' => 'Mesyuarat Pengurusan Q3',
+            'bilik_id' => $bilik->id,
+            'sesi' => ['pagi'],
             'bilangan_peserta' => 20,
-            'kategori'         => 'mesyuarat',
-            'nama_pengerusi'   => 'Pengarah Bahagian',
-            'tujuan'           => 'Semakan prestasi suku tahun',
-            'jenis'            => 'bulanan',
-            'setiap_n'         => 1,
-            'tarikh_mula'      => $mulaBulan->format('Y-m-d'),
-            'tarikh_tamat'     => $mulaBulan->copy()->addMonths(2)->format('Y-m-d'),
+            'kategori' => 'mesyuarat',
+            'nama_pengerusi' => 'Pengarah Bahagian',
+            'tujuan' => 'Semakan prestasi suku tahun',
+            'jenis' => 'bulanan',
+            'setiap_n' => 1,
+            'tarikh_mula' => $mulaBulan->format('Y-m-d'),
+            'tarikh_tamat' => $mulaBulan->copy()->addMonths(2)->format('Y-m-d'),
         ]);
 
         // Redirect ke senarai dengan filter akan_datang
@@ -92,10 +92,10 @@ class TempahanBerulangTest extends TestCase
 
         // Rekod kumpulan wujud
         $this->assertDatabaseHas('tempahan_berulang', [
-            'jenis'           => 'bulanan',
-            'nama_mesyuarat'  => 'Mesyuarat Pengurusan Q3',
-            'user_id'         => $staf->id,
-            'bilik_id'        => $bilik->id,
+            'jenis' => 'bulanan',
+            'nama_mesyuarat' => 'Mesyuarat Pengurusan Q3',
+            'user_id' => $staf->id,
+            'bilik_id' => $bilik->id,
         ]);
 
         // 3 tempahan individu dijana (bulan 1, 2, 3)
@@ -107,24 +107,24 @@ class TempahanBerulangTest extends TestCase
     #[Test]
     public function staf_boleh_buat_tempahan_berulang_mingguan(): void
     {
-        $staf  = User::factory()->staf()->create();
+        $staf = User::factory()->staf()->create();
         $bilik = BilikMesyuarat::factory()->kapasiti(30)->create();
 
         // Cari Isnin akan datang
         $isnin = now()->next('Monday');
 
         $response = $this->actingAs($staf)->post('/tempahan-berulang', [
-            'nama_mesyuarat'    => 'Taklimat Mingguan Unit',
-            'bilik_id'          => $bilik->id,
-            'sesi'              => ['pagi'],
-            'bilangan_peserta'  => 15,
-            'kategori'          => 'taklimat',
-            'nama_pengerusi'    => 'Ketua Unit',
-            'jenis'             => 'mingguan',
-            'setiap_n'          => 1,
+            'nama_mesyuarat' => 'Taklimat Mingguan Unit',
+            'bilik_id' => $bilik->id,
+            'sesi' => ['pagi'],
+            'bilangan_peserta' => 15,
+            'kategori' => 'taklimat',
+            'nama_pengerusi' => 'Ketua Unit',
+            'jenis' => 'mingguan',
+            'setiap_n' => 1,
             'hari_dalam_minggu' => [1], // Isnin = 1
-            'tarikh_mula'       => $isnin->format('Y-m-d'),
-            'tarikh_tamat'      => $isnin->copy()->addWeeks(3)->format('Y-m-d'),
+            'tarikh_mula' => $isnin->format('Y-m-d'),
+            'tarikh_tamat' => $isnin->copy()->addWeeks(3)->format('Y-m-d'),
         ]);
 
         $response->assertRedirect('/tempahan?tarikh_filter=akan_datang');
@@ -138,28 +138,28 @@ class TempahanBerulangTest extends TestCase
     #[Test]
     public function store_gagal_jika_konflik_wujud_pada_slot_berulang(): void
     {
-        $staf  = User::factory()->staf()->create();
+        $staf = User::factory()->staf()->create();
         $bilik = BilikMesyuarat::factory()->kapasiti(30)->create();
-        $mula  = now()->addMonth()->startOfMonth();
+        $mula = now()->addMonth()->startOfMonth();
 
         // Tempah manual pada bulan pertama — ini akan jadi konflik
         Tempahan::factory()->pagi()->create([
             'bilik_id' => $bilik->id,
-            'tarikh'   => $mula->format('Y-m-d'),
-            'status'   => Tempahan::STATUS_DILULUSKAN,
+            'tarikh' => $mula->format('Y-m-d'),
+            'status' => Tempahan::STATUS_DILULUSKAN,
         ]);
 
         $response = $this->actingAs($staf)->post('/tempahan-berulang', [
-            'nama_mesyuarat'   => 'Mesyuarat Konflik Berulang',
-            'bilik_id'         => $bilik->id,
-            'sesi'             => ['pagi'],
+            'nama_mesyuarat' => 'Mesyuarat Konflik Berulang',
+            'bilik_id' => $bilik->id,
+            'sesi' => ['pagi'],
             'bilangan_peserta' => 10,
-            'kategori'         => 'mesyuarat',
-            'nama_pengerusi'   => 'Pengurus',
-            'jenis'            => 'bulanan',
-            'setiap_n'         => 1,
-            'tarikh_mula'      => $mula->format('Y-m-d'),
-            'tarikh_tamat'     => $mula->copy()->addMonths(2)->format('Y-m-d'),
+            'kategori' => 'mesyuarat',
+            'nama_pengerusi' => 'Pengurus',
+            'jenis' => 'bulanan',
+            'setiap_n' => 1,
+            'tarikh_mula' => $mula->format('Y-m-d'),
+            'tarikh_tamat' => $mula->copy()->addMonths(2)->format('Y-m-d'),
         ]);
 
         $response->assertSessionHasErrors('tarikh_mula');
@@ -169,20 +169,20 @@ class TempahanBerulangTest extends TestCase
     #[Test]
     public function store_gagal_jika_tarikh_mula_sudah_lepas(): void
     {
-        $staf  = User::factory()->staf()->create();
+        $staf = User::factory()->staf()->create();
         $bilik = BilikMesyuarat::factory()->kapasiti(20)->create();
 
         $response = $this->actingAs($staf)->post('/tempahan-berulang', [
-            'nama_mesyuarat'   => 'Tempahan Lepas',
-            'bilik_id'         => $bilik->id,
-            'sesi'             => ['pagi'],
+            'nama_mesyuarat' => 'Tempahan Lepas',
+            'bilik_id' => $bilik->id,
+            'sesi' => ['pagi'],
             'bilangan_peserta' => 5,
-            'kategori'         => 'mesyuarat',
-            'nama_pengerusi'   => 'Pengurus',
-            'jenis'            => 'bulanan',
-            'setiap_n'         => 1,
-            'tarikh_mula'      => now()->subMonth()->format('Y-m-d'), // lepas!
-            'tarikh_tamat'     => now()->addMonth()->format('Y-m-d'),
+            'kategori' => 'mesyuarat',
+            'nama_pengerusi' => 'Pengurus',
+            'jenis' => 'bulanan',
+            'setiap_n' => 1,
+            'tarikh_mula' => now()->subMonth()->format('Y-m-d'), // lepas!
+            'tarikh_tamat' => now()->addMonth()->format('Y-m-d'),
         ]);
 
         $response->assertSessionHasErrors('tarikh_mula');
@@ -195,21 +195,21 @@ class TempahanBerulangTest extends TestCase
     public function pentadbir_boleh_kemaskini_semua_tempahan_dalam_kumpulan(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
-        $bilik     = BilikMesyuarat::factory()->kapasiti(30)->create();
-        $kumpulan  = $this->buatKumpulan($pentadbir, $bilik, 3);
+        $bilik = BilikMesyuarat::factory()->kapasiti(30)->create();
+        $kumpulan = $this->buatKumpulan($pentadbir, $bilik, 3);
 
         $response = $this->actingAs($pentadbir)->put("/tempahan-berulang/{$kumpulan->ulid}", [
-            'nama_mesyuarat'   => 'Mesyuarat Pengurusan DIKEMASKINI',
+            'nama_mesyuarat' => 'Mesyuarat Pengurusan DIKEMASKINI',
             'bilangan_peserta' => 15,
-            'kategori'         => 'mesyuarat',
-            'nama_pengerusi'   => 'Pengarah Baru',
+            'kategori' => 'mesyuarat',
+            'nama_pengerusi' => 'Pengarah Baru',
         ]);
 
         $response->assertRedirect('/tempahan');
 
         // Kumpulan dikemaskini
         $this->assertDatabaseHas('tempahan_berulang', [
-            'id'             => $kumpulan->id,
+            'id' => $kumpulan->id,
             'nama_mesyuarat' => 'Mesyuarat Pengurusan DIKEMASKINI',
         ]);
 
@@ -227,8 +227,8 @@ class TempahanBerulangTest extends TestCase
     public function pentadbir_boleh_padam_satu_tempahan_dalam_kumpulan(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
-        $bilik     = BilikMesyuarat::factory()->kapasiti(20)->create();
-        $kumpulan  = $this->buatKumpulan($pentadbir, $bilik, 3);
+        $bilik = BilikMesyuarat::factory()->kapasiti(20)->create();
+        $kumpulan = $this->buatKumpulan($pentadbir, $bilik, 3);
 
         $satTempahan = $kumpulan->tempahan()->first();
 
@@ -249,8 +249,8 @@ class TempahanBerulangTest extends TestCase
     public function pentadbir_boleh_padam_semua_tempahan_dalam_kumpulan(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
-        $bilik     = BilikMesyuarat::factory()->kapasiti(20)->create();
-        $kumpulan  = $this->buatKumpulan($pentadbir, $bilik, 3);
+        $bilik = BilikMesyuarat::factory()->kapasiti(20)->create();
+        $kumpulan = $this->buatKumpulan($pentadbir, $bilik, 3);
 
         $satTempahan = $kumpulan->tempahan()->first();
 
@@ -269,8 +269,8 @@ class TempahanBerulangTest extends TestCase
     #[Test]
     public function staf_tidak_boleh_padam_tempahan_berulang(): void
     {
-        $staf     = User::factory()->staf()->create();
-        $bilik    = BilikMesyuarat::factory()->kapasiti(20)->create();
+        $staf = User::factory()->staf()->create();
+        $bilik = BilikMesyuarat::factory()->kapasiti(20)->create();
         $kumpulan = $this->buatKumpulan($staf, $bilik, 2);
 
         $satTempahan = $kumpulan->tempahan()->first();
@@ -289,8 +289,8 @@ class TempahanBerulangTest extends TestCase
     public function padam_tempahan_terakhir_dalam_kumpulan_padam_kumpulan_juga(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
-        $bilik     = BilikMesyuarat::factory()->kapasiti(20)->create();
-        $kumpulan  = $this->buatKumpulan($pentadbir, $bilik, 1); // 1 tempahan sahaja
+        $bilik = BilikMesyuarat::factory()->kapasiti(20)->create();
+        $kumpulan = $this->buatKumpulan($pentadbir, $bilik, 1); // 1 tempahan sahaja
 
         $satTempahan = $kumpulan->tempahan()->first();
 

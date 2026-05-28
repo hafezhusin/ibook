@@ -15,12 +15,12 @@ return [
     */
     'sesi' => [
         'pagi' => [
-            'mula'  => '09:00',
+            'mula' => '09:00',
             'tamat' => '13:00',
             'label' => 'SESI PAGI (9:00 AM - 1:00 PM)',
         ],
         'petang' => [
-            'mula'  => '14:00',
+            'mula' => '14:00',
             'tamat' => '18:00',
             'label' => 'SESI PETANG (2:00 PM - 6:00 PM)',
         ],
@@ -32,9 +32,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'cache' => [
-        'dashboard'       => 300,   // 5 minit
+        'dashboard' => 300,   // 5 minit
         'kalendar_events' => 180,   // 3 minit
-        'laporan'         => 600,   // 10 minit
+        'laporan' => 600,   // 10 minit
     ],
 
     /*
@@ -45,7 +45,7 @@ return [
     'paginate' => [
         'tempahan' => 20,
         'pengguna' => 50,
-        'laporan'  => 25,
+        'laporan' => 25,
     ],
 
     /*
@@ -55,8 +55,8 @@ return [
     */
     'had' => [
         'mesyuarat_akan_datang_dashboard' => 10,
-        'carian_global'                   => 15,
-        'laporan_eksport_baris'           => 5000,
+        'carian_global' => 15,
+        'laporan_eksport_baris' => 5000,
     ],
 
     /*
@@ -65,11 +65,11 @@ return [
     |--------------------------------------------------------------------------
     */
     'kategori_mesyuarat' => [
-        'mesyuarat'    => 'Mesyuarat',
+        'mesyuarat' => 'Mesyuarat',
         'perbincangan' => 'Perbincangan',
-        'taklimat'     => 'Taklimat',
-        'bengkel'      => 'Bengkel/Workshop',
-        'latihan'      => 'Latihan/Kursus',
+        'taklimat' => 'Taklimat',
+        'bengkel' => 'Bengkel/Workshop',
+        'latihan' => 'Latihan/Kursus',
     ],
 
     /*
@@ -80,7 +80,7 @@ return [
     'berulang' => [
         'had_kejadian' => 12,   // Maksimum bilangan kejadian per kumpulan
         'had_setiap_n' => 12,   // Maksimum nilai setiap_n (setiap N minggu/bulan)
-        'had_tahun'    => 2,    // Tarikh tamat maksimum dari hari ini (tahun)
+        'had_tahun' => 2,    // Tarikh tamat maksimum dari hari ini (tahun)
     ],
 
     /*

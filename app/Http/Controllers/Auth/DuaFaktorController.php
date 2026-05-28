@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Http\Controllers\Auth;
 
@@ -35,11 +35,11 @@ class DuaFaktorController extends Controller
      */
     public function show(Request $request)
     {
-        if (!session('2fa_user_id')) {
+        if (! session('2fa_user_id')) {
             return redirect()->route('login');
         }
 
-        $user         = User::find(session('2fa_user_id'));
+        $user = User::find(session('2fa_user_id'));
         // @phpstan-ignore-next-line nullsafe.neverNull — find() boleh pulang null jika ID tidak sah
         $emailSembunyi = $user?->masked_email ?? '***@***';
 
@@ -60,47 +60,49 @@ class DuaFaktorController extends Controller
             'kod' => ['required', 'string', 'size:6', 'regex:/^\d{6}$/'],
         ], [
             'kod.required' => 'Sila masukkan kod pengesahan.',
-            'kod.size'     => 'Kod mestilah 6 digit.',
-            'kod.regex'    => 'Kod mestilah 6 digit angka.',
+            'kod.size' => 'Kod mestilah 6 digit.',
+            'kod.regex' => 'Kod mestilah 6 digit angka.',
         ]);
 
         $userId = session('2fa_user_id');
-        if (!$userId) {
+        if (! $userId) {
             return redirect()->route('login')
                 ->withErrors(['email' => 'Sesi telah tamat. Sila log masuk semula.']);
         }
 
-        $cacheKey = '2fa_otp_' . $userId;
-        $cached   = Cache::get($cacheKey);
+        $cacheKey = '2fa_otp_'.$userId;
+        $cached = Cache::get($cacheKey);
 
         // ── Semak cache kosong ATAU expiry eksplisit sudah berlalu ────
         // expires_at disemak secara manual supaya percubaan gagal tidak
         // dapat melanjutkan hayat OTP melalui Cache::put() semula.
-        if (!$cached || now()->timestamp > ($cached['expires_at'] ?? 0)) {
+        if (! $cached || now()->timestamp > ($cached['expires_at'] ?? 0)) {
             Cache::forget($cacheKey);
             session()->forget(['2fa_user_id', '2fa_remember']);
             AuditLogger::catat('2fa_otp_luput', null, [
                 'ip' => $request->ip(),
             ]);
+
             return redirect()->route('login')
                 ->withErrors(['email' => 'Kod pengesahan telah tamat tempoh. Sila log masuk semula.']);
         }
 
         // ── Bandingkan OTP menggunakan hash_equals() — tahan timing attack ──
-        $inputHash  = hash_hmac('sha256', $request->kod, config('app.key'));
+        $inputHash = hash_hmac('sha256', $request->kod, config('app.key'));
         $simpanHash = $cached['kod_hash'] ?? '';
 
-        if (!hash_equals($simpanHash, $inputHash)) {
+        if (! hash_equals($simpanHash, $inputHash)) {
             $cached['percubaan']++;
 
             if ($cached['percubaan'] >= $this->maxPercubaan) {
                 Cache::forget($cacheKey);
                 session()->forget(['2fa_user_id', '2fa_remember']);
                 AuditLogger::catat('2fa_lockout', null, [
-                    'user_id'    => $userId,
-                    'ip'         => $request->ip(),
-                    'percubaan'  => $cached['percubaan'],
+                    'user_id' => $userId,
+                    'ip' => $request->ip(),
+                    'percubaan' => $cached['percubaan'],
                 ]);
+
                 return redirect()->route('login')
                     ->withErrors(['email' => 'Terlalu banyak percubaan. Sila log masuk semula.']);
             }
@@ -111,10 +113,10 @@ class DuaFaktorController extends Controller
 
             $berbaki = $this->maxPercubaan - $cached['percubaan'];
             AuditLogger::catat('2fa_otp_salah', null, [
-                'user_id'   => $userId,
-                'ip'        => $request->ip(),
+                'user_id' => $userId,
+                'ip' => $request->ip(),
                 'percubaan' => $cached['percubaan'],
-                'berbaki'   => $berbaki,
+                'berbaki' => $berbaki,
             ]);
 
             return back()->withErrors([
@@ -133,9 +135,9 @@ class DuaFaktorController extends Controller
         $user->update(['last_login_at' => now()]);
 
         AuditLogger::catat('log_masuk_berjaya', null, [
-            'kaedah'     => '2FA',
+            'kaedah' => '2FA',
             'user_agent' => substr($request->userAgent() ?? '', 0, 200),
-        ], $user->name . ' log masuk ke sistem (2FA)');
+        ], $user->name.' log masuk ke sistem (2FA)');
 
         return redirect()->intended(route('dashboard'));
     }
@@ -147,26 +149,27 @@ class DuaFaktorController extends Controller
     public function hantarSemula(Request $request)
     {
         $userId = session('2fa_user_id');
-        if (!$userId) {
+        if (! $userId) {
             return redirect()->route('login');
         }
 
-        $throttleKey = '2fa_resend_' . $userId;
+        $throttleKey = '2fa_resend_'.$userId;
         if (RateLimiter::tooManyAttempts($throttleKey, 1)) {
             $saat = RateLimiter::availableIn($throttleKey);
+
             return back()->withErrors([
                 'kod' => "Sila tunggu {$saat} saat sebelum meminta kod baru.",
             ]);
         }
 
         try {
-            $user   = User::findOrFail($userId);
-            $otp    = self::janaOtp();
+            $user = User::findOrFail($userId);
+            $otp = self::janaOtp();
             $expiry = now()->addMinutes(10);
 
-            Cache::put('2fa_otp_' . $userId, [
-                'kod_hash'   => hash_hmac('sha256', $otp, config('app.key')),
-                'percubaan'  => 0,
+            Cache::put('2fa_otp_'.$userId, [
+                'kod_hash' => hash_hmac('sha256', $otp, config('app.key')),
+                'percubaan' => 0,
                 'expires_at' => $expiry->timestamp,
             ], $expiry);
 
@@ -175,10 +178,11 @@ class DuaFaktorController extends Controller
 
             AuditLogger::catat('2fa_resend_otp', null, [
                 'user_id' => $userId,
-                'ip'      => $request->ip(),
+                'ip' => $request->ip(),
             ]);
         } catch (\Throwable $e) {
-            Log::warning('DuaFaktorController::hantarSemula gagal: ' . $e->getMessage());
+            Log::warning('DuaFaktorController::hantarSemula gagal: '.$e->getMessage());
+
             return back()->withErrors(['kod' => 'Gagal menghantar kod. Sila cuba lagi.']);
         }
 

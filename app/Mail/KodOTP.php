@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Mail;
 
@@ -26,8 +26,8 @@ class KodOTP extends Mailable
     use Queueable, SerializesModels;
 
     /**
-     * @param string $namaPengguna  Nama penuh pengguna
-     * @param string $otp           Kod OTP 6 digit
+     * @param  string  $namaPengguna  Nama penuh pengguna
+     * @param  string  $otp  Kod OTP 6 digit
      */
     public function __construct(
         public string $namaPengguna,
@@ -37,7 +37,7 @@ class KodOTP extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: '[iBook] Kod Pengesahan: ' . $this->otp,
+            subject: '[iBook] Kod Pengesahan: '.$this->otp,
         );
     }
 

@@ -39,18 +39,18 @@ class BilikTest extends TestCase
         $pentadbir = User::factory()->pentadbir()->create();
 
         $response = $this->actingAs($pentadbir)->post('/bilik-mesyuarat', [
-            'nama'      => 'Bilik Seminar Utama',
-            'kapasiti'  => 40,
-            'lokasi'    => 'Tingkat 3',
+            'nama' => 'Bilik Seminar Utama',
+            'kapasiti' => 40,
+            'lokasi' => 'Tingkat 3',
             'kemudahan' => ['Projektor', 'Papan Putih'],
-            'status'    => 'aktif',
+            'status' => 'aktif',
         ]);
 
         $response->assertRedirect('/bilik-mesyuarat');
         $this->assertDatabaseHas('bilik_mesyuarat', [
-            'nama'     => 'Bilik Seminar Utama',
+            'nama' => 'Bilik Seminar Utama',
             'kapasiti' => 40,
-            'status'   => 'aktif',
+            'status' => 'aktif',
         ]);
     }
 
@@ -60,9 +60,9 @@ class BilikTest extends TestCase
         $pentadbir = User::factory()->pentadbir()->create();
 
         $response = $this->actingAs($pentadbir)->post('/bilik-mesyuarat', [
-            'nama'     => '',
+            'nama' => '',
             'kapasiti' => 20,
-            'status'   => 'aktif',
+            'status' => 'aktif',
         ]);
 
         $response->assertSessionHasErrors('nama');
@@ -73,17 +73,17 @@ class BilikTest extends TestCase
     public function pentadbir_boleh_kemaskini_bilik(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
-        $bilik     = BilikMesyuarat::factory()->create(['nama' => 'Bilik Lama']);
+        $bilik = BilikMesyuarat::factory()->create(['nama' => 'Bilik Lama']);
 
         $response = $this->actingAs($pentadbir)->put("/bilik-mesyuarat/{$bilik->ulid}", [
-            'nama'     => 'Bilik Baharu',
+            'nama' => 'Bilik Baharu',
             'kapasiti' => 25,
-            'status'   => 'aktif',
+            'status' => 'aktif',
         ]);
 
         $response->assertRedirect('/bilik-mesyuarat');
         $this->assertDatabaseHas('bilik_mesyuarat', [
-            'id'   => $bilik->id,
+            'id' => $bilik->id,
             'nama' => 'Bilik Baharu',
         ]);
     }
@@ -92,7 +92,7 @@ class BilikTest extends TestCase
     public function pentadbir_boleh_padam_bilik_tanpa_tempahan(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
-        $bilik     = BilikMesyuarat::factory()->create();
+        $bilik = BilikMesyuarat::factory()->create();
 
         $response = $this->actingAs($pentadbir)->delete("/bilik-mesyuarat/{$bilik->ulid}");
 
@@ -104,12 +104,12 @@ class BilikTest extends TestCase
     public function padam_bilik_disekat_jika_ada_rekod_tempahan(): void
     {
         $pentadbir = User::factory()->pentadbir()->create();
-        $bilik     = BilikMesyuarat::factory()->create();
+        $bilik = BilikMesyuarat::factory()->create();
 
         // Cipta tempahan untuk bilik ini
         Tempahan::factory()->create([
             'bilik_id' => $bilik->id,
-            'user_id'  => $pentadbir->id,
+            'user_id' => $pentadbir->id,
         ]);
 
         $response = $this->actingAs($pentadbir)->delete("/bilik-mesyuarat/{$bilik->ulid}");

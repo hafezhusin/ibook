@@ -16,6 +16,7 @@ use App\Http\Controllers\ProfilController;
 use App\Http\Controllers\TempahanBerulangController;
 use App\Http\Controllers\TempahanController;
 use App\Http\Controllers\TetapanController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 // Auth routes (tanpa middleware)
@@ -56,21 +57,21 @@ Route::middleware('throttle:60,1')->group(function () {
 // Respons diminimumkan: hanya status pass/fail & timestamp.
 // Butiran komponen (db/disk) tidak didedahkan untuk elak enumeration.
 Route::get('/health', function () {
-    $dbOk   = false;
+    $dbOk = false;
     $diskOk = is_writable(storage_path());
 
     try {
-        \Illuminate\Support\Facades\DB::connection()->getPdo();
+        DB::connection()->getPdo();
         $dbOk = true;
-    } catch (\Exception) {
+    } catch (Exception) {
         // sengaja dibiarkan kosong — status akan jadi degraded
     }
 
-    $statusOk   = $dbOk && $diskOk;
+    $statusOk = $dbOk && $diskOk;
     $statusCode = $statusOk ? 200 : 503;
 
     return response()->json([
-        'status'    => $statusOk ? 'ok' : 'degraded',
+        'status' => $statusOk ? 'ok' : 'degraded',
         'timestamp' => now()->toIso8601String(),
     ], $statusCode);
 })->name('health');
@@ -128,7 +129,7 @@ Route::middleware('auth.custom')->group(function () {
     // Laporan
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan');
     Route::middleware('role:pentadbir_sistem,urus_setia')->group(function () {
-        Route::get('/laporan/eksport/pdf',   [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
+        Route::get('/laporan/eksport/pdf', [LaporanController::class, 'exportPdf'])->name('laporan.pdf');
         Route::get('/laporan/eksport/excel', [LaporanController::class, 'exportExcel'])->name('laporan.excel');
     });
 

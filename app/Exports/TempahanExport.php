@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Exports;
 
@@ -26,13 +26,7 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class TempahanExport implements
-    FromCollection,
-    WithHeadings,
-    WithMapping,
-    WithStyles,
-    WithTitle,
-    WithColumnWidths
+class TempahanExport implements FromCollection, WithColumnWidths, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     /** Instance-level counter — selamat untuk panggilan berulang */
     private int $bil = 0;
@@ -41,7 +35,7 @@ class TempahanExport implements
 
     public function collection(): Collection
     {
-        $user  = Auth::user();
+        $user = Auth::user();
         $query = Tempahan::query()->with(['bilik:id,nama,lokasi', 'pengguna:id,name,jabatan']);
 
         // Hak akses — staf hanya rekod unit sendiri (sama seperti unitQuery() controller)
@@ -55,23 +49,23 @@ class TempahanExport implements
         }
 
         // ── Filter ──
-        if (!empty($this->filters['bilik_id'])) {
+        if (! empty($this->filters['bilik_id'])) {
             $query->where('bilik_id', $this->filters['bilik_id']);
         }
-        if (!empty($this->filters['status'])) {
+        if (! empty($this->filters['status'])) {
             $query->where('status', $this->filters['status']);
         }
-        if (!empty($this->filters['kategori'])) {
+        if (! empty($this->filters['kategori'])) {
             $query->where('kategori', $this->filters['kategori']);
         }
-        if (!empty($this->filters['tarikh_dari'])) {
+        if (! empty($this->filters['tarikh_dari'])) {
             $query->whereDate('tarikh', '>=', $this->filters['tarikh_dari']);
         }
-        if (!empty($this->filters['tarikh_hingga'])) {
+        if (! empty($this->filters['tarikh_hingga'])) {
             $query->whereDate('tarikh', '<=', $this->filters['tarikh_hingga']);
         }
-        if (!empty($this->filters['carian'])) {
-            $query->where('nama_mesyuarat', 'like', '%' . $this->filters['carian'] . '%');
+        if (! empty($this->filters['carian'])) {
+            $query->where('nama_mesyuarat', 'like', '%'.$this->filters['carian'].'%');
         }
 
         return $query->orderByDesc('tarikh')->get();
@@ -101,8 +95,8 @@ class TempahanExport implements
 
         $statusLabel = match ($t->status) {
             'diluluskan' => 'Diluluskan',
-            'ditolak'    => 'Ditolak',
-            default      => 'Menunggu',
+            'ditolak' => 'Ditolak',
+            default => 'Menunggu',
         };
 
         return [
@@ -110,7 +104,7 @@ class TempahanExport implements
             $t->nama_mesyuarat,
             $t->tarikh->format('d/m/Y'),
             $t->sesi === 'pagi' ? 'Pagi' : 'Petang',
-            $t->masa_mula . ' - ' . $t->masa_tamat,
+            $t->masa_mula.' - '.$t->masa_tamat,
             $t->bilik->nama ?? '-',
             $t->kategori,
             $t->nama_pengerusi,
@@ -127,11 +121,11 @@ class TempahanExport implements
             // Baris pengepala: latar gelap, teks putih tebal
             1 => [
                 'font' => [
-                    'bold'  => true,
+                    'bold' => true,
                     'color' => ['argb' => 'FFFFFFFF'],
                 ],
                 'fill' => [
-                    'fillType'   => Fill::FILL_SOLID,
+                    'fillType' => Fill::FILL_SOLID,
                     'startColor' => ['argb' => 'FF1A1A2E'],
                 ],
             ],

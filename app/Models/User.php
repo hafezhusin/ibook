@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -11,29 +12,31 @@
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
 
-
 namespace App\Models;
 
+use App\Notifications\ResetKataLaluan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 /**
- * @property bool        $dua_faktor_aktif   Sama ada pengguna mengaktifkan 2FA
- * @property bool        $aktif              Status akaun aktif/tidak aktif
- * @property string|null $jabatan            Unit/jabatan pengguna
- * @property string      $peranan            Peranan: pentadbir_sistem|urus_setia|staf
- * @property string      $label_peranan      Accessor: label peranan dalam Bahasa Melayu
- * @property string      $masked_email       Accessor: emel disamarkan (cth: a***@mail.com)
+ * @property bool $dua_faktor_aktif Sama ada pengguna mengaktifkan 2FA
+ * @property bool $aktif Status akaun aktif/tidak aktif
+ * @property string|null $jabatan Unit/jabatan pengguna
+ * @property string $peranan Peranan: pentadbir_sistem|urus_setia|staf
+ * @property string $label_peranan Accessor: label peranan dalam Bahasa Melayu
+ * @property string $masked_email Accessor: emel disamarkan (cth: a***@mail.com)
  */
 class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    const PERANAN_PENTADBIR  = 'pentadbir_sistem';
+    const PERANAN_PENTADBIR = 'pentadbir_sistem';
+
     const PERANAN_URUS_SETIA = 'urus_setia';
-    const PERANAN_STAF       = 'staf';
+
+    const PERANAN_STAF = 'staf';
 
     const SENARAI_UNIT = [
         'Helpdesk BPTM',
@@ -85,16 +88,16 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-            'aktif'             => 'boolean',
-            'dua_faktor_aktif'  => 'boolean',
-            'last_login_at'     => 'datetime',
+            'password' => 'hashed',
+            'aktif' => 'boolean',
+            'dua_faktor_aktif' => 'boolean',
+            'last_login_at' => 'datetime',
         ];
     }
 
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(new \App\Notifications\ResetKataLaluan($token));
+        $this->notify(new ResetKataLaluan($token));
     }
 
     public function tempahan(): HasMany
@@ -136,6 +139,7 @@ class User extends Authenticatable
     {
         [$nama, $domain] = explode('@', $this->email, 2);
         $prefix = substr($nama, 0, min(3, strlen($nama)));
-        return $prefix . '***@' . $domain;
+
+        return $prefix.'***@'.$domain;
     }
 }

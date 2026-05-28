@@ -22,7 +22,7 @@ return new class extends Migration
 
         // Index khusus untuk sorting senarai tempahan.
         // SQLite sokong CREATE INDEX, jadi ini selamat untuk kedua-dua driver.
-        if (!$this->indexExists('tempahan', 'idx_tempahan_tarikh_masa_mula')) {
+        if (! $this->indexExists('tempahan', 'idx_tempahan_tarikh_masa_mula')) {
             Schema::table('tempahan', function (Blueprint $table) {
                 $table->index(['tarikh', 'masa_mula'], 'idx_tempahan_tarikh_masa_mula');
             });
@@ -45,10 +45,13 @@ return new class extends Migration
         try {
             $indexes = DB::select("PRAGMA index_list({$table})");
             foreach ($indexes as $idx) {
-                if ($idx->name === $index) return true;
+                if ($idx->name === $index) {
+                    return true;
+                }
             }
+
             return false;
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return false; // MySQL — biarkan schema builder uruskan
         }
     }

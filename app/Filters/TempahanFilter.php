@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -36,7 +37,7 @@ class TempahanFilter
         }
 
         if ($request->filled('carian')) {
-            $query->where('nama_mesyuarat', 'like', '%' . $request->carian . '%');
+            $query->where('nama_mesyuarat', 'like', '%'.$request->carian.'%');
         }
 
         if ($request->filled('status')) {
@@ -56,19 +57,19 @@ class TempahanFilter
         }
 
         // Penapis jabatan hanya untuk admin/urus setia — staf tidak boleh tapis unit lain
-        if ($request->filled('jabatan') && !$user->isStaf()) {
-            $query->whereHas('pengguna', fn ($q) => $q->where('jabatan', 'like', '%' . $request->jabatan . '%'));
+        if ($request->filled('jabatan') && ! $user->isStaf()) {
+            $query->whereHas('pengguna', fn ($q) => $q->where('jabatan', 'like', '%'.$request->jabatan.'%'));
         }
 
         // Penapis tarikh pintas
         match ($request->get('tarikh_filter')) {
-            'hari_ini'    => $query->whereDate('tarikh', today()),
-            'esok'        => $query->whereDate('tarikh', today()->addDay()),
-            'baharu'      => $query->where('created_at', '>=', now()->subHours(24)),
-            '7_hari'      => $query->whereBetween('tarikh', [today(), today()->addDays(7)]),
-            'bulan_ini'   => $query->whereMonth('tarikh', now()->month)->whereYear('tarikh', now()->year),
+            'hari_ini' => $query->whereDate('tarikh', today()),
+            'esok' => $query->whereDate('tarikh', today()->addDay()),
+            'baharu' => $query->where('created_at', '>=', now()->subHours(24)),
+            '7_hari' => $query->whereBetween('tarikh', [today(), today()->addDays(7)]),
+            'bulan_ini' => $query->whereMonth('tarikh', now()->month)->whereYear('tarikh', now()->year),
             'akan_datang' => $query->where('tarikh', '>=', today()),
-            default       => null,
+            default => null,
         };
     }
 }

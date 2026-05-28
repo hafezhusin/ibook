@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Middleware\AuditLog;
+use App\Http\Middleware\Authenticate;
+use App\Http\Middleware\CheckRole;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,14 +17,14 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // Daftarkan alias middleware
         $middleware->alias([
-            'role'        => \App\Http\Middleware\CheckRole::class,
-            'auth.custom' => \App\Http\Middleware\Authenticate::class,
+            'role' => CheckRole::class,
+            'auth.custom' => Authenticate::class,
         ]);
 
         // Tambah security headers dan audit log pada semua web request
         $middleware->web(append: [
-            \App\Http\Middleware\SecurityHeaders::class,
-            \App\Http\Middleware\AuditLog::class,
+            SecurityHeaders::class,
+            AuditLog::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

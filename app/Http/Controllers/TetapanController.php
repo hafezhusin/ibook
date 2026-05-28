@@ -1,4 +1,5 @@
 <?php
+
 /**
  * iBook --- Sistem Pengurusan Bilik Mesyuarat
  * Copyright (c) 2026 Bahagian Pengurusan Teknologi Maklumat (BPTM)
@@ -10,7 +11,6 @@
  * Unauthorized copying, modification, distribution, or use of this software,
  * via any medium, is strictly prohibited. Proprietary and confidential.
  */
-
 
 namespace App\Http\Controllers;
 
@@ -64,14 +64,14 @@ class TetapanController extends Controller
         }
 
         // ── 2. Simpan nilai BARU ──
-        Tetapan::set('nama_sistem',    $request->validated()['nama_sistem'] ?? '');
-        Tetapan::set('nama_jabatan',   $request->validated()['nama_jabatan']);
-        Tetapan::set('logo_jabatan',   $request->validated()['logo_jabatan'] ?? '');
+        Tetapan::set('nama_sistem', $request->validated()['nama_sistem'] ?? '');
+        Tetapan::set('nama_jabatan', $request->validated()['nama_jabatan']);
+        Tetapan::set('logo_jabatan', $request->validated()['logo_jabatan'] ?? '');
         Tetapan::set('emel_pentadbir', $request->validated()['emel_pentadbir'] ?? '');
         Tetapan::set('emel_notifikasi', $request->validated()['emel_notifikasi'] ?? '');
-        Tetapan::set('notif_tempahan_baru',   $request->boolean('notif_tempahan_baru') ? '1' : '0');
-        Tetapan::set('notif_kelulusan',       $request->boolean('notif_kelulusan') ? '1' : '0');
-        Tetapan::set('peringatan_mesyuarat',  $request->boolean('peringatan_mesyuarat') ? '1' : '0');
+        Tetapan::set('notif_tempahan_baru', $request->boolean('notif_tempahan_baru') ? '1' : '0');
+        Tetapan::set('notif_kelulusan', $request->boolean('notif_kelulusan') ? '1' : '0');
+        Tetapan::set('peringatan_mesyuarat', $request->boolean('peringatan_mesyuarat') ? '1' : '0');
 
         // ── 3. Kosongkan cache supaya nilai terbaru dipaparkan serta-merta ──
         Tetapan::clearCache();
@@ -96,15 +96,15 @@ class TetapanController extends Controller
             'kemaskini_tetapan',
             null,
             [
-                'perubahan'       => $perubahan,
-                'jumlah_berubah'  => count($perubahan),
+                'perubahan' => $perubahan,
+                'jumlah_berubah' => count($perubahan),
             ]
         );
 
         return redirect()->route('tetapan.index')
-            ->with('success', 'Tetapan sistem berjaya disimpan.' .
+            ->with('success', 'Tetapan sistem berjaya disimpan.'.
                 (count($perubahan) > 0
-                    ? ' ' . count($perubahan) . ' nilai telah dikemaskini.'
+                    ? ' '.count($perubahan).' nilai telah dikemaskini.'
                     : ' Tiada perubahan dikesan.'));
     }
 }
