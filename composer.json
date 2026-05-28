@@ -50,7 +50,13 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": []
+            "dont-discover": [
+                "nunomaduro/collision",
+                "larastan/larastan",
+                "phpunit/phpunit",
+                "laravel/pint",
+                "fakerphp/faker"
+            ]
         }
     },
     "config": {
