@@ -637,51 +637,5 @@
     </div>
 
     @include('layouts.partials._scripts')
-    }
-
-    // Mulakan timer
-    resetTimer();
-})();
-
-// ── Toggle Tema: Light / Dark ─────────────────────────────────────
-(function () {
-    const html = document.documentElement;
-    const btn  = document.getElementById('btn-toggle-tema');
-    const icon = document.getElementById('icon-tema');
-    const mq   = window.matchMedia('(prefers-color-scheme: dark)');
-
-    function isDarkActive() {
-        return html.classList.contains('dark') ||
-            (!html.classList.contains('light') && mq.matches);
-    }
-
-    function updateIcon() {
-        if (!icon) return;
-        // Tunjuk ikon bertentangan dengan mod semasa
-        icon.className = isDarkActive()
-            ? 'fa-solid fa-sun text-sm'    // kini gelap → tunjuk matahari (tukar ke terang)
-            : 'fa-solid fa-moon text-sm';  // kini terang → tunjuk bulan (tukar ke gelap)
-    }
-
-    function toggleTema() {
-        if (isDarkActive()) {
-            html.classList.remove('dark');
-            html.classList.add('light');
-            try { localStorage.setItem('ibook-theme', 'light'); } catch(e) {}
-        } else {
-            html.classList.remove('light');
-            html.classList.add('dark');
-            try { localStorage.setItem('ibook-theme', 'dark'); } catch(e) {}
-        }
-        updateIcon();
-    }
-
-    if (btn) btn.addEventListener('click', toggleTema);
-    updateIcon();
-
-    // Kemaskini ikon bila OS tukar tema (jika pengguna ikut auto)
-    mq.addEventListener('change', updateIcon);
-})();
-</script>
 </body>
 </html>
