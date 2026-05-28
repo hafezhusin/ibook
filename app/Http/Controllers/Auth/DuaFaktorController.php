@@ -48,6 +48,11 @@ class DuaFaktorController extends Controller
 
     /**
      * Sahkan kod OTP yang dimasukkan pengguna.
+     *
+     * Keselamatan:
+     *  - OTP disimpan sebagai HMAC-SHA256, dibandingkan dengan hash_equals() (tahan timing attack)
+     *  - expires_at disimpan eksplisit supaya TTL tidak dapat dilanjut dengan percubaan berulang
+     *  - Percubaan gagal, lockout, dan OTP luput dicatat dalam audit log
      */
     public function verify(Request $request)
     {
@@ -68,24 +73,49 @@ class DuaFaktorController extends Controller
         $cacheKey = '2fa_otp_' . $userId;
         $cached   = Cache::get($cacheKey);
 
-        if (!$cached) {
+        // ── Semak cache kosong ATAU expiry eksplisit sudah berlalu ────
+        // expires_at disemak secara manual supaya percubaan gagal tidak
+        // dapat melanjutkan hayat OTP melalui Cache::put() semula.
+        if (!$cached || now()->timestamp > ($cached['expires_at'] ?? 0)) {
+            Cache::forget($cacheKey);
             session()->forget(['2fa_user_id', '2fa_remember']);
+            AuditLogger::catat('2fa_otp_luput', null, [
+                'ip' => $request->ip(),
+            ]);
             return redirect()->route('login')
                 ->withErrors(['email' => 'Kod pengesahan telah tamat tempoh. Sila log masuk semula.']);
         }
 
-        if ($cached['kod'] !== $request->kod) {
+        // ── Bandingkan OTP menggunakan hash_equals() — tahan timing attack ──
+        $inputHash  = hash_hmac('sha256', $request->kod, config('app.key'));
+        $simpanHash = $cached['kod_hash'] ?? '';
+
+        if (!hash_equals($simpanHash, $inputHash)) {
             $cached['percubaan']++;
 
             if ($cached['percubaan'] >= $this->maxPercubaan) {
                 Cache::forget($cacheKey);
                 session()->forget(['2fa_user_id', '2fa_remember']);
+                AuditLogger::catat('2fa_lockout', null, [
+                    'user_id'    => $userId,
+                    'ip'         => $request->ip(),
+                    'percubaan'  => $cached['percubaan'],
+                ]);
                 return redirect()->route('login')
                     ->withErrors(['email' => 'Terlalu banyak percubaan. Sila log masuk semula.']);
             }
 
-            Cache::put($cacheKey, $cached, now()->addMinutes(10));
+            // Kemaskini percubaan TANPA melanjut TTL — guna baki masa dari expires_at asal
+            $ttlBaki = max(1, ($cached['expires_at'] ?? now()->timestamp) - now()->timestamp);
+            Cache::put($cacheKey, $cached, $ttlBaki);
+
             $berbaki = $this->maxPercubaan - $cached['percubaan'];
+            AuditLogger::catat('2fa_otp_salah', null, [
+                'user_id'   => $userId,
+                'ip'        => $request->ip(),
+                'percubaan' => $cached['percubaan'],
+                'berbaki'   => $berbaki,
+            ]);
 
             return back()->withErrors([
                 'kod' => "Kod tidak sah. {$berbaki} percubaan berbaki.",
@@ -130,16 +160,23 @@ class DuaFaktorController extends Controller
         }
 
         try {
-            $user = User::findOrFail($userId);
-            $otp  = self::janaOtp();
+            $user   = User::findOrFail($userId);
+            $otp    = self::janaOtp();
+            $expiry = now()->addMinutes(10);
 
             Cache::put('2fa_otp_' . $userId, [
-                'kod'       => $otp,
-                'percubaan' => 0,
-            ], now()->addMinutes(10));
+                'kod_hash'   => hash_hmac('sha256', $otp, config('app.key')),
+                'percubaan'  => 0,
+                'expires_at' => $expiry->timestamp,
+            ], $expiry);
 
             Mail::to($user->email)->send(new KodOTP($user->name, $otp));
             RateLimiter::hit($throttleKey, 60);
+
+            AuditLogger::catat('2fa_resend_otp', null, [
+                'user_id' => $userId,
+                'ip'      => $request->ip(),
+            ]);
         } catch (\Throwable $e) {
             Log::warning('DuaFaktorController::hantarSemula gagal: ' . $e->getMessage());
             return back()->withErrors(['kod' => 'Gagal menghantar kod. Sila cuba lagi.']);

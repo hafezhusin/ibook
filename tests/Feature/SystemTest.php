@@ -16,9 +16,11 @@ class SystemTest extends TestCase
     {
         $response = $this->get('/health');
 
+        // Respons diminimumkan — hanya status & timestamp (tiada butiran komponen)
         $response->assertOk()
-            ->assertJsonStructure(['db', 'disk', 'status', 'version'])
-            ->assertJson(['status' => 'ok', 'db' => 'ok']);
+            ->assertJsonStructure(['status', 'timestamp'])
+            ->assertJson(['status' => 'ok'])
+            ->assertJsonMissing(['db', 'disk', 'version']); // pastikan maklumat sensitif tidak terdedah
     }
 
     #[Test]

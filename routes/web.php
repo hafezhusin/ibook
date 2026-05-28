@@ -53,19 +53,26 @@ Route::middleware('throttle:60,1')->group(function () {
 });
 
 // ── Health Check — semak status sistem (DB + storan) ───────────────────────
+// Respons diminimumkan: hanya status pass/fail & timestamp.
+// Butiran komponen (db/disk) tidak didedahkan untuk elak enumeration.
 Route::get('/health', function () {
-    $checks = [];
+    $dbOk   = false;
+    $diskOk = is_writable(storage_path());
+
     try {
         \Illuminate\Support\Facades\DB::connection()->getPdo();
-        $checks['db'] = 'ok';
+        $dbOk = true;
     } catch (\Exception) {
-        $checks['db'] = 'error';
+        // sengaja dibiarkan kosong — status akan jadi degraded
     }
-    $checks['disk']    = is_writable(storage_path()) ? 'ok' : 'error';
-    $checks['status']  = collect($checks)->contains('error') ? 'degraded' : 'ok';
-    $checks['version'] = config('app.name', 'iBook') . ' 2.0';
-    $statusCode = $checks['status'] === 'ok' ? 200 : 503;
-    return response()->json($checks, $statusCode);
+
+    $statusOk   = $dbOk && $diskOk;
+    $statusCode = $statusOk ? 200 : 503;
+
+    return response()->json([
+        'status'    => $statusOk ? 'ok' : 'degraded',
+        'timestamp' => now()->toIso8601String(),
+    ], $statusCode);
 })->name('health');
 
 // Routes yang memerlukan log masuk

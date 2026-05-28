@@ -210,11 +210,15 @@ class AuthController extends Controller
 
                 // Jana dan hantar OTP (kegagalan hantar tidak halang navigasi ke halaman OTP)
                 try {
-                    $otp = DuaFaktorController::janaOtp();
+                    $otp    = DuaFaktorController::janaOtp();
+                    $expiry = now()->addMinutes(10);
                     Cache::put('2fa_otp_' . $user->id, [
-                        'kod'       => $otp,
-                        'percubaan' => 0,
-                    ], now()->addMinutes(10));
+                        // OTP disimpan sebagai HMAC-SHA256 — bukan plain text
+                        // Elak pendedahan nilai OTP jika cache dibaca secara tidak sah
+                        'kod_hash'   => hash_hmac('sha256', $otp, config('app.key')),
+                        'percubaan'  => 0,
+                        'expires_at' => $expiry->timestamp, // expiry eksplisit — TTL tidak akan dilanjut pada gagal
+                    ], $expiry);
                     Mail::to($user->email)->send(new KodOTP($user->name, $otp));
                 } catch (\Throwable $e) {
                     Log::warning('2FA OTP hantar gagal: ' . $e->getMessage());
