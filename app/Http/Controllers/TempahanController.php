@@ -18,20 +18,15 @@ use App\Exports\TempahanExport;
 use App\Filters\TempahanFilter;
 use App\Http\Requests\StoreTempahanRequest;
 use App\Http\Requests\UpdateTempahanRequest;
-use App\Mail\NotifikasiTempahanBaharu;
-use App\Mail\PengesahanTempahan;
 use App\Models\BilikMesyuarat;
 use App\Models\Tempahan;
-use App\Models\Tetapan;
 use App\Services\AuditLogger;
+use App\Services\KalendarCacheService;
+use App\Services\TempahanMailService;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Maatwebsite\Excel\Facades\Excel;
 
 class TempahanController extends Controller
@@ -227,7 +222,7 @@ class TempahanController extends Controller
             throw $e;
         }
 
-        $this->bumpKalendarCacheVersion();
+        KalendarCacheService::bump();
 
         AuditLogger::catat('buat_tempahan', null, [
             'nama_mesyuarat' => $validated['nama_mesyuarat'],
@@ -237,7 +232,7 @@ class TempahanController extends Controller
         ]);
 
         // Hantar e-mel — kegagalan tidak patut halang aliran tempahan
-        $this->hantarEmelTempahan($tempahanDibuat, $validated, $bilik);
+        (new TempahanMailService)->hantarSelepasStore($tempahanDibuat, $validated, $bilik, Auth::user());
 
         $jumlahSesi = count($validated['sesi']);
 
@@ -311,7 +306,7 @@ class TempahanController extends Controller
             'dikemaskini_oleh' => $user->id,
             'dikemaskini_pada' => now(),
         ]);
-        $this->bumpKalendarCacheVersion();
+        KalendarCacheService::bump();
 
         AuditLogger::catat('kemaskini_tempahan', $tempahan, [
             'pindaan_unit' => $adalahPindaanUnit,
@@ -381,75 +376,5 @@ class TempahanController extends Controller
     private function terapiFilters($query, Request $request): void
     {
         TempahanFilter::terapkan($query, $request);
-    }
-
-    /**
-     * Hantar e-mel pengesahan kepada pemohon dan notifikasi kepada Urus Setia.
-     * Dibungkus dalam try/catch — kegagalan e-mel tidak patut halang aliran tempahan.
-     *
-     * @param  Tempahan[]  $tempahanDibuat  rekod yang baru dicipta
-     * @param  array  $validated  data dari FormRequest
-     */
-    private function hantarEmelTempahan(array $tempahanDibuat, array $validated, BilikMesyuarat $bilik): void
-    {
-        if (empty($tempahanDibuat)) {
-            return;
-        }
-
-        $user = Auth::user();
-        $tarikhLabel = Carbon::parse($validated['tarikh'])->locale('ms')->isoFormat('dddd, D MMMM YYYY');
-        $kategoriLabel = Tempahan::KATEGORI[$validated['kategori']] ?? $validated['kategori'];
-        $noRujukan = $tempahanDibuat[0]->no_rujukan;
-
-        // 1. Pengesahan kepada pemohon
-        if (Tetapan::get('notif_kelulusan', '1') === '1' && $user->email) {
-            try {
-                Mail::to($user->email)->send(new PengesahanTempahan(
-                    noRujukan: $noRujukan,
-                    namaMesyuarat: $validated['nama_mesyuarat'],
-                    tarikhLabel: $tarikhLabel,
-                    semuaSesi: $validated['sesi'],
-                    bilikNama: $bilik->nama,
-                    bilanganPeserta: $validated['bilangan_peserta'],
-                    kategoriLabel: $kategoriLabel,
-                    namaPengerusi: $validated['nama_pengerusi'],
-                    tujuan: $validated['tujuan'] ?? '',
-                    pemohonNama: $user->name,
-                    pemohonEmail: $user->email,
-                ));
-            } catch (\Throwable $e) {
-                Log::warning('E-mel pengesahan tempahan gagal dihantar: '.$e->getMessage());
-            }
-        }
-
-        // 2. Notifikasi kepada Urus Setia
-        if (Tetapan::get('notif_tempahan_baru', '1') === '1') {
-            $emelNotifikasi = Tetapan::get('emel_notifikasi');
-            if ($emelNotifikasi) {
-                try {
-                    Mail::to($emelNotifikasi)->send(new NotifikasiTempahanBaharu(
-                        namaMesyuarat: $validated['nama_mesyuarat'],
-                        tarikhLabel: $tarikhLabel,
-                        semuaSesi: $validated['sesi'],
-                        bilikNama: $bilik->nama,
-                        pemohonNama: $user->name,
-                        pemohonJabatan: $user->jabatan ?? '',
-                        noRujukan: $noRujukan,
-                        berulang: false,
-                        jumlahSesi: count($tempahanDibuat),
-                    ));
-                } catch (\Throwable $e) {
-                    Log::warning('E-mel notifikasi Urus Setia gagal dihantar: '.$e->getMessage());
-                }
-            }
-        }
-    }
-
-    private function bumpKalendarCacheVersion(): void
-    {
-        Cache::add('kalendar:events:version', 1, now()->addDays(30));
-        Cache::increment('kalendar:events:version');
-        Cache::add('kalendar:public-events:version', 1, now()->addDays(30));
-        Cache::increment('kalendar:public-events:version');
     }
 }

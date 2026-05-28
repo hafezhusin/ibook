@@ -19,6 +19,7 @@ use App\Mail\PengesahanTempahanBerulang;
 use App\Models\Tempahan;
 use App\Models\TempahanBerulang;
 use App\Services\AuditLogger;
+use App\Services\KalendarCacheService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -190,7 +191,10 @@ class TempahanBerulangController extends Controller
             // Kegagalan emel tidak patut batalkan tempahan yang berjaya dibuat
         }
 
-        // 5. Log audit
+        // 5. Invalidat cache kalendar — rekod baharu perlu kelihatan serta-merta
+        KalendarCacheService::bump();
+
+        // 6. Log audit
         AuditLogger::catat('buat_tempahan_berulang', $kumpulan, [
             'kumpulan_id' => $kumpulan->id,
             'jumlah_tarikh' => $semuaTarikh->count(),
@@ -270,6 +274,8 @@ class TempahanBerulangController extends Controller
                 }
             }
         });
+
+        KalendarCacheService::bump();
 
         AuditLogger::catat('padam_tempahan', $tempahan, [
             'skop' => $skop,

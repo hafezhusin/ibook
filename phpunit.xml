@@ -39,5 +39,6 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="HEALTH_TOKEN" value="phpunit-health-token-test"/>
     </php>
 </phpunit>

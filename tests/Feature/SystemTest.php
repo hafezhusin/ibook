@@ -14,13 +14,30 @@ class SystemTest extends TestCase
     #[Test]
     public function health_endpoint_kembalikan_status_ok(): void
     {
-        $response = $this->get('/health');
+        // Token ditetapkan dalam phpunit.xml <env name="HEALTH_TOKEN" value="phpunit-health-token-test"/>
+        $token = env('HEALTH_TOKEN');
+
+        $response = $this->get('/health?token='.$token);
 
         // Respons diminimumkan — hanya status & timestamp (tiada butiran komponen)
         $response->assertOk()
             ->assertJsonStructure(['status', 'timestamp'])
             ->assertJson(['status' => 'ok'])
             ->assertJsonMissing(['db', 'disk', 'version']); // pastikan maklumat sensitif tidak terdedah
+    }
+
+    #[Test]
+    public function health_endpoint_tolak_tanpa_token(): void
+    {
+        // Pastikan endpoint kembalikan 404 (bukan 401/403) tanpa token
+        // supaya penggodam tidak tahu endpoint ini wujud
+        $this->get('/health')->assertNotFound();
+    }
+
+    #[Test]
+    public function health_endpoint_tolak_token_salah(): void
+    {
+        $this->get('/health?token=token-yang-salah-sama-sekali')->assertNotFound();
     }
 
     #[Test]
