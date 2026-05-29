@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\BahagianController;
 use App\Http\Controllers\Auth\DuaFaktorController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\BackupController;
@@ -179,5 +180,14 @@ Route::middleware('auth.custom')->group(function () {
         Route::post('/backup/jadual', [BackupController::class, 'simpanJadual'])->name('backup.jadual');
         Route::post('/backup/{backup}/muat-turun', [BackupController::class, 'muatTurun'])->name('backup.muat-turun');
         Route::delete('/backup/{backup}', [BackupController::class, 'padam'])->name('backup.padam');
+
+        // Bahagian — multi-tenant (pentadbir sistem sahaja)
+        Route::get('/bahagian', [BahagianController::class, 'index'])->name('bahagian.index');
+        Route::get('/bahagian/tambah', [BahagianController::class, 'create'])->name('bahagian.create');
+        Route::post('/bahagian', [BahagianController::class, 'store'])->name('bahagian.store');
+        Route::get('/bahagian/{bahagian}/edit', [BahagianController::class, 'edit'])->name('bahagian.edit');
+        Route::put('/bahagian/{bahagian}', [BahagianController::class, 'update'])->name('bahagian.update');
+        Route::post('/bahagian/{bahagian}/toggle-aktif', [BahagianController::class, 'toggleAktif'])->name('bahagian.toggle-aktif');
+        Route::post('/bahagian/{bahagian}/toggle-cross-booking', [BahagianController::class, 'toggleCrossBooking'])->name('bahagian.toggle-cross-booking');
     });
 });

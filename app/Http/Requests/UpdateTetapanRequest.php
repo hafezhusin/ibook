@@ -41,6 +41,7 @@ class UpdateTetapanRequest extends FormRequest
             'notif_tempahan_baru' => ['nullable', 'boolean'],
             'notif_kelulusan' => ['nullable', 'boolean'],
             'peringatan_mesyuarat' => ['nullable', 'boolean'],
+            'cross_booking_aktif' => ['nullable', 'boolean'],
         ];
     }
 

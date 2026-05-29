@@ -34,6 +34,7 @@ class TetapanController extends Controller
         'notif_tempahan_baru',
         'notif_kelulusan',
         'peringatan_mesyuarat',
+        'cross_booking_aktif',
     ];
 
     public function index()
@@ -72,6 +73,7 @@ class TetapanController extends Controller
         Tetapan::set('notif_tempahan_baru', $request->boolean('notif_tempahan_baru') ? '1' : '0');
         Tetapan::set('notif_kelulusan', $request->boolean('notif_kelulusan') ? '1' : '0');
         Tetapan::set('peringatan_mesyuarat', $request->boolean('peringatan_mesyuarat') ? '1' : '0');
+        Tetapan::set('cross_booking_aktif', $request->boolean('cross_booking_aktif') ? '1' : '0');
 
         // ── 3. Kosongkan cache supaya nilai terbaru dipaparkan serta-merta ──
         Tetapan::clearCache();

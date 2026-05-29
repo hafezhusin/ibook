@@ -94,7 +94,7 @@ class TempahanController extends Controller
             $query->orderByDesc('created_at');
         }
         $tempahan = $query->paginate(20)->withQueryString();
-        $bilik = BilikMesyuarat::where('status', 'aktif')->get();
+        $bilik = BilikMesyuarat::where('status', 'aktif')->untukPengguna(auth()->user())->get();
         $kategori = Tempahan::KATEGORI;
 
         // ── Worklist ringkasan ────────────────────────────────────────
@@ -129,7 +129,7 @@ class TempahanController extends Controller
 
     public function create(Request $request)
     {
-        $bilik = BilikMesyuarat::where('status', 'aktif')->get();
+        $bilik = BilikMesyuarat::where('status', 'aktif')->untukPengguna(auth()->user())->get();
         $kategori = Tempahan::KATEGORI;
         $sesi = Tempahan::MASA_SESI;
 
@@ -255,7 +255,7 @@ class TempahanController extends Controller
     {
         $this->authorize('update', $tempahan);
 
-        $bilik = BilikMesyuarat::where('status', 'aktif')->get();
+        $bilik = BilikMesyuarat::where('status', 'aktif')->untukPengguna(auth()->user())->get();
         $kategori = Tempahan::KATEGORI;
         $sesi = Tempahan::MASA_SESI;
 

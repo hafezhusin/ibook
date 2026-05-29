@@ -224,6 +224,53 @@
             </div>
         </fieldset>
 
+        {{-- ════════════════════════════ --}}
+        {{-- BAHAGIAN 4: Cross-Booking (Multi-Bahagian) --}}
+        {{-- ════════════════════════════ --}}
+        <fieldset class="bg-white rounded-xl shadow-sm overflow-hidden border-2 border-dashed border-amber-200">
+            <legend class="w-full">
+                <div class="flex items-center gap-2 px-6 pt-5 pb-4 border-b border-amber-100 bg-amber-50">
+                    <span class="w-7 h-7 rounded-full bg-amber-400 text-white text-xs font-bold flex items-center justify-center flex-shrink-0" aria-hidden="true">4</span>
+                    <span class="font-bold text-gray-800">Cross-Booking Bahagian Lain</span>
+                    <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium border border-amber-300">
+                        <i class="fa-solid fa-lock text-xs mr-1" aria-hidden="true"></i>Menunggu Kelulusan Pengurusan
+                    </span>
+                </div>
+            </legend>
+            <div class="p-6">
+                <p class="text-sm text-gray-600 mb-5">
+                    Master switch untuk fungsi cross-booking — membenarkan staf melihat dan membooking bilik bahagian lain.
+                    <strong class="text-amber-700">Aktifkan hanya setelah pengurusan atasan memberi kelulusan rasmi.</strong>
+                    Per-bahagian boleh diurus dalam halaman <a href="{{ route('bahagian.index') }}" class="text-amber-600 underline font-medium">Bahagian</a>.
+                </p>
+
+                {{-- Toggle cross_booking_aktif --}}
+                <div class="flex items-start gap-4 p-4 rounded-xl border {{ ($tetapan['cross_booking_aktif'] ?? '0') === '1' ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200' }}">
+                    <div class="flex-1">
+                        <label for="cross_booking_aktif" class="font-medium text-gray-800 cursor-pointer flex items-center gap-2">
+                            <i class="fa-solid fa-building-columns text-amber-500" aria-hidden="true"></i>
+                            Aktifkan Cross-Booking Bahagian Lain
+                        </label>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Apabila diaktifkan, staf boleh melihat bilik bahagian lain yang telah mendapat kebenaran cross-booking.
+                            Apabila dimatikan, semua staf hanya nampak bilik bahagian mereka sendiri (tetapan semasa).
+                        </p>
+                    </div>
+                    <div class="flex-shrink-0 pt-0.5">
+                        <input type="hidden" name="cross_booking_aktif" value="0">
+                        <input type="checkbox" id="cross_booking_aktif" name="cross_booking_aktif" value="1"
+                            class="w-5 h-5 rounded text-amber-500 border-gray-300 cursor-pointer"
+                            {{ ($tetapan['cross_booking_aktif'] ?? '0') === '1' ? 'checked' : '' }}
+                            aria-describedby="hint-cross-booking">
+                    </div>
+                </div>
+                <p id="hint-cross-booking" class="text-xs text-gray-400 mt-2">
+                    <i class="fa-solid fa-circle-info mr-1" aria-hidden="true"></i>
+                    Status semasa: <strong>{{ ($tetapan['cross_booking_aktif'] ?? '0') === '1' ? '✅ Diaktifkan' : '🔒 Dimatikan (lalai)' }}</strong>
+                </p>
+            </div>
+        </fieldset>
+
         {{-- Butang Simpan --}}
         <div class="flex items-center gap-3">
             <button type="submit" class="btn-primary">

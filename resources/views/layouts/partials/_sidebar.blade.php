@@ -122,6 +122,14 @@
             </li>
             @if(auth()->user()->isPentadbir())
             <li>
+                <a href="{{ route('bahagian.index') }}"
+                   class="sidebar-link"
+                   {{ request()->routeIs('bahagian*') ? 'aria-current=page' : '' }}>
+                    <i class="fa-solid fa-building-columns w-5" aria-hidden="true"></i>
+                    <span>Bahagian</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('audit.index') }}"
                    class="sidebar-link"
                    {{ request()->routeIs('audit*') ? 'aria-current=page' : '' }}>

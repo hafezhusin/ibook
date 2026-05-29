@@ -16,6 +16,7 @@ namespace App\Models;
 
 use App\Notifications\ResetKataLaluan;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -68,6 +69,7 @@ class User extends Authenticatable
     ];
 
     protected $fillable = [
+        'bahagian_id',
         'name',
         'email',
         'password',
@@ -103,6 +105,19 @@ class User extends Authenticatable
     public function tempahan(): HasMany
     {
         return $this->hasMany(Tempahan::class);
+    }
+
+    public function bahagian(): BelongsTo
+    {
+        return $this->belongsTo(Bahagian::class, 'bahagian_id');
+    }
+
+    /**
+     * Nama bahagian pengguna — pentadbir sistem tiada bahagian spesifik.
+     */
+    public function getNamaBahagianAttribute(): string
+    {
+        return $this->bahagian?->nama ?? 'Semua Bahagian';
     }
 
     public function isPentadbir(): bool

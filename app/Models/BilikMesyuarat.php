@@ -14,9 +14,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -33,6 +35,7 @@ class BilikMesyuarat extends Model
     protected $table = 'bilik_mesyuarat';
 
     protected $fillable = [
+        'bahagian_id',
         'nama',
         'kapasiti',
         'kemudahan',
@@ -67,6 +70,51 @@ class BilikMesyuarat extends Model
     public function tempahan(): HasMany
     {
         return $this->hasMany(Tempahan::class, 'bilik_id');
+    }
+
+    public function pengubah(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dikemaskini_oleh');
+    }
+
+    public function bahagian(): BelongsTo
+    {
+        return $this->belongsTo(Bahagian::class, 'bahagian_id');
+    }
+
+    /**
+     * Scope: tapis bilik mengikut bahagian pengguna + tetapan cross-booking.
+     *
+     * Logik tiga peringkat:
+     *   1. Pentadbir sistem → nampak SEMUA bilik (tiada tapis)
+     *   2. Master switch ON + bahagian cross_booking_aktif=1 → bilik sendiri + bilik bahagian luar
+     *   3. Default → hanya bilik bahagian sendiri (atau NULL = bahagian utama)
+     */
+    public function scopeUntukPengguna(Builder $query, User $pengguna): Builder
+    {
+        // Pentadbir sistem — akses penuh tanpa tapis
+        if ($pengguna->isPentadbir()) {
+            return $query;
+        }
+
+        $bahagianId = $pengguna->bahagian_id;
+        $masterAktif = \App\Models\Tetapan::get('cross_booking_aktif', '0') === '1';
+
+        if ($masterAktif) {
+            // Bilik bahagian sendiri ATAU bahagian luar yang cross_booking_aktif = 1
+            return $query->where(function (Builder $q) use ($bahagianId) {
+                $q->where('bahagian_id', $bahagianId)
+                  ->orWhereNull('bahagian_id')
+                  ->orWhereHas('bahagian', fn (Builder $q2) =>
+                      $q2->where('cross_booking_aktif', true)->where('aktif', true)
+                  );
+            });
+        }
+
+        // Default: hanya bilik bahagian sendiri
+        return $query->where(function (Builder $q) use ($bahagianId) {
+            $q->where('bahagian_id', $bahagianId)->orWhereNull('bahagian_id');
+        });
     }
 
     public function isAktif(): bool
