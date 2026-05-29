@@ -77,7 +77,13 @@ class PenggunaController extends Controller
         $penggunaPending   = $queryPending->paginate(25, ['*'], 'page_pending')->appends($appends);
         $penggunaNyahaktif = $queryNyahaktif->paginate(25, ['*'], 'page_nyahaktif')->appends($appends);
 
-        $units        = User::SENARAI_UNIT;
+        // Unit list — dinamik berdasarkan bahagian dipilih (bukan constant statik)
+        $unitQuery = User::whereNotNull('jabatan')->where('jabatan', '!=', '');
+        if ($bahagianId !== '') {
+            $unitQuery->where('bahagian_id', $bahagianId);
+        }
+        $units = $unitQuery->distinct()->orderBy('jabatan')->pluck('jabatan')->toArray();
+
         $bahagianList = Bahagian::where('aktif', true)->orderBy('kod')->get();
 
         return view('pengguna.index', compact(

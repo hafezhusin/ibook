@@ -602,8 +602,9 @@ document.getElementById('filter-unit').addEventListener('change', function() {
     document.getElementById('form-carian').submit();
 });
 
-// Bahagian dropdown — server-side filter (merentasi halaman)
+// Bahagian dropdown — server-side filter; reset unit bila bahagian bertukar
 document.getElementById('filter-bahagian').addEventListener('change', function() {
+    document.getElementById('filter-unit').value = '';   // reset unit
     document.getElementById('form-carian').submit();
 });
 
