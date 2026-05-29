@@ -26,6 +26,7 @@ class UpdateBilikRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'bahagian_id' => ['required', 'integer', 'exists:bahagian,id'],
             'nama' => ['required', 'string', 'max:255'],
             'kapasiti' => ['required', 'integer', 'min:1', 'max:500'],
             'lokasi' => ['nullable', 'string', 'max:255'],
@@ -39,6 +40,8 @@ class UpdateBilikRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'bahagian_id.required' => 'Sila pilih bahagian pemilik bilik.',
+            'bahagian_id.exists' => 'Bahagian yang dipilih tidak sah.',
             'nama.required' => 'Sila masukkan nama bilik.',
             'kapasiti.required' => 'Sila masukkan kapasiti bilik.',
             'kapasiti.min' => 'Kapasiti mestilah sekurang-kurangnya 1 orang.',

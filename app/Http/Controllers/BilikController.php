@@ -16,6 +16,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreBilikRequest;
 use App\Http\Requests\UpdateBilikRequest;
+use App\Models\Bahagian;
 use App\Models\BilikMesyuarat;
 use App\Services\AuditLogger;
 use Illuminate\Support\Facades\DB;
@@ -59,7 +60,8 @@ class BilikController extends Controller
 
     public function create()
     {
-        return view('bilik.form', ['bilik' => null]);
+        $bahagian = Bahagian::where('aktif', true)->orderBy('kod')->get();
+        return view('bilik.form', ['bilik' => null, 'bahagian' => $bahagian]);
     }
 
     public function store(StoreBilikRequest $request)
@@ -81,7 +83,8 @@ class BilikController extends Controller
 
     public function edit(BilikMesyuarat $bilik)
     {
-        return view('bilik.form', compact('bilik'));
+        $bahagian = Bahagian::where('aktif', true)->orderBy('kod')->get();
+        return view('bilik.form', compact('bilik', 'bahagian'));
     }
 
     public function update(UpdateBilikRequest $request, BilikMesyuarat $bilik)

@@ -51,6 +51,27 @@
                 @enderror
             </div>
 
+            {{-- Bahagian --}}
+            <div class="md:col-span-2">
+                <label for="bahagian-bilik" class="form-label">
+                    Bahagian <span class="text-red-500" aria-hidden="true">*</span>
+                </label>
+                <select id="bahagian-bilik" name="bahagian_id" class="form-input" required aria-required="true"
+                    @error('bahagian_id') aria-invalid="true" aria-describedby="ralat-bahagian" @enderror>
+                    <option value="">— Pilih Bahagian —</option>
+                    @foreach($bahagian as $b)
+                    <option value="{{ $b->id }}"
+                        {{ old('bahagian_id', $bilik?->bahagian_id) == $b->id ? 'selected' : '' }}>
+                        {{ $b->kod }} — {{ $b->nama }}
+                    </option>
+                    @endforeach
+                </select>
+                <p class="form-hint">Bahagian/jabatan pemilik bilik mesyuarat ini.</p>
+                @error('bahagian_id')
+                <p id="ralat-bahagian" class="text-red-500 text-xs mt-1" role="alert">{{ $message }}</p>
+                @enderror
+            </div>
+
             {{-- Kapasiti --}}
             <div>
                 <label for="kapasiti-bilik" class="form-label">
