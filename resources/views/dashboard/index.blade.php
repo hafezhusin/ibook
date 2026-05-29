@@ -197,6 +197,51 @@
     </div>
 </div>
 
+{{-- ══ Filter Bahagian (Pentadbir Sistem sahaja) ══════════════════ --}}
+@if(auth()->user()->isPentadbir())
+<form method="GET" action="{{ route('dashboard') }}"
+      class="flex items-center gap-3 mb-4 flex-wrap"
+      aria-label="Tapis dashboard mengikut bahagian">
+
+    <div class="flex items-center gap-2 text-sm text-gray-500 font-medium flex-shrink-0">
+        <i class="fa-solid fa-building-columns text-amber-400 text-xs" aria-hidden="true"></i>
+        Tapis Bahagian:
+    </div>
+
+    <div class="relative flex-1 min-w-[200px] max-w-xs">
+        <select name="bahagian_id"
+                onchange="this.form.submit()"
+                class="form-input text-sm appearance-none w-full pr-8 cursor-pointer"
+                aria-label="Pilih bahagian untuk ditapis">
+            <option value="">— Semua Bahagian —</option>
+            @foreach($bahagianList as $b)
+            <option value="{{ $b->id }}" {{ $bahagianFilter == $b->id ? 'selected' : '' }}>
+                {{ $b->kod }} — {{ $b->nama }}
+            </option>
+            @endforeach
+        </select>
+        <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" aria-hidden="true"></i>
+    </div>
+
+    @if($bahagianFilter)
+    <a href="{{ route('dashboard') }}"
+       class="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-3 py-2 bg-white transition-colors whitespace-nowrap"
+       title="Papar semua bahagian">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i> Kosongkan
+    </a>
+    @php
+        $namaFilterBahagian = $bahagianList->firstWhere('id', $bahagianFilter)?->kod ?? '';
+    @endphp
+    <span class="text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5"
+          style="background:#fef3c7; color:#92400e">
+        <i class="fa-solid fa-filter text-[10px]" aria-hidden="true"></i>
+        Menapis: {{ $namaFilterBahagian }}
+    </span>
+    @endif
+
+</form>
+@endif
+
 {{-- ══ Tab Bar ══════════════════════════════════════════════════════ --}}
 <div class="tab-bar" role="tablist" aria-label="Pandangan papan pemuka">
     <button class="tab-btn" data-tab="ringkasan" role="tab" aria-selected="true" aria-controls="tab-ringkasan"

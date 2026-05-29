@@ -14,17 +14,32 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bahagian;
 use App\Services\DashboardService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
     public function __construct(private DashboardService $service) {}
 
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
-        $data = $this->service->getData($user);
+
+        // Filter bahagian — hanya untuk pentadbir sistem
+        $bahagianFilter = null;
+        if ($user->isPentadbir() && $request->filled('bahagian_id')) {
+            $bahagianFilter = (int) $request->bahagian_id;
+        }
+
+        $bahagianList = $user->isPentadbir()
+            ? Bahagian::where('aktif', true)->orderBy('kod')->get()
+            : collect();
+
+        $data = $this->service->getData($user, $bahagianFilter);
+        $data['bahagianList']   = $bahagianList;
+        $data['bahagianFilter'] = $bahagianFilter;
 
         return view('dashboard.index', $data);
     }

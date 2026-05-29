@@ -24,20 +24,21 @@ use Illuminate\Support\Facades\DB;
 class DashboardService
 {
     /**
-     * Kunci cache unik bagi setiap pengguna & peranan.
-     * Staf mendapat data unit sendiri, admin/urus setia mendapat semua.
+     * Kunci cache unik bagi setiap pengguna, peranan & filter bahagian.
+     * Staf mendapat data unit sendiri, admin/urus setia mengikut skop bahagian.
      */
-    private function kunciCache(User $user): string
+    private function kunciCache(User $user, ?int $bahagianFilter = null): string
     {
         // Sertakan versi supaya luputkanSemuaCache() benar-benar buang semua entri cache.
-        // Setiap kali versi dinaikkan, kunci berubah → cache lama diabaikan secara automatik.
         $versi = Cache::get('dashboard.cache.version', 1);
         if ($user->isStaf()) {
             $skop = "staf.{$user->id}";
         } else {
             // Urus setia berlainan bahagian perlu cache berasingan
             $bahagianDim = $user->bahagian_id ?? 'all';
-            $skop = "admin.{$user->peranan}.h{$bahagianDim}";
+            // Pentadbir sistem boleh filter by bahagian — sertakan dalam kunci
+            $filterDim   = $bahagianFilter ? ".f{$bahagianFilter}" : '';
+            $skop = "admin.{$user->peranan}.h{$bahagianDim}{$filterDim}";
         }
 
         return "dashboard.v{$versi}.{$skop}";
@@ -47,22 +48,26 @@ class DashboardService
      * Dapatkan semua data dashboard.
      * Hasil di-cache mengikut TTL dalam config/ibook.php.
      */
-    public function getData(User $user): array
+    public function getData(User $user, ?int $bahagianFilter = null): array
     {
         $ttl = config('ibook.cache.dashboard', 300);
 
-        return Cache::remember($this->kunciCache($user), $ttl, function () use ($user) {
-            return $this->kiraData($user);
+        return Cache::remember($this->kunciCache($user, $bahagianFilter), $ttl, function () use ($user, $bahagianFilter) {
+            return $this->kiraData($user, $bahagianFilter);
         });
     }
 
     /**
      * Padam cache dashboard untuk pengguna tertentu.
      * Dipanggil bila ada tempahan baru / dikemaskini.
+     * Guna luputkanSemuaCache() jika filter bahagian berbeza-beza.
      */
     public function luputkanCache(User $user): void
     {
-        Cache::forget($this->kunciCache($user));
+        // Buang cache tanpa filter (paparan biasa)
+        Cache::forget($this->kunciCache($user, null));
+        // Bump versi keseluruhan supaya semua filter variant turut luput
+        $this->luputkanSemuaCache();
     }
 
     /**
@@ -77,17 +82,30 @@ class DashboardService
     /**
      * Kira semua statistik dashboard dari DB.
      */
-    private function kiraData(User $user): array
+    private function kiraData(User $user, ?int $bahagianFilter = null): array
     {
         $bulanIni = now()->month;
         $tahunIni = now()->year;
         $bulanLepas = now()->subMonth()->month;
         $tahunLepas = now()->subMonth()->year;
 
-        // Query asas mengikut skop pengguna
+        // ── Bilik skop — apply bahagian filter jika ada ──────────────────
+        $bilik = BilikMesyuarat::where('status', 'aktif')
+            ->untukPengguna($user)
+            ->when($bahagianFilter, fn ($q) => $q->where('bahagian_id', $bahagianFilter))
+            ->get();
+
+        $bilikIds = $bilik->pluck('id');
+
+        // ── Query asas tempahan mengikut skop ────────────────────────────
+        // Staf: tempahan sendiri sahaja
+        // Pentadbir + filter bahagian: tempahan dalam bilik bahagian berkenaan
+        // Pentadbir tanpa filter: semua tempahan
         $query = Tempahan::query();
         if ($user->isStaf()) {
             $query->where('user_id', $user->id);
+        } elseif ($bahagianFilter) {
+            $query->whereIn('bilik_id', $bilikIds);
         }
 
         // Tempahan bulan ini & bulan lepas (untuk trend)
@@ -109,11 +127,6 @@ class DashboardService
             ->whereDate('tarikh', today())
             ->where('status', Tempahan::STATUS_DILULUSKAN)
             ->count();
-
-        // Statistik bilik — ditapis mengikut bahagian pengguna
-        $bilik = BilikMesyuarat::where('status', 'aktif')
-            ->untukPengguna($user)
-            ->get();
         $esok = today()->addDay();
 
         // Satu query untuk semua slot hari ini + esok — ganti 4 query berasingan
@@ -142,7 +155,7 @@ class DashboardService
             ->whereMonth('tarikh', $bulanIni)
             ->whereYear('tarikh', $tahunIni)
             ->where('status', Tempahan::STATUS_DILULUSKAN)
-            ->whereIn('bilik_id', $bilik->pluck('id'))
+            ->whereIn('bilik_id', $bilikIds)
             ->groupBy('bilik_id')
             ->pluck('jumlah', 'bilik_id'); // Collection: bilik_id => jumlah
 
