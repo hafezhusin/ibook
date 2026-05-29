@@ -28,8 +28,9 @@ class PenggunaController extends Controller
 {
     public function index(Request $request)
     {
-        $cari = trim($request->input('cari', ''));
-        $unit = trim($request->input('unit', ''));
+        $cari       = trim($request->input('cari', ''));
+        $unit       = trim($request->input('unit', ''));
+        $bahagianId = trim($request->input('bahagian_id', ''));
 
         // Aktif
         $queryAktif = User::where('aktif', true)->orderBy('name');
@@ -61,15 +62,28 @@ class PenggunaController extends Controller
             $queryNyahaktif->where('jabatan', $unit);
         }
 
-        $appends = array_filter(['cari' => $cari, 'unit' => $unit], fn ($v) => $v !== '');
+        if ($bahagianId !== '') {
+            $queryAktif->where('bahagian_id', $bahagianId);
+            $queryPending->where('bahagian_id', $bahagianId);
+            $queryNyahaktif->where('bahagian_id', $bahagianId);
+        }
 
-        $penggunaAktif = $queryAktif->paginate(25, ['*'], 'page_aktif')->appends($appends);
-        $penggunaPending = $queryPending->paginate(25, ['*'], 'page_pending')->appends($appends);
+        $appends = array_filter(
+            ['cari' => $cari, 'unit' => $unit, 'bahagian_id' => $bahagianId],
+            fn ($v) => $v !== ''
+        );
+
+        $penggunaAktif    = $queryAktif->paginate(25, ['*'], 'page_aktif')->appends($appends);
+        $penggunaPending   = $queryPending->paginate(25, ['*'], 'page_pending')->appends($appends);
         $penggunaNyahaktif = $queryNyahaktif->paginate(25, ['*'], 'page_nyahaktif')->appends($appends);
 
-        $units = User::SENARAI_UNIT;
+        $units        = User::SENARAI_UNIT;
+        $bahagianList = Bahagian::where('aktif', true)->orderBy('kod')->get();
 
-        return view('pengguna.index', compact('penggunaAktif', 'penggunaPending', 'penggunaNyahaktif', 'cari', 'unit', 'units'));
+        return view('pengguna.index', compact(
+            'penggunaAktif', 'penggunaPending', 'penggunaNyahaktif',
+            'cari', 'unit', 'units', 'bahagianId', 'bahagianList'
+        ));
     }
 
     public function store(StorePenggunaRequest $request)

@@ -85,6 +85,22 @@
         @endif
     </div>
 
+    {{-- Dropdown Bahagian --}}
+    <div class="relative">
+        <i class="fa-solid fa-building-columns absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" aria-hidden="true"></i>
+        <select id="filter-bahagian" name="bahagian_id"
+            class="form-input text-sm pl-8 pr-8 appearance-none cursor-pointer min-w-[200px]"
+            aria-label="Tapis mengikut bahagian">
+            <option value="">— Semua Bahagian —</option>
+            @foreach($bahagianList as $b)
+            <option value="{{ $b->id }}" {{ $bahagianId == $b->id ? 'selected' : '' }}>
+                {{ $b->kod }} — {{ $b->nama }}
+            </option>
+            @endforeach
+        </select>
+        <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" aria-hidden="true"></i>
+    </div>
+
     {{-- Dropdown Unit --}}
     <div class="relative">
         <select id="filter-unit" name="unit"
@@ -99,7 +115,7 @@
     </div>
 
     {{-- Papar butang Kosongkan jika ada filter aktif --}}
-    @if($cari !== '' || $unit !== '')
+    @if($cari !== '' || $unit !== '' || $bahagianId !== '')
     <a href="{{ route('pengguna.index') }}"
         class="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg px-3 py-2 bg-white transition-colors"
         title="Kosongkan semua penapis">
@@ -582,8 +598,13 @@ document.getElementById('carian-pengguna').addEventListener('input', function() 
 
 // Unit dropdown — tapis visual segera + submit ke server
 document.getElementById('filter-unit').addEventListener('change', function() {
-    applyFilters();                     // tapis segera pada halaman semasa
-    document.getElementById('form-carian').submit();  // hantar ke server (pagination betul)
+    applyFilters();
+    document.getElementById('form-carian').submit();
+});
+
+// Bahagian dropdown — server-side filter (merentasi halaman)
+document.getElementById('filter-bahagian').addEventListener('change', function() {
+    document.getElementById('form-carian').submit();
 });
 
 // Tab buttons
