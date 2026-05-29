@@ -24,7 +24,9 @@ class KetersediaanController extends Controller
 {
     public function index()
     {
-        $bilikAktif = BilikMesyuarat::where('status', 'aktif')->orderBy('nama')->get();
+        $bilikAktif = BilikMesyuarat::where('status', 'aktif')
+            ->untukPengguna(auth()->user())
+            ->orderBy('nama')->get();
 
         return view('ketersediaan.index', compact('bilikAktif'));
     }
@@ -53,6 +55,7 @@ class KetersediaanController extends Controller
         };
 
         $bilikList = BilikMesyuarat::where('status', 'aktif')
+            ->untukPengguna(auth()->user())
             ->orderBy('nama')
             ->get();
 
@@ -146,7 +149,9 @@ class KetersediaanController extends Controller
             $hari[] = $mula->copy()->addDays($i)->toDateString();
         }
 
-        $bilikList = BilikMesyuarat::where('status', 'aktif')->orderBy('nama')->get();
+        $bilikList = BilikMesyuarat::where('status', 'aktif')
+            ->untukPengguna(auth()->user())
+            ->orderBy('nama')->get();
 
         // Ambil semua tempahan untuk minggu ini — satu query sahaja
         $cacheKey = 'ketersediaan_minggu_'.$mula->toDateString();

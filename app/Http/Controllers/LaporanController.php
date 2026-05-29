@@ -43,7 +43,9 @@ class LaporanController extends Controller
         $isStaf = $user->isStaf();
         $isPentadbir = $user->isPentadbir();
         $senaraiTahun = range(now()->year, now()->year - 4);
-        $senaraibilik = BilikMesyuarat::where('status', 'aktif')->orderBy('nama')->get(['id', 'nama']);
+        $senaraibilik = BilikMesyuarat::where('status', 'aktif')
+            ->untukPengguna($user)
+            ->orderBy('nama')->get(['id', 'nama']);
 
         // ── Item 5: Log audit akses laporan ──
         AuditLogger::catat('akses_laporan', null, [
@@ -84,10 +86,11 @@ class LaporanController extends Controller
         // =============================================
         $isTahunSemasa = ($tahun === now()->year);
         $ttl = $isTahunSemasa ? self::CACHE_INI_TTL : self::CACHE_LALU_TTL;
-        $cacheKey = "laporan_v2_admin_{$tahun}".($bilikFilter ? "_b{$bilikFilter}" : '');
+        $bahagianDim = $user->bahagian_id ?? 'all';
+        $cacheKey = "laporan_v2_admin_{$tahun}".($bilikFilter ? "_b{$bilikFilter}" : '')."_h{$bahagianDim}";
 
-        // Data dikira sekali dan dicache (tidak bergantung kepada pengguna)
-        $data = Cache::remember($cacheKey, $ttl, fn () => $this->kiraLaporanAdmin($tahun, $bilikFilter));
+        // Data dikira sekali dan dicache (diasingkan mengikut bahagian pengguna)
+        $data = Cache::remember($cacheKey, $ttl, fn () => $this->kiraLaporanAdmin($tahun, $bilikFilter, $user));
 
         // Tambah nilai yang bergantung kepada pengguna (tidak boleh dicache)
         $data['isPentadbir'] = $isPentadbir;
@@ -105,7 +108,7 @@ class LaporanController extends Controller
         $tahun = (int) $request->get('tahun', now()->year);
         $bilikFilter = $request->filled('bilik_id') ? (int) $request->bilik_id : null;
 
-        $data = $this->kiraLaporanAdmin($tahun, $bilikFilter);
+        $data = $this->kiraLaporanAdmin($tahun, $bilikFilter, Auth::user());
         $data['tahun'] = $tahun;
 
         AuditLogger::catat('eksport_laporan_pdf', null, ['tahun' => $tahun]);
@@ -128,7 +131,7 @@ class LaporanController extends Controller
         $tahun = (int) $request->get('tahun', now()->year);
         $bilikFilter = $request->filled('bilik_id') ? (int) $request->bilik_id : null;
 
-        $data = $this->kiraLaporanAdmin($tahun, $bilikFilter);
+        $data = $this->kiraLaporanAdmin($tahun, $bilikFilter, Auth::user());
 
         AuditLogger::catat('eksport_laporan_excel', null, ['tahun' => $tahun]);
 
@@ -141,7 +144,7 @@ class LaporanController extends Controller
     // ─────────────────────────────────────────────────────────
     // Kira semua data laporan admin — boleh dicache selamat
     // ─────────────────────────────────────────────────────────
-    private function kiraLaporanAdmin(int $tahun, ?int $bilikId = null): array
+    private function kiraLaporanAdmin(int $tahun, ?int $bilikId = null, $user = null): array
     {
         // ── 1. Tempahan mengikut bulan ──
         $dataBulan = $this->kiraBulan($tahun, [], $bilikId);
@@ -194,7 +197,7 @@ class LaporanController extends Controller
         $bilik = BilikMesyuarat::with(['tempahan' => function ($q) use ($tahun) {
             $q->whereYear('tarikh', $tahun)
                 ->where('status', Tempahan::STATUS_DILULUSKAN);
-        }])->get()->map(function ($b) use ($maxSesiTahun) {
+        }])->when($user, fn ($q) => $q->untukPengguna($user))->get()->map(function ($b) use ($maxSesiTahun) {
             $jumlah = $b->tempahan->count();
             // $maxSesiTahun adalah 730 atau 732 — sentiasa > 0, bahagi terus.
             $peratusan = (int) round(($jumlah / $maxSesiTahun) * 100);

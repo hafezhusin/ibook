@@ -52,11 +52,14 @@ class CarianController extends Controller
 
         $tempahan = $queryTempahan->orderByDesc('tarikh')->limit(10)->get();
 
-        // Carian bilik (pentadbir sahaja)
+        // Carian bilik (pentadbir & urus setia — ditapis mengikut bahagian)
         $bilik = collect();
         if ($user->isPentadbir()) {
-            $bilik = BilikMesyuarat::where('nama', 'like', "%{$q}%")
-                ->orWhere('lokasi', 'like', "%{$q}%")
+            $bilik = BilikMesyuarat::untukPengguna($user)
+                ->where(function ($qb) use ($q) {
+                    $qb->where('nama', 'like', "%{$q}%")
+                        ->orWhere('lokasi', 'like', "%{$q}%");
+                })
                 ->limit(10)->get();
         }
 

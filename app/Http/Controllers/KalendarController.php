@@ -25,7 +25,9 @@ class KalendarController extends Controller
 {
     public function index()
     {
-        $bilik = BilikMesyuarat::where('status', 'aktif')->orderBy('nama')->get();
+        $bilik = BilikMesyuarat::where('status', 'aktif')
+            ->untukPengguna(auth()->user())
+            ->orderBy('nama')->get();
 
         return response()
             ->view('kalendar.index', compact('bilik'))
