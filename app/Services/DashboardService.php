@@ -32,7 +32,13 @@ class DashboardService
         // Sertakan versi supaya luputkanSemuaCache() benar-benar buang semua entri cache.
         // Setiap kali versi dinaikkan, kunci berubah → cache lama diabaikan secara automatik.
         $versi = Cache::get('dashboard.cache.version', 1);
-        $skop = $user->isStaf() ? "staf.{$user->id}" : "admin.{$user->peranan}";
+        if ($user->isStaf()) {
+            $skop = "staf.{$user->id}";
+        } else {
+            // Urus setia berlainan bahagian perlu cache berasingan
+            $bahagianDim = $user->bahagian_id ?? 'all';
+            $skop = "admin.{$user->peranan}.h{$bahagianDim}";
+        }
 
         return "dashboard.v{$versi}.{$skop}";
     }
@@ -104,8 +110,10 @@ class DashboardService
             ->where('status', Tempahan::STATUS_DILULUSKAN)
             ->count();
 
-        // Statistik bilik
-        $bilik = BilikMesyuarat::where('status', 'aktif')->get();
+        // Statistik bilik — ditapis mengikut bahagian pengguna
+        $bilik = BilikMesyuarat::where('status', 'aktif')
+            ->untukPengguna($user)
+            ->get();
         $esok = today()->addDay();
 
         // Satu query untuk semua slot hari ini + esok — ganti 4 query berasingan
