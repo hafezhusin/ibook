@@ -30,8 +30,9 @@ class UpdatePenggunaRequest extends FormRequest
         return [
             'name' => ['sometimes', 'string', 'max:255'],
             'jabatan' => ['nullable', 'string', 'max:255'],
-            'peranan' => ['required', 'in:'.PerananPengguna::validasiIn()],
-            'aktif' => ['boolean'],
+            'peranan'     => ['required', 'in:'.PerananPengguna::validasiIn()],
+            'aktif'       => ['boolean'],
+            'bahagian_id' => ['nullable', 'integer', 'exists:bahagian,id'],
         ];
     }
 

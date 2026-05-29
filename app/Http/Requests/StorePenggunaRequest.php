@@ -31,7 +31,8 @@ class StorePenggunaRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email', 'max:255'],
             'jabatan' => ['nullable', 'string', 'max:255'],
-            'peranan' => ['required', 'in:'.PerananPengguna::validasiIn()],
+            'peranan'     => ['required', 'in:'.PerananPengguna::validasiIn()],
+            'bahagian_id' => ['required', 'integer', 'exists:bahagian,id'],
             'password' => [
                 'required',
                 'confirmed',
@@ -48,7 +49,9 @@ class StorePenggunaRequest extends FormRequest
             'email.unique' => 'Emel ini telah digunakan.',
             'email.email' => 'Format emel tidak sah.',
             'peranan.required' => 'Sila pilih peranan.',
-            'peranan.in' => 'Peranan yang dipilih tidak sah.',
+            'peranan.in'         => 'Peranan yang dipilih tidak sah.',
+            'bahagian_id.required' => 'Sila pilih bahagian.',
+            'bahagian_id.exists'   => 'Bahagian yang dipilih tidak sah.',
             'password.required' => 'Sila masukkan kata laluan.',
             'password.confirmed' => 'Pengesahan kata laluan tidak sepadan.',
         ];

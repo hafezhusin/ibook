@@ -30,8 +30,15 @@
         </div>
     </div>
 
-    {{-- Unit --}}
-    <div class="text-sm text-gray-600 truncate">{{ $p->jabatan ?? '—' }}</div>
+    {{-- Unit + Bahagian --}}
+    <div class="text-sm text-gray-600 truncate">{{ $p->jabatan ?? '—' }}
+        @if($p->bahagian)
+        <div class="text-xs text-amber-600 font-medium mt-0.5">
+            <i class="fa-solid fa-building-columns text-[9px]" aria-hidden="true"></i>
+            {{ $p->bahagian->kod }}
+        </div>
+        @endif
+    </div>
 
     {{-- Peranan --}}
     <div>
@@ -81,6 +88,7 @@
             data-peranan="{{ $p->peranan }}"
             data-aktif="{{ $p->aktif ? 'true' : 'false' }}"
             data-has-sso="{{ (str_ends_with($p->email, '@anm.gov.my') || $p->google_id) ? 'true' : 'false' }}"
+            data-bahagian-id="{{ $p->bahagian_id ?? '' }}"
             class="text-amber-500 text-xs hover:underline" aria-label="Edit {{ $p->name }}">
             <i class="fa-solid fa-pen" aria-hidden="true"></i> Edit
         </button>

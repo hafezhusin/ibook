@@ -29,6 +29,12 @@
                 @endif
             </div>
             <div class="text-xs text-gray-500 truncate">{{ $p->jabatan ?? 'Tiada unit' }}</div>
+            @if($p->bahagian)
+            <div class="text-xs text-amber-600 truncate font-medium">
+                <i class="fa-solid fa-building-columns text-[10px]" aria-hidden="true"></i>
+                {{ $p->bahagian->kod }}
+            </div>
+            @endif
             <div class="text-xs text-gray-400 truncate">
                 {{ auth()->user()->isPentadbir() ? $p->email : $p->masked_email }}
             </div>
@@ -84,6 +90,7 @@
                 data-peranan="{{ $p->peranan }}"
                 data-aktif="{{ $p->aktif ? 'true' : 'false' }}"
                 data-has-sso="{{ (str_ends_with($p->email, '@anm.gov.my') || $p->google_id) ? 'true' : 'false' }}"
+                data-bahagian-id="{{ $p->bahagian_id ?? '' }}"
                 class="text-amber-500 text-xs hover:underline"
                 aria-label="Edit pengguna — {{ $p->name }}"
                 aria-haspopup="dialog" aria-controls="modal-edit">

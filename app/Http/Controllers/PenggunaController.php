@@ -32,6 +32,14 @@ class PenggunaController extends Controller
         $unit       = trim($request->input('unit', ''));
         $bahagianId = trim($request->input('bahagian_id', ''));
 
+        // Urus Setia — terhad kepada bahagian sendiri sahaja
+        $authUser      = auth()->user();
+        $urusSetiaLock = false;
+        if ($authUser->isUrusSetia() && $authUser->bahagian_id) {
+            $bahagianId    = (string) $authUser->bahagian_id;
+            $urusSetiaLock = true;
+        }
+
         // Aktif
         $queryAktif = User::where('aktif', true)->orderBy('name');
 
@@ -89,7 +97,7 @@ class PenggunaController extends Controller
 
         return view('pengguna.index', compact(
             'penggunaAktif', 'penggunaPending', 'penggunaNyahaktif',
-            'cari', 'unit', 'units', 'bahagianId', 'bahagianList'
+            'cari', 'unit', 'units', 'bahagianId', 'bahagianList', 'urusSetiaLock'
         ));
     }
 
@@ -98,12 +106,13 @@ class PenggunaController extends Controller
         $validated = $request->validated();
 
         $pengguna = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'jabatan' => $validated['jabatan'] ?? null,
-            'peranan' => $validated['peranan'],
-            'password' => Hash::make($validated['password']),
-            'aktif' => true,
+            'name'        => $validated['name'],
+            'email'       => $validated['email'],
+            'jabatan'     => $validated['jabatan'] ?? null,
+            'peranan'     => $validated['peranan'],
+            'bahagian_id' => $validated['bahagian_id'],
+            'password'    => Hash::make($validated['password']),
+            'aktif'       => true,
         ]);
 
         AuditLogger::catat('tambah_pengguna', $pengguna, [

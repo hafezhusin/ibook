@@ -85,7 +85,15 @@
         @endif
     </div>
 
-    {{-- Dropdown Bahagian --}}
+    {{-- Dropdown Bahagian — locked untuk Urus Setia --}}
+    @if($urusSetiaLock)
+    {{-- Urus Setia: papar bahagian sendiri, tidak boleh tukar --}}
+    <div class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-600 min-w-[200px]">
+        <i class="fa-solid fa-building-columns text-amber-400 text-xs" aria-hidden="true"></i>
+        <span>{{ $bahagianList->firstWhere('id', $bahagianId)?->kod ?? 'Bahagian Saya' }}</span>
+        <input type="hidden" name="bahagian_id" value="{{ $bahagianId }}">
+    </div>
+    @else
     <div class="relative">
         <i class="fa-solid fa-building-columns absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" aria-hidden="true"></i>
         <select id="filter-bahagian" name="bahagian_id"
@@ -100,6 +108,7 @@
         </select>
         <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" aria-hidden="true"></i>
     </div>
+    @endif
 
     {{-- Dropdown Unit --}}
     <div class="relative">
@@ -437,6 +446,15 @@
                         placeholder="emel@jabatan.gov.my" required aria-required="true" autocomplete="off">
                 </div>
                 <div>
+                    <label for="tambah-bahagian" class="form-label">Bahagian <span class="text-red-500">*</span></label>
+                    <select id="tambah-bahagian" name="bahagian_id" class="form-input" required aria-required="true">
+                        <option value="">— Pilih Bahagian —</option>
+                        @foreach($bahagianList as $b)
+                        <option value="{{ $b->id }}">{{ $b->kod }} — {{ $b->nama }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
                     <label for="tambah-jabatan" class="form-label">Unit</label>
                     <input type="text" id="tambah-jabatan" name="jabatan" class="form-input"
                         placeholder="cth: Unit Pentadbiran">
@@ -486,6 +504,15 @@
                         <i class="fa-brands fa-google" aria-hidden="true"></i>
                         Nama diambil dari akaun MyGovUC — tidak boleh diubah di sini.
                     </p>
+                </div>
+                <div>
+                    <label for="edit-bahagian" class="form-label">Bahagian</label>
+                    <select id="edit-bahagian" name="bahagian_id" class="form-input">
+                        <option value="">— Tiada Bahagian —</option>
+                        @foreach($bahagianList as $b)
+                        <option value="{{ $b->id }}">{{ $b->kod }} — {{ $b->nama }}</option>
+                        @endforeach
+                    </select>
                 </div>
                 <div>
                     <label for="edit-jabatan" class="form-label">Unit</label>
@@ -661,7 +688,7 @@ document.addEventListener('click', function(e) {
     const editBtn = e.target.closest('[data-open-edit]');
     if (editBtn) {
         const d = editBtn.dataset;
-        openEdit(parseInt(d.openEdit, 10), d.name, d.jabatan, d.peranan, d.aktif === 'true', d.hasSso === 'true');
+        openEdit(parseInt(d.openEdit, 10), d.name, d.jabatan, d.peranan, d.aktif === 'true', d.hasSso === 'true', d.bahagianId || '');
         return;
     }
     const nyahaktifBtn = e.target.closest('[data-open-nyahaktif]');
@@ -826,11 +853,12 @@ function sortList(panel, col, btnEl) {
     btnEl.querySelector('.sort-icon').textContent = dir === 'asc' ? '↑' : '↓';
 }
 
-function openEdit(id, name, jabatan, peranan, aktif, hasSso) {
-    document.getElementById('form-edit').action    = '/pengguna/' + id;
-    document.getElementById('edit-jabatan').value  = jabatan || '';
-    document.getElementById('edit-peranan').value  = peranan;
-    document.getElementById('edit-aktif').checked  = aktif;
+function openEdit(id, name, jabatan, peranan, aktif, hasSso, bahagianId) {
+    document.getElementById('form-edit').action      = '/pengguna/' + id;
+    document.getElementById('edit-bahagian').value   = bahagianId || '';
+    document.getElementById('edit-jabatan').value    = jabatan || '';
+    document.getElementById('edit-peranan').value    = peranan;
+    document.getElementById('edit-aktif').checked    = aktif;
 
     const nameInput = document.getElementById('edit-name');
     const ssoHint   = document.getElementById('edit-name-sso-hint');
