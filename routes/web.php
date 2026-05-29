@@ -144,10 +144,16 @@ Route::middleware('auth.custom')->group(function () {
         Route::get('/laporan/eksport/excel', [LaporanController::class, 'exportExcel'])->name('laporan.excel');
     });
 
-    // Pentadbir Sistem & Urus Setia — lihat pengguna & reset password
+    // Pentadbir Sistem & Urus Setia — lihat pengguna, reset password, import CSV
     Route::middleware('role:pentadbir_sistem,urus_setia')->group(function () {
         Route::get('/pengguna', [PenggunaController::class, 'index'])->name('pengguna.index');
         Route::post('/pengguna/{pengguna}/reset-password', [PenggunaController::class, 'resetPassword'])->name('pengguna.reset-password');
+
+        // Import CSV — mesti sebelum {pengguna} wildcard
+        Route::get('/pengguna/import-csv/templat', [PenggunaController::class, 'downloadTemplat'])->name('pengguna.import-csv.templat');
+        Route::get('/pengguna/import-csv', [PenggunaController::class, 'importCsvForm'])->name('pengguna.import-csv');
+        Route::post('/pengguna/import-csv', [PenggunaController::class, 'importCsvPratonton'])->name('pengguna.import-csv.pratonton');
+        Route::post('/pengguna/import-csv/proses', [PenggunaController::class, 'importCsvProses'])->name('pengguna.import-csv.proses');
     });
 
     // Hanya Pentadbir Sistem

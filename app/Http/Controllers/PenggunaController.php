@@ -16,6 +16,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePenggunaRequest;
 use App\Http\Requests\UpdatePenggunaRequest;
+use App\Models\Bahagian;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
@@ -155,6 +156,236 @@ class PenggunaController extends Controller
         ]);
 
         return back()->with('success', 'Kata laluan pengguna berjaya ditukar semula.');
+    }
+
+    // ── Import CSV ──────────────────────────────────────────────────
+
+    /**
+     * Borang muat naik CSV.
+     */
+    public function importCsvForm()
+    {
+        $user = auth()->user();
+        $bahagian = $user->isPentadbir()
+            ? Bahagian::where('aktif', true)->orderBy('kod')->get()
+            : Bahagian::where('id', $user->bahagian_id)->get();
+
+        $pratonton   = session('import_pratonton');
+        $bahagianId  = session('import_bahagian_id');
+
+        return view('pengguna.import-csv', compact('bahagian', 'pratonton', 'bahagianId'));
+    }
+
+    /**
+     * Parse CSV → simpan dalam session → tunjuk pratonton.
+     */
+    public function importCsvPratonton(Request $request)
+    {
+        $authUser = auth()->user();
+
+        $request->validate([
+            'csv_fail'    => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
+            'bahagian_id' => ['required', 'integer', 'exists:bahagian,id'],
+        ], [
+            'csv_fail.required'    => 'Sila muat naik fail CSV.',
+            'csv_fail.mimes'       => 'Fail mestilah dalam format CSV (.csv).',
+            'csv_fail.max'         => 'Saiz fail tidak boleh melebihi 2MB.',
+            'bahagian_id.required' => 'Sila pilih bahagian.',
+            'bahagian_id.exists'   => 'Bahagian tidak sah.',
+        ]);
+
+        $bahagianId = (int) $request->bahagian_id;
+
+        // Urus setia hanya boleh import untuk bahagian sendiri
+        if ($authUser->isUrusSetia() && $authUser->bahagian_id !== $bahagianId) {
+            return back()->with('error', 'Anda hanya boleh mengimport pengguna untuk bahagian anda sendiri.');
+        }
+
+        // ── Parse CSV ──
+        $handle = fopen($request->file('csv_fail')->getPathname(), 'r');
+
+        // Buang BOM (Excel CSV)
+        $bom = fread($handle, 3);
+        if ($bom !== "\xEF\xBB\xBF") {
+            rewind($handle);
+        }
+
+        $header = fgetcsv($handle);
+        if (! $header) {
+            fclose($handle);
+            return back()->with('error', 'Fail CSV kosong atau tidak sah.');
+        }
+
+        $header = array_map(fn ($h) => strtolower(trim($h)), $header);
+
+        foreach (['nama', 'emel'] as $wajib) {
+            if (! in_array($wajib, $header)) {
+                fclose($handle);
+                return back()->with('error', "Lajur wajib '{$wajib}' tidak dijumpai dalam CSV. Sila guna templat yang disediakan.");
+            }
+        }
+
+        $baris   = [];
+        $bilBaris = 0;
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $bilBaris++;
+            if ($bilBaris > 500) break;
+            if (count($row) < count($header)) continue;
+
+            $data = array_combine($header, array_slice($row, 0, count($header)));
+
+            $nama    = trim($data['nama'] ?? '');
+            $emel    = strtolower(trim($data['emel'] ?? ''));
+            $unit    = trim($data['unit'] ?? $data['jabatan'] ?? '');
+            $peranan = trim($data['peranan'] ?? 'staf');
+
+            if (empty($nama) || empty($emel)) {
+                continue;
+            }
+
+            if (! filter_var($emel, FILTER_VALIDATE_EMAIL)) {
+                $baris[] = [
+                    'baris'       => $bilBaris,
+                    'nama'        => $nama,
+                    'emel'        => $emel,
+                    'unit'        => $unit,
+                    'peranan'     => $peranan,
+                    'status'      => 'ralat',
+                    'mesej'       => 'Format emel tidak sah',
+                    'existing_id' => null,
+                ];
+                continue;
+            }
+
+            $peranan = in_array($peranan, ['staf', 'urus_setia', 'pentadbir_sistem'])
+                ? $peranan : 'staf';
+
+            $existing = User::where('email', $emel)->first();
+
+            if ($existing) {
+                $status = $existing->aktif ? 'aktif' : 'tidak_aktif';
+                $mesej  = $existing->aktif ? 'Sudah aktif dalam sistem' : 'Akan diaktifkan semula';
+            } else {
+                $status = 'baru';
+                $mesej  = 'Pengguna baru akan dicipta';
+            }
+
+            $baris[] = [
+                'baris'       => $bilBaris,
+                'nama'        => $nama,
+                'emel'        => $emel,
+                'unit'        => $unit,
+                'peranan'     => $peranan,
+                'status'      => $status,
+                'mesej'       => $mesej,
+                'existing_id' => $existing?->id,
+            ];
+        }
+        fclose($handle);
+
+        if (empty($baris)) {
+            return back()->with('error', 'Tiada data yang sah dalam CSV. Semak format dan cuba semula.');
+        }
+
+        session(['import_pratonton' => $baris, 'import_bahagian_id' => $bahagianId]);
+
+        return redirect()->route('pengguna.import-csv');
+    }
+
+    /**
+     * Proses baris yang dipilih daripada pratonton.
+     */
+    public function importCsvProses(Request $request)
+    {
+        $pratonton  = session('import_pratonton');
+        $bahagianId = session('import_bahagian_id');
+
+        if (! $pratonton || ! $bahagianId) {
+            return redirect()->route('pengguna.import-csv')
+                ->with('error', 'Sesi pratonton tamat. Sila muat naik CSV semula.');
+        }
+
+        $request->validate([
+            'pilihan'   => ['required', 'array', 'min:1'],
+            'pilihan.*' => ['integer'],
+        ], [
+            'pilihan.required' => 'Sila pilih sekurang-kurangnya satu pengguna untuk diproses.',
+        ]);
+
+        $dipilih    = array_map('intval', $request->pilihan);
+        $kataLaluan = 'iBook@' . date('Y');
+        $dicipta    = 0;
+        $diaktifkan = 0;
+
+        foreach ($pratonton as $i => $b) {
+            if (! in_array($i, $dipilih)) {
+                continue;
+            }
+            if (in_array($b['status'], ['ralat', 'aktif'])) {
+                continue;
+            }
+
+            if ($b['status'] === 'baru') {
+                User::create([
+                    'name'        => $b['nama'],
+                    'email'       => $b['emel'],
+                    'jabatan'     => $b['unit'] ?: null,
+                    'peranan'     => $b['peranan'],
+                    'password'    => Hash::make($kataLaluan),
+                    'aktif'       => true,
+                    'bahagian_id' => $bahagianId,
+                ]);
+                $dicipta++;
+            } elseif ($b['status'] === 'tidak_aktif' && $b['existing_id']) {
+                User::where('id', $b['existing_id'])->update([
+                    'aktif'       => true,
+                    'bahagian_id' => $bahagianId,
+                    'jabatan'     => $b['unit'] ?: null,
+                ]);
+                $diaktifkan++;
+            }
+        }
+
+        session()->forget(['import_pratonton', 'import_bahagian_id']);
+
+        $jumlah = $dicipta + $diaktifkan;
+        AuditLogger::catat('import_csv_pengguna', null, [
+            'bahagian_id' => $bahagianId,
+            'dicipta'     => $dicipta,
+            'diaktifkan'  => $diaktifkan,
+            'jumlah'      => $jumlah,
+        ]);
+
+        $mesej = "{$jumlah} pengguna berjaya diproses ({$dicipta} dicipta, {$diaktifkan} diaktifkan semula).";
+        if ($dicipta > 0) {
+            $mesej .= " Kata laluan lalai bagi pengguna baru: <code>{$kataLaluan}</code>";
+        }
+
+        return redirect()->route('pengguna.index')->with('success_html', $mesej);
+    }
+
+    /**
+     * Muat turun templat CSV.
+     */
+    public function downloadTemplat()
+    {
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="templat-import-pengguna.csv"',
+        ];
+
+        $callback = function () {
+            $h = fopen('php://output', 'w');
+            fprintf($h, "\xEF\xBB\xBF"); // BOM — supaya Excel buka dengan betul
+            fputcsv($h, ['nama', 'emel', 'unit', 'peranan']);
+            fputcsv($h, ['Ahmad bin Ali', 'ahmad.ali@jabatan.gov.my', 'Unit Gaji', 'staf']);
+            fputcsv($h, ['Siti Nurhaliza binti Hassan', 'siti.hassan@jabatan.gov.my', 'Unit Bayaran', 'staf']);
+            fputcsv($h, ['Mohd Razif bin Roslan', 'razif.roslan@jabatan.gov.my', 'Unit ICT', 'urus_setia']);
+            fclose($h);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     // ── Toggle aktif/nyahaktif satu pengguna ──

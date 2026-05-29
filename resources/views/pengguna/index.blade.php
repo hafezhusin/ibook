@@ -32,15 +32,24 @@
 @section('content')
 
 {{-- ── Header ── --}}
-<div class="flex items-center justify-between mb-5">
+<div class="flex items-center justify-between mb-5 gap-3 flex-wrap">
     <div>
         <h1 class="text-2xl font-bold text-gray-800">Pengguna</h1>
         <p class="text-gray-500 text-sm mt-1">Pengurusan pengguna dan peranan</p>
     </div>
-    <button type="button" id="btn-buka-tambah"
-        class="btn-primary" aria-haspopup="dialog" aria-controls="modal-tambah">
-        <i class="fa-solid fa-plus" aria-hidden="true"></i> Tambah Pengguna
-    </button>
+    <div class="flex items-center gap-2 flex-wrap">
+        <a href="{{ route('pengguna.import-csv') }}"
+            class="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 hover:border-amber-300 transition-colors shadow-sm">
+            <i class="fa-solid fa-file-csv text-green-600" aria-hidden="true"></i>
+            Import CSV
+        </a>
+        @if(auth()->user()->isPentadbir())
+        <button type="button" id="btn-buka-tambah"
+            class="btn-primary" aria-haspopup="dialog" aria-controls="modal-tambah">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i> Tambah Pengguna
+        </button>
+        @endif
+    </div>
 </div>
 
 {{-- Flash messages --}}
@@ -538,15 +547,21 @@ let viewSemasa = localStorage.getItem(LS_VIEW_KEY) || 'kad';
 // ── Listeners (formerly inline handlers) ──────────────────────────
 
 // Buka modal tambah
-document.getElementById('btn-buka-tambah').addEventListener('click', function() {
-    document.getElementById('modal-tambah').classList.remove('hidden');
-    document.getElementById('tambah-name').focus();
-});
+const btnBukaTambah = document.getElementById('btn-buka-tambah');
+if (btnBukaTambah) {
+    btnBukaTambah.addEventListener('click', function() {
+        document.getElementById('modal-tambah').classList.remove('hidden');
+        document.getElementById('tambah-name').focus();
+    });
+}
 
 // Tutup modal
-document.getElementById('btn-tutup-tambah').addEventListener('click', function() {
-    document.getElementById('modal-tambah').classList.add('hidden');
-});
+const btnTutupTambah = document.getElementById('btn-tutup-tambah');
+if (btnTutupTambah) {
+    btnTutupTambah.addEventListener('click', function() {
+        document.getElementById('modal-tambah').classList.add('hidden');
+    });
+}
 document.getElementById('btn-tutup-edit').addEventListener('click', function() {
     document.getElementById('modal-edit').classList.add('hidden');
 });
