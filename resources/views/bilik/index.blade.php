@@ -13,14 +13,31 @@
     </a>
 </div>
 
-<div class="mb-4">
+<div class="mb-4 flex flex-wrap gap-3 items-center">
+    {{-- Carian teks --}}
     <div class="relative">
         <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" aria-hidden="true"></i>
         <input type="search" id="carian-bilik"
             placeholder="Cari nama bilik..."
-            class="form-input pl-9 text-sm w-full md:w-72"
+            class="form-input pl-9 text-sm w-full md:w-64"
             aria-label="Cari bilik mesyuarat">
     </div>
+
+    {{-- Filter Bahagian --}}
+    <div class="relative">
+        <i class="fa-solid fa-building-columns absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none" aria-hidden="true"></i>
+        <select id="filter-bahagian"
+            class="form-input pl-9 text-sm pr-8 w-full md:w-56"
+            aria-label="Tapis mengikut bahagian">
+            <option value="">— Semua Bahagian —</option>
+            @foreach($bahagian as $b)
+            <option value="{{ $b->id }}">{{ $b->kod }} — {{ $b->nama }}</option>
+            @endforeach
+        </select>
+    </div>
+
+    {{-- Kiraan hasil --}}
+    <span id="kiraan-bilik" class="text-sm text-gray-400 ml-auto"></span>
 </div>
 
 <section aria-labelledby="heading-bilik-senarai">
@@ -52,6 +69,7 @@
         <article class="bg-white rounded-xl shadow-sm overflow-hidden kad-bilik"
             data-nama="{{ strtolower($b->nama) }}"
             data-lokasi="{{ strtolower($b->lokasi ?? '') }}"
+            data-bahagian-id="{{ $b->bahagian_id ?? '' }}"
             aria-labelledby="bilik-{{ $b->id }}">
             {{-- Gambar bilik --}}
             <div class="h-44 overflow-hidden relative group">
@@ -72,13 +90,22 @@
                 @endif
             </div>
             <div class="p-5">
-                <div class="flex items-start justify-between mb-3">
+                <div class="flex items-start justify-between mb-2">
                     <h3 id="bilik-{{ $b->id }}" class="font-bold text-gray-800">{{ $b->nama }}</h3>
                     <span class="text-xs font-semibold px-2 py-1 rounded-full {{ $b->isAktif() ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' }}"
                         role="status">
                         {{ $b->isAktif() ? 'Aktif' : 'Tidak Aktif' }}
                     </span>
                 </div>
+                {{-- Badge bahagian --}}
+                @if($b->bahagian)
+                <div class="mb-2">
+                    <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-medium">
+                        <i class="fa-solid fa-building-columns text-[10px]" aria-hidden="true"></i>
+                        {{ $b->bahagian->kod }}
+                    </span>
+                </div>
+                @endif
 
                 <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
                     <i class="fa-solid fa-users text-amber-400" aria-hidden="true"></i>
@@ -166,19 +193,33 @@
 
 @push('scripts')
 <script nonce="{{ $cspNonce }}">
-function cariBilik(kata) {
-    const carian = kata.trim().toLowerCase();
+function terapiFilter() {
+    const carian    = (document.getElementById('carian-bilik').value || '').trim().toLowerCase();
+    const bahagian  = (document.getElementById('filter-bahagian').value || '').trim();
+    const kiraan    = document.getElementById('kiraan-bilik');
+    let nampak = 0;
+
     document.querySelectorAll('.kad-bilik').forEach(kad => {
         const nama   = kad.dataset.nama || '';
         const lokasi = kad.dataset.lokasi || '';
-        const match  = !carian || nama.includes(carian) || lokasi.includes(carian);
+        const kadBhg = kad.dataset.bahagianId || '';
+
+        const matchCarian  = !carian  || nama.includes(carian) || lokasi.includes(carian);
+        const matchBahagian = !bahagian || kadBhg === bahagian;
+
+        const match = matchCarian && matchBahagian;
         kad.style.display = match ? '' : 'none';
+        if (match) nampak++;
     });
+
+    if (kiraan) {
+        const total = document.querySelectorAll('.kad-bilik').length;
+        kiraan.textContent = (carian || bahagian) ? nampak + ' daripada ' + total + ' bilik' : '';
+    }
 }
 
-document.getElementById('carian-bilik').addEventListener('input', function() {
-    cariBilik(this.value);
-});
+document.getElementById('carian-bilik').addEventListener('input', terapiFilter);
+document.getElementById('filter-bahagian').addEventListener('change', terapiFilter);
 
 document.getElementById('grid-bilik').addEventListener('submit', function(e) {
     const form = e.target.closest('.padam-bilik-form');

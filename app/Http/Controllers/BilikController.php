@@ -46,7 +46,7 @@ class BilikController extends Controller
                     ->whereYear('tarikh', $tahun)
                     ->where('status', 'diluluskan');
             },
-        ])->get();
+        ])->with('bahagian:id,kod,nama')->get();
 
         // Tetapkan peratus penggunaan sebagai atribut dinamik
         $bilik->each(function ($b) use ($maxSesi) {
@@ -55,7 +55,9 @@ class BilikController extends Controller
                 : 0;
         });
 
-        return view('bilik.index', compact('bilik'));
+        $bahagian = Bahagian::where('aktif', true)->orderBy('kod')->get();
+
+        return view('bilik.index', compact('bilik', 'bahagian'));
     }
 
     public function create()
