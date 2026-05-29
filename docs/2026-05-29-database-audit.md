@@ -217,12 +217,12 @@ SQLSTATE[HY000]: General error: 1553 Cannot drop index 'tempahan_bilik_id_foreig
 ### `public/patch-db-audit-3.php` — Patch 9–13
 
 - **URL:** `https://ibookbptm.great-site.net/patch-db-audit-3.php?k=ibook2026p3`
-- **Status:** ✅ Dijalankan (12 berjaya), **⚠️ MESTI DIPADAM dari server production**
+- **Status:** ✅ Dijalankan (12 berjaya), **dah dipadam dari server production** ✅
 
 ### `public/patch-db-audit-4.php` — Patch 14–17
 
 - **URL:** `https://ibookbptm.great-site.net/patch-db-audit-4.php?k=ibook2026p4`
-- **Status:** ✅ Dijalankan (3 berjaya, 0 gagal) — **MESTI DIPADAM dari server production**
+- **Status:** ✅ Dijalankan (3 berjaya, 0 gagal), **dah dipadam dari server production** ✅
 - Run 1: 6 berjaya, 2 gagal (duplikat tunggal + privilege error)
 - Run 2: 6 berjaya, 1 gagal (masih ada 3+ berganda selepas fix separa)
 - Run 3 (final): 3 berjaya, 0 gagal — 77 rekod berganda auto-fixed, UNIQUE index berjaya
@@ -364,7 +364,7 @@ SQLSTATE[HY000]: General error: 1553 Cannot drop index 'tempahan_bilik_id_foreig
 4. **FTP deployment** — Port 21/990/2121 boleh diblock oleh ISP/router. Gunakan InfinityFree online file manager sebagai alternatif.
 5. ~~**Deploy patch 7–8 ke production**~~ ✅ Selesai — patch-db-audit-2.php dijalankan dan dipadam dari server.
 6. ~~**Deploy patch 9–13 ke production**~~ ✅ Selesai — patch-db-audit-3.php dijalankan (12 berjaya).
-7. **⚠️ PADAM patch-db-audit-3.php dari server production** — fail masih ada, risiko keselamatan.
+7. ~~**PADAM patch-db-audit-3.php dari server production**~~ ✅ Dipadam.
 8. ~~**Deploy patch 14–17 ke production**~~ ✅ Selesai — patch-db-audit-4.php dijalankan (3 berjaya, 0 gagal).
-9. **⚠️ PADAM patch-db-audit-4.php dari server production** — fail mesti dipadam segera.
+9. ~~**PADAM patch-db-audit-4.php dari server production**~~ ✅ Dipadam.
 9. **Ulangan tahunan view** — setiap tahun baru: cipta `vw_tempahan_YYYY`, padam `vw_tempahan_` 5 tahun lalu. Pindahkan rekod ≥3 tahun ke `tempahan_archive` secara berkala.
