@@ -630,10 +630,14 @@ document.getElementById('filter-unit').addEventListener('change', function() {
 });
 
 // Bahagian dropdown — server-side filter; reset unit bila bahagian bertukar
-document.getElementById('filter-bahagian').addEventListener('change', function() {
-    document.getElementById('filter-unit').value = '';   // reset unit
-    document.getElementById('form-carian').submit();
-});
+// (Elemen hanya wujud untuk pentadbir — urus setia guna input hidden, tiada dropdown)
+const filterBahagian = document.getElementById('filter-bahagian');
+if (filterBahagian) {
+    filterBahagian.addEventListener('change', function() {
+        document.getElementById('filter-unit').value = '';   // reset unit
+        document.getElementById('form-carian').submit();
+    });
+}
 
 // Tab buttons
 document.querySelectorAll('[data-tab]').forEach(function(btn) {
