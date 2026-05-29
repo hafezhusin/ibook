@@ -184,7 +184,7 @@
     $jumlahAktif     = collect($pratonton)->where('status', 'aktif')->count();
     $jumlahRalat     = collect($pratonton)->where('status', 'ralat')->count();
     $bolehDipilih    = $jumlahBaru + $jumlahTidakAktif;
-    $bahagianNama    = Bahagian::find($bahagianId)?->nama ?? '—';
+    $bahagianNama    = $bahagian->firstWhere('id', $bahagianId)?->nama ?? '—';
 @endphp
 
 {{-- Ringkasan stat --}}
