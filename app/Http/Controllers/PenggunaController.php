@@ -77,8 +77,9 @@ class PenggunaController extends Controller
         $penggunaPending   = $queryPending->paginate(25, ['*'], 'page_pending')->appends($appends);
         $penggunaNyahaktif = $queryNyahaktif->paginate(25, ['*'], 'page_nyahaktif')->appends($appends);
 
-        // Unit list — dinamik berdasarkan bahagian dipilih (bukan constant statik)
-        $unitQuery = User::whereNotNull('jabatan')->where('jabatan', '!=', '');
+        // Unit list — hanya dari pengguna AKTIF dalam bahagian dipilih
+        // (elak unit 'kosong' yang hanya ada pending/nyahaktif user)
+        $unitQuery = User::where('aktif', true)->whereNotNull('jabatan')->where('jabatan', '!=', '');
         if ($bahagianId !== '') {
             $unitQuery->where('bahagian_id', $bahagianId);
         }
