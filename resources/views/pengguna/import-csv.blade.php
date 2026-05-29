@@ -179,16 +179,17 @@
 @else
 
 @php
-    $jumlahBaru      = collect($pratonton)->where('status', 'baru')->count();
+    $jumlahBaru       = collect($pratonton)->where('status', 'baru')->count();
     $jumlahTidakAktif = collect($pratonton)->where('status', 'tidak_aktif')->count();
-    $jumlahAktif     = collect($pratonton)->where('status', 'aktif')->count();
-    $jumlahRalat     = collect($pratonton)->where('status', 'ralat')->count();
-    $bolehDipilih    = $jumlahBaru + $jumlahTidakAktif;
-    $bahagianNama    = $bahagian->firstWhere('id', $bahagianId)?->nama ?? '—';
+    $jumlahAktif      = collect($pratonton)->where('status', 'aktif')->count();
+    $jumlahDuplikat   = collect($pratonton)->where('status', 'duplikat')->count();
+    $jumlahRalat      = collect($pratonton)->where('status', 'ralat')->count();
+    $bolehDipilih     = $jumlahBaru + $jumlahTidakAktif;
+    $bahagianNama     = $bahagian->firstWhere('id', $bahagianId)?->nama ?? '—';
 @endphp
 
 {{-- Ringkasan stat --}}
-<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+<div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
     <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-green-400">
         <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Baru</p>
         <p class="text-2xl font-bold text-green-600 mt-1">{{ $jumlahBaru }}</p>
@@ -203,6 +204,11 @@
         <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Sudah Aktif</p>
         <p class="text-2xl font-bold text-blue-600 mt-1">{{ $jumlahAktif }}</p>
         <p class="text-xs text-gray-400 mt-0.5">tiada tindakan</p>
+    </div>
+    <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-purple-400">
+        <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Duplikat</p>
+        <p class="text-2xl font-bold text-purple-600 mt-1">{{ $jumlahDuplikat }}</p>
+        <p class="text-xs text-gray-400 mt-0.5">emel pendua dalam CSV</p>
     </div>
     <div class="bg-white rounded-xl p-4 shadow-sm border-l-4 border-red-400">
         <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Ralat</p>
@@ -273,9 +279,10 @@
                     @php
                         $bolehPilih = in_array($b['status'], ['baru', 'tidak_aktif']);
                         $rowCls = match($b['status']) {
-                            'ralat'       => 'bg-red-50/50',
-                            'aktif'       => 'opacity-60',
-                            default       => '',
+                            'ralat'     => 'bg-red-50/50',
+                            'aktif'     => 'opacity-60',
+                            'duplikat'  => 'bg-purple-50/50 opacity-70',
+                            default     => '',
                         };
                     @endphp
                     <tr class="hover:bg-gray-50 transition-colors {{ $rowCls }}">
@@ -329,6 +336,7 @@
                                     'baru'        => 'bg-green-100 text-green-700',
                                     'tidak_aktif' => 'bg-amber-100 text-amber-700',
                                     'aktif'       => 'bg-blue-100 text-blue-700',
+                                    'duplikat'    => 'bg-purple-100 text-purple-700',
                                     'ralat'       => 'bg-red-100 text-red-700',
                                     default       => 'bg-gray-100 text-gray-500',
                                 };
@@ -336,6 +344,7 @@
                                     'baru'        => 'fa-user-plus',
                                     'tidak_aktif' => 'fa-user-clock',
                                     'aktif'       => 'fa-circle-check',
+                                    'duplikat'    => 'fa-copy',
                                     'ralat'       => 'fa-circle-xmark',
                                     default       => 'fa-circle',
                                 };
@@ -343,6 +352,7 @@
                                     'baru'        => 'Baru',
                                     'tidak_aktif' => 'Akan Diaktif',
                                     'aktif'       => 'Sudah Aktif',
+                                    'duplikat'    => 'Duplikat',
                                     'ralat'       => 'Ralat',
                                     default       => '—',
                                 };

@@ -255,8 +255,9 @@ class PenggunaController extends Controller
             }
         }
 
-        $baris   = [];
-        $bilBaris = 0;
+        $baris      = [];
+        $bilBaris   = 0;
+        $seenEmails = []; // Jejak emel dalam CSV ini — elak duplikat intra-CSV
 
         while (($row = fgetcsv($handle)) !== false) {
             $bilBaris++;
@@ -288,9 +289,26 @@ class PenggunaController extends Controller
                 continue;
             }
 
+            // ── Duplikat dalam CSV yang sama ──────────────────────────────
+            if (isset($seenEmails[$emel])) {
+                $baris[] = [
+                    'baris'       => $bilBaris,
+                    'nama'        => $nama,
+                    'emel'        => $emel,
+                    'unit'        => $unit,
+                    'peranan'     => $peranan,
+                    'status'      => 'duplikat',
+                    'mesej'       => 'Emel pendua dalam CSV (baris ' . $seenEmails[$emel] . ')',
+                    'existing_id' => null,
+                ];
+                continue;
+            }
+            $seenEmails[$emel] = $bilBaris;
+
             $peranan = in_array($peranan, ['staf', 'urus_setia', 'pentadbir_sistem'])
                 ? $peranan : 'staf';
 
+            // ── Semak rekod sedia ada dalam DB ───────────────────────────
             $existing = User::where('email', $emel)->first();
 
             if ($existing) {
@@ -343,36 +361,61 @@ class PenggunaController extends Controller
             'pilihan.required' => 'Sila pilih sekurang-kurangnya satu pengguna untuk diproses.',
         ]);
 
-        $dipilih    = array_map('intval', $request->pilihan);
-        $kataLaluan = 'iBook@' . date('Y');
-        $dicipta    = 0;
-        $diaktifkan = 0;
+        $dipilih      = array_map('intval', $request->pilihan);
+        $kataLaluan   = 'iBook@' . date('Y');
+        $dicipta      = 0;
+        $diaktifkan   = 0;
+        $dilangkau    = 0;
+        $prosedEmails = []; // Jejak emel yang telah diproses dalam batch ini
 
         foreach ($pratonton as $i => $b) {
             if (! in_array($i, $dipilih)) {
                 continue;
             }
-            if (in_array($b['status'], ['ralat', 'aktif'])) {
+            // Langkau baris yang memang tidak boleh diproses
+            if (in_array($b['status'], ['ralat', 'aktif', 'duplikat'])) {
+                continue;
+            }
+            // Elak proses emel yang sama dua kali dalam batch ini
+            $emelLower = strtolower($b['emel']);
+            if (isset($prosedEmails[$emelLower])) {
+                $dilangkau++;
                 continue;
             }
 
             if ($b['status'] === 'baru') {
+                // ── Semakan akhir: pastikan emel belum wujud dalam DB ──
+                // (guard terhadap race condition atau double-submit)
+                if (User::where('email', $emelLower)->exists()) {
+                    $dilangkau++;
+                    continue;
+                }
                 User::create([
                     'name'        => $b['nama'],
-                    'email'       => $b['emel'],
+                    'email'       => $emelLower,
                     'jabatan'     => $b['unit'] ?: null,
                     'peranan'     => $b['peranan'],
                     'password'    => Hash::make($kataLaluan),
                     'aktif'       => true,
                     'bahagian_id' => $bahagianId,
                 ]);
+                $prosedEmails[$emelLower] = true;
                 $dicipta++;
             } elseif ($b['status'] === 'tidak_aktif' && $b['existing_id']) {
-                User::where('id', $b['existing_id'])->update([
+                // ── Semakan akhir: pastikan ID masih wujud dan masih tidak aktif ──
+                $userSemak = User::where('id', $b['existing_id'])
+                    ->where('aktif', false)
+                    ->first();
+                if (! $userSemak) {
+                    $dilangkau++;
+                    continue;
+                }
+                $userSemak->update([
                     'aktif'       => true,
                     'bahagian_id' => $bahagianId,
                     'jabatan'     => $b['unit'] ?: null,
                 ]);
+                $prosedEmails[$emelLower] = true;
                 $diaktifkan++;
             }
         }
@@ -384,10 +427,14 @@ class PenggunaController extends Controller
             'bahagian_id' => $bahagianId,
             'dicipta'     => $dicipta,
             'diaktifkan'  => $diaktifkan,
+            'dilangkau'   => $dilangkau,
             'jumlah'      => $jumlah,
         ]);
 
         $mesej = "{$jumlah} pengguna berjaya diproses ({$dicipta} dicipta, {$diaktifkan} diaktifkan semula).";
+        if ($dilangkau > 0) {
+            $mesej .= " <span class='text-amber-700'>{$dilangkau} dilangkau (sudah wujud / duplikat).</span>";
+        }
         if ($dicipta > 0) {
             $mesej .= " Kata laluan lalai bagi pengguna baru: <code>{$kataLaluan}</code>";
         }
