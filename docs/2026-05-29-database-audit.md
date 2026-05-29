@@ -222,8 +222,10 @@ SQLSTATE[HY000]: General error: 1553 Cannot drop index 'tempahan_bilik_id_foreig
 ### `public/patch-db-audit-4.php` — Patch 14–17
 
 - **URL:** `https://ibookbptm.great-site.net/patch-db-audit-4.php?k=ibook2026p4`
-- **Status:** ⏳ Menunggu upload ke InfinityFree via File Manager
-- Kandungan fail sudah dalam clipboard — paste terus ke File Manager
+- **Status:** ✅ Dijalankan (3 berjaya, 0 gagal) — **MESTI DIPADAM dari server production**
+- Run 1: 6 berjaya, 2 gagal (duplikat tunggal + privilege error)
+- Run 2: 6 berjaya, 1 gagal (masih ada 3+ berganda selepas fix separa)
+- Run 3 (final): 3 berjaya, 0 gagal — 77 rekod berganda auto-fixed, UNIQUE index berjaya
 
 > **Nota:** Semua fail patch ada dalam `.gitignore` (`public/patch-*.php`). MESTI DIPADAM dari server selepas berjaya.
 
@@ -285,6 +287,25 @@ SQLSTATE[HY000]: General error: 1553 Cannot drop index 'tempahan_bilik_id_foreig
 | 7 | ⚠️ Skip (sudah ENUM dari run sebelumnya) |
 | 8 | ✅ Data migration: 4 rekod `"Pentadbir Sistem Berkaliber"` → `user_id=1` · ✅ ALTER bigint · ✅ FK ditambah |
 
+### Run 8 — Production (patch 14–17 via patch-db-audit-4.php, final)
+
+**3 berjaya, 0 gagal** ✅ · DB: MariaDB 11.4.11
+
+| Patch | Tindakan |
+|-------|----------|
+| 14 | ⚠️ Skip (3 covering indexes sudah wujud dari run sebelumnya) |
+| 15 `slot_aktif` | ⚠️ Skip (kolum sudah wujud) |
+| 15 UNIQUE | ✅ Auto-fix 77 rekod berganda historis → `ditolak` (kekal ID tertinggi per kumpulan) → `uq_tempahan_slot_exact` berjaya dibuat |
+| 16 | ⚠️ Skip graceful — InfinityFree tiada `CREATE ROUTINE` privilege (sama seperti trigger). Migration didaftar. |
+| 17 archive | ⚠️ Skip (sudah wujud dari run sebelumnya) |
+| 17 views | ⚠️ Skip graceful — InfinityFree tiada `CREATE VIEW` privilege. Migration didaftar. |
+
+**Penemuan penting Run 8:**
+- Production ada **ratusan double-booking historis** (slot yang sama di-book berulang kali) — bukti konkrit mengapa `uq_tempahan_slot_exact` diperlukan
+- Kumpulan ada 2, 3, 4 rekod berganda — fix pertama (Run 7a) cuma mark satu per kumpulan; fix betul mark semua kecuali ID tertinggi
+- `uq_tempahan_slot_exact` kini aktif di production — zero double-booking dijamin di peringkat DB
+- InfinityFree: **stored procedure** (`CREATE ROUTINE`) dan **view** (`CREATE VIEW`) tidak disokong — sama taraf dengan trigger. Ciri-ciri ini kekal di persekitaran lokal untuk forensik dan pelaporan.
+
 ### Run 7 — Lokal (patch 14–17, 100/100 enterprise-grade)
 
 **9 berjaya, 0 gagal** ✅ · 296 tests, 629 assertions — semua pass
@@ -344,5 +365,6 @@ SQLSTATE[HY000]: General error: 1553 Cannot drop index 'tempahan_bilik_id_foreig
 5. ~~**Deploy patch 7–8 ke production**~~ ✅ Selesai — patch-db-audit-2.php dijalankan dan dipadam dari server.
 6. ~~**Deploy patch 9–13 ke production**~~ ✅ Selesai — patch-db-audit-3.php dijalankan (12 berjaya).
 7. **⚠️ PADAM patch-db-audit-3.php dari server production** — fail masih ada, risiko keselamatan.
-8. **Deploy patch 14–17 ke production** — upload `patch-db-audit-4.php` ke InfinityFree File Manager, jalankan, padam selepas berjaya.
+8. ~~**Deploy patch 14–17 ke production**~~ ✅ Selesai — patch-db-audit-4.php dijalankan (3 berjaya, 0 gagal).
+9. **⚠️ PADAM patch-db-audit-4.php dari server production** — fail mesti dipadam segera.
 9. **Ulangan tahunan view** — setiap tahun baru: cipta `vw_tempahan_YYYY`, padam `vw_tempahan_` 5 tahun lalu. Pindahkan rekod ≥3 tahun ke `tempahan_archive` secara berkala.
