@@ -30,6 +30,7 @@
             class="form-input pl-9 text-sm pr-8 w-full md:w-56"
             aria-label="Tapis mengikut bahagian">
             <option value="">— Semua Bahagian —</option>
+            <option value="tiada">⚠ Tiada Bahagian</option>
             @foreach($bahagian as $b)
             <option value="{{ $b->id }}">{{ $b->kod }} — {{ $b->nama }}</option>
             @endforeach
@@ -103,6 +104,13 @@
                     <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-medium">
                         <i class="fa-solid fa-building-columns text-[10px]" aria-hidden="true"></i>
                         {{ $b->bahagian->kod }}
+                    </span>
+                </div>
+                @else
+                <div class="mb-2">
+                    <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 font-medium">
+                        <i class="fa-solid fa-triangle-exclamation text-[10px]" aria-hidden="true"></i>
+                        Tiada Bahagian
                     </span>
                 </div>
                 @endif
@@ -205,7 +213,7 @@ function terapiFilter() {
         const kadBhg = kad.dataset.bahagianId || '';
 
         const matchCarian  = !carian  || nama.includes(carian) || lokasi.includes(carian);
-        const matchBahagian = !bahagian || kadBhg === bahagian;
+        const matchBahagian = !bahagian || (bahagian === 'tiada' ? kadBhg === '' : kadBhg === bahagian);
 
         const match = matchCarian && matchBahagian;
         kad.style.display = match ? '' : 'none';
@@ -214,12 +222,14 @@ function terapiFilter() {
 
     if (kiraan) {
         const total = document.querySelectorAll('.kad-bilik').length;
-        kiraan.textContent = (carian || bahagian) ? nampak + ' daripada ' + total + ' bilik' : '';
+        kiraan.textContent = nampak + ' daripada ' + total + ' bilik';
     }
 }
 
 document.getElementById('carian-bilik').addEventListener('input', terapiFilter);
 document.getElementById('filter-bahagian').addEventListener('change', terapiFilter);
+// Terapkan filter semasa muat — supaya bahagian pertama terus aktif
+terapiFilter();
 
 document.getElementById('grid-bilik').addEventListener('submit', function(e) {
     const form = e.target.closest('.padam-bilik-form');

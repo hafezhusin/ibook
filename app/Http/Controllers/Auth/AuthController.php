@@ -20,6 +20,7 @@ use App\Mail\AmaranKeselamatan;
 use App\Mail\KodOTP;
 use App\Mail\NotifikasiPendaftaranSSO;
 use App\Models\ActivityLog;
+use App\Models\SesiAktif;
 use App\Models\Tetapan;
 use App\Models\User;
 use App\Services\AuditLogger;
@@ -140,6 +141,22 @@ class AuthController extends Controller
 
         $user->update(['last_login_at' => now()]);
 
+        // Track sesi aktif
+        try {
+            SesiAktif::where('pengguna_id', $user->id)
+                ->where('session_id', $request->session()->getId())
+                ->delete();
+            SesiAktif::create([
+                'pengguna_id'       => $user->id,
+                'session_id'        => $request->session()->getId(),
+                'ip_address'        => $request->ip(),
+                'user_agent'        => substr($request->userAgent() ?? '', 0, 500),
+                'kaedah'            => 'google',
+                'log_masuk_pada'    => now(),
+                'aktiviti_terakhir' => now(),
+            ]);
+        } catch (\Throwable) {}
+
         AuditLogger::catat('log_masuk_google', null, [
             'user_agent' => substr($request->userAgent() ?? '', 0, 200),
         ], $user->name.' log masuk melalui Google SSO');
@@ -237,6 +254,22 @@ class AuthController extends Controller
             // Rekod waktu log masuk terakhir
             Auth::user()->update(['last_login_at' => now()]);
 
+            // Track sesi aktif
+            try {
+                SesiAktif::where('pengguna_id', Auth::id())
+                    ->where('session_id', $request->session()->getId())
+                    ->delete();
+                SesiAktif::create([
+                    'pengguna_id'       => Auth::id(),
+                    'session_id'        => $request->session()->getId(),
+                    'ip_address'        => $request->ip(),
+                    'user_agent'        => substr($request->userAgent() ?? '', 0, 500),
+                    'kaedah'            => 'emel',
+                    'log_masuk_pada'    => now(),
+                    'aktiviti_terakhir' => now(),
+                ]);
+            } catch (\Throwable) {}
+
             // Audit: log masuk berjaya
             AuditLogger::catat('log_masuk_berjaya', null, [
                 'user_agent' => substr($request->userAgent() ?? '', 0, 200),
@@ -272,6 +305,11 @@ class AuthController extends Controller
         AuditLogger::catat('log_keluar', null, [
             'user_agent' => substr($request->userAgent() ?? '', 0, 200),
         ], Auth::user()?->name.' log keluar dari sistem');
+
+        // Buang rekod sesi aktif
+        try {
+            SesiAktif::where('session_id', $request->session()->getId())->delete();
+        } catch (\Throwable) {}
 
         Auth::logout();
         $request->session()->invalidate();

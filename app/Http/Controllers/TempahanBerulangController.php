@@ -97,7 +97,7 @@ class TempahanBerulangController extends Controller
                         if (Tempahan::where('bilik_id', $validated['bilik_id'])
                             ->whereDate('tarikh', $tarikh->toDateString())
                             ->where('sesi', $sesi)
-                            ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+                            ->whereNotIn('status', [Tempahan::STATUS_DITOLAK, Tempahan::STATUS_DIBATALKAN])
                             ->lockForUpdate()
                             ->exists()) {
                             $konflikDitemui[] = $tarikh->format('d/m/Y').' ('.$sesi.')';

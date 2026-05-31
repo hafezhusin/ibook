@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\SesiAktifController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\BahagianController;
 use App\Http\Controllers\Auth\DuaFaktorController;
@@ -87,6 +88,9 @@ Route::get('/health', function () {
     ], $statusCode);
 })->name('health');
 
+// Redirect `/bilik` → `/bilik-mesyuarat` (elak 404 jika ada pautan lama atau taip salah)
+Route::redirect('/bilik', '/bilik-mesyuarat', 301);
+
 // Routes yang memerlukan log masuk
 Route::middleware('auth.custom')->group(function () {
 
@@ -131,6 +135,12 @@ Route::middleware('auth.custom')->group(function () {
     Route::delete('/tempahan/{tempahan}/padam-berulang', [TempahanBerulangController::class, 'destroy'])
         ->name('tempahan-berulang.destroy');
 
+    // Kelulusan & penolakan tempahan — hanya Pentadbir Sistem & Urus Setia
+    Route::middleware('role:pentadbir_sistem,urus_setia')->group(function () {
+        Route::post('/tempahan/{tempahan}/luluskan', [TempahanController::class, 'luluskan'])->name('tempahan.luluskan');
+        Route::post('/tempahan/{tempahan}/tolak', [TempahanController::class, 'tolak'])->name('tempahan.tolak');
+    });
+
     // Eksport — hanya Pentadbir Sistem & Urus Setia
     Route::middleware('role:pentadbir_sistem,urus_setia')->group(function () {
         Route::get('/tempahan/eksport/pdf', [TempahanController::class, 'exportPdf'])->name('tempahan.pdf');
@@ -159,8 +169,14 @@ Route::middleware('auth.custom')->group(function () {
     // Hanya Pentadbir Sistem
     Route::middleware('role:pentadbir_sistem')->group(function () {
         // Log Audit
+        // Sesi Aktif
+        Route::get('/sesi-aktif', [SesiAktifController::class, 'index'])->name('sesi-aktif.index');
+        Route::post('/sesi-aktif/{pengguna}/paksa-log-keluar', [SesiAktifController::class, 'paksaLogKeluar'])->name('sesi-aktif.paksa-log-keluar');
+
         Route::get('/log-audit', [AuditLogController::class, 'index'])->name('audit.index');
         Route::get('/log-audit/eksport/excel', [AuditLogController::class, 'exportExcel'])->name('audit.excel');
+        Route::get('/log-audit/pengguna/{pengguna}', [AuditLogController::class, 'timeline'])->name('audit.timeline');
+        Route::get('/log-audit/pengguna/{pengguna}/pdf', [AuditLogController::class, 'timelinePdf'])->name('audit.timeline.pdf');
 
         // Bilik Mesyuarat
         Route::get('/bilik-mesyuarat', [BilikController::class, 'index'])->name('bilik.index');

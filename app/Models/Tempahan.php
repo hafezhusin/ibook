@@ -36,9 +36,13 @@ class Tempahan extends Model
 
     protected $table = 'tempahan';
 
+    const STATUS_MENUNGGU   = 'menunggu';
+
     const STATUS_DILULUSKAN = 'diluluskan';
 
     const STATUS_DITOLAK = 'ditolak';
+
+    const STATUS_DIBATALKAN = 'dibatalkan';
 
     const SESI_PAGI = 'pagi';
 
@@ -50,11 +54,14 @@ class Tempahan extends Model
     ];
 
     const KATEGORI = [
-        'mesyuarat' => 'Mesyuarat',
+        'mesyuarat'    => 'Mesyuarat',
         'perbincangan' => 'Perbincangan',
-        'taklimat' => 'Taklimat',
-        'bengkel' => 'Bengkel/Workshop',
-        'latihan' => 'Latihan/Kursus',
+        'taklimat'     => 'Taklimat',
+        'bengkel'      => 'Bengkel/Workshop',
+        'latihan'      => 'Latihan/Kursus',
+        'teknikal'     => 'Teknikal',
+        'pengurusan'   => 'Pengurusan',
+        'lain-lain'    => 'Lain-lain',
     ];
 
     /**
@@ -149,6 +156,11 @@ class Tempahan extends Model
      */
     public function bolehDiEditOleh(User $user): bool
     {
+        // Tempahan yang dibatalkan automatik tidak boleh diedit oleh sesiapa
+        if ($this->status === self::STATUS_DIBATALKAN) {
+            return false;
+        }
+
         if (! $user->isStaf()) {
             return true;
         }
@@ -190,13 +202,12 @@ class Tempahan extends Model
 
     public function getStatusBadgeAttribute(): string
     {
-        // PHPStan mengetahui status adalah 'diluluskan'|'ditolak' sahaja.
-        // Semak satu kes, pulang yang satu lagi sebagai default — tiada perbandingan mubazir.
-        if ($this->status === self::STATUS_DILULUSKAN) {
-            return '<span class="badge-lulus">Diluluskan</span>';
-        }
-
-        return '<span class="badge-tolak">Ditolak</span>';
+        return match ($this->status) {
+            self::STATUS_DILULUSKAN => '<span class="badge-lulus">Diluluskan</span>',
+            self::STATUS_DIBATALKAN => '<span class="badge-batal">Dibatalkan</span>',
+            'menunggu'              => '<span class="badge-tunggu">Menunggu</span>',
+            default                 => '<span class="badge-tolak">Ditolak</span>',
+        };
     }
 
     public function getKategoriLabelAttribute(): string
@@ -207,5 +218,10 @@ class Tempahan extends Model
     public function isDiluluskan(): bool
     {
         return $this->status === self::STATUS_DILULUSKAN;
+    }
+
+    public function isDibatalkan(): bool
+    {
+        return $this->status === self::STATUS_DIBATALKAN;
     }
 }

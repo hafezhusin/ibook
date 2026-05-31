@@ -14,6 +14,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Bahagian;
 use App\Models\BilikMesyuarat;
 use App\Models\Tempahan;
 use Illuminate\Http\Request;
@@ -27,10 +28,20 @@ class KalendarController extends Controller
     {
         $bilik = BilikMesyuarat::where('status', 'aktif')
             ->untukPengguna(auth()->user())
+            ->with('bahagian:id,kod,nama')
             ->orderBy('nama')->get();
 
+        // Senarai bahagian yang ada bilik aktif boleh dilihat oleh pengguna ini
+        // Diperolehi terus dari $bilik supaya konsisten — tanpa query tambahan
+        $bahagian = $bilik
+            ->pluck('bahagian')
+            ->filter()
+            ->unique('id')
+            ->sortBy('kod')
+            ->values();
+
         return response()
-            ->view('kalendar.index', compact('bilik'))
+            ->view('kalendar.index', compact('bilik', 'bahagian'))
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache')
             ->header('X-LiteSpeed-Cache-Control', 'no-cache');
@@ -49,16 +60,20 @@ class KalendarController extends Controller
         $bilikId = $request->filled('bilik_id')
             ? (int) $request->bilik_id
             : 0;
+        $bahagianId = $request->filled('bahagian_id')
+            ? (int) $request->bahagian_id
+            : 0;
         $cacheKey = sprintf(
-            'kalendar:events:v%s:u%s:s%s:e%s:b%s',
+            'kalendar:events:v%s:u%s:s%s:e%s:b%s:bhg%s',
             $cacheVersion,
             $user->id,
             $start ?? '-',
             $end ?? '-',
-            $bilikId
+            $bilikId,
+            $bahagianId
         );
 
-        $events = Cache::remember($cacheKey, now()->addSeconds(60), function () use ($start, $end, $bilikId, $user) {
+        $events = Cache::remember($cacheKey, now()->addSeconds(60), function () use ($start, $end, $bilikId, $bahagianId, $user) {
             // Semua pengguna (termasuk staf) boleh nampak semua tempahan dalam kalendar
             // supaya mereka tahu slot yang dah ditempah sebelum buat permohonan baru
             $query = Tempahan::query()
@@ -82,7 +97,7 @@ class KalendarController extends Controller
                     'bilik:id,nama,lokasi',
                     'pengguna:id,name',
                 ])
-                ->where('status', '!=', Tempahan::STATUS_DITOLAK);
+                ->whereNotIn('status', [Tempahan::STATUS_DITOLAK, Tempahan::STATUS_DIBATALKAN]);
 
             if ($start) {
                 $query->whereDate('tarikh', '>=', $start);
@@ -92,6 +107,9 @@ class KalendarController extends Controller
             }
             if ($bilikId > 0) {
                 $query->where('bilik_id', $bilikId);
+            } elseif ($bahagianId > 0) {
+                // Tapis event mengikut bahagian — tunjuk semua bilik bahagian tersebut
+                $query->whereHas('bilik', fn ($q) => $q->where('bahagian_id', $bahagianId));
             }
 
             return $this->formatEvents($query->get(), false, $user->id);

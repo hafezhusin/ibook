@@ -13,6 +13,8 @@ namespace App\Services;
 
 use App\Mail\NotifikasiTempahanBaharu;
 use App\Mail\PengesahanTempahan;
+use App\Mail\TempahanDiluluskan;
+use App\Mail\TempahanDitolak;
 use App\Models\BilikMesyuarat;
 use App\Models\Tempahan;
 use App\Models\Tetapan;
@@ -47,6 +49,7 @@ class TempahanMailService
         $tarikhLabel = Carbon::parse($validated['tarikh'])->locale('ms')->isoFormat('dddd, D MMMM YYYY');
         $kategoriLabel = Tempahan::KATEGORI[$validated['kategori']] ?? $validated['kategori'];
         $noRujukan = $tempahanDibuat[0]->no_rujukan;
+        $isMenunggu = $tempahanDibuat[0]->status === Tempahan::STATUS_MENUNGGU;
 
         // 1. Pengesahan kepada pemohon
         if (Tetapan::get('notif_kelulusan', '1') === '1' && $user->email) {
@@ -63,14 +66,15 @@ class TempahanMailService
                     tujuan: $validated['tujuan'] ?? '',
                     pemohonNama: $user->name,
                     pemohonEmail: $user->email,
+                    isMenunggu: $isMenunggu,
                 ));
             } catch (\Throwable $e) {
                 Log::warning('E-mel pengesahan tempahan gagal dihantar: '.$e->getMessage());
             }
         }
 
-        // 2. Notifikasi kepada Urus Setia
-        if (Tetapan::get('notif_tempahan_baru', '1') === '1') {
+        // 3. Notifikasi kepada Urus Setia — hanya jika pemohon staf (menunggu kelulusan)
+        if ($isMenunggu && Tetapan::get('notif_tempahan_baru', '1') === '1') {
             $emelNotifikasi = Tetapan::get('emel_notifikasi');
             if ($emelNotifikasi) {
                 try {
@@ -89,6 +93,48 @@ class TempahanMailService
                     Log::warning('E-mel notifikasi Urus Setia gagal dihantar: '.$e->getMessage());
                 }
             }
+        }
+    }
+
+    /**
+     * Hantar e-mel kelulusan kepada pemohon.
+     */
+    public function hantarSelepasLuluskan(Tempahan $tempahan, User $pelulus): void
+    {
+        if (Tetapan::get('notif_kelulusan', '1') !== '1') {
+            return;
+        }
+
+        $pemohon = $tempahan->pengguna;
+        if (! $pemohon?->email) {
+            return;
+        }
+
+        try {
+            Mail::to($pemohon->email)->send(new TempahanDiluluskan($tempahan, $pelulus));
+        } catch (\Throwable $e) {
+            Log::warning('E-mel luluskan tempahan gagal dihantar: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Hantar e-mel penolakan kepada pemohon.
+     */
+    public function hantarSelepasTolaK(Tempahan $tempahan, User $penolak, string $catatan): void
+    {
+        if (Tetapan::get('notif_kelulusan', '1') !== '1') {
+            return;
+        }
+
+        $pemohon = $tempahan->pengguna;
+        if (! $pemohon?->email) {
+            return;
+        }
+
+        try {
+            Mail::to($pemohon->email)->send(new TempahanDitolak($tempahan, $penolak, $catatan));
+        } catch (\Throwable $e) {
+            Log::warning('E-mel tolak tempahan gagal dihantar: '.$e->getMessage());
         }
     }
 }

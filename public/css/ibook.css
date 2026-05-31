@@ -68,6 +68,8 @@ select:focus-visible, textarea:focus-visible {
 /* ── Komponen Umum ─────────────────────────────────────── */
 .badge-lulus    { background:#d1fae5; color:#064e3b; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
 .badge-tolak    { background:#fee2e2; color:#7f1d1d; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+.badge-batal    { background:#f3e8ff; color:#5b21b6; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+.badge-tunggu   { background:#fef9c3; color:#713f12; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
 
 /* Butang — contrast ratio 4.5:1+ (WCAG 1.4.3) */
 .btn-primary {
@@ -279,6 +281,8 @@ select:focus-visible, textarea:focus-visible {
     /* ── Badge ───────────────────────────────────────────── */
     .badge-lulus    { background: #14532d !important; color: #86efac !important; }
     .badge-tolak    { background: #7f1d1d !important; color: #fca5a5 !important; }
+    .badge-batal    { background: #4c1d95 !important; color: #ddd6fe !important; }
+    .badge-tunggu   { background: #713f12 !important; color: #fde047 !important; }
 
     /* ── Alert ───────────────────────────────────────────── */
     .alert-success { background: #052e16 !important; border-color: #166534 !important; color: #86efac !important; }
@@ -406,6 +410,8 @@ select:focus-visible, textarea:focus-visible {
     html.light .progress-bar { background: #e5e7eb !important; }
     html.light .badge-lulus { background: #d1fae5 !important; color: #065f46 !important; }
     html.light .badge-tolak { background: #fee2e2 !important; color: #991b1b !important; }
+    html.light .badge-batal { background: #f3e8ff !important; color: #5b21b6 !important; }
+    html.light .badge-tunggu { background: #fef9c3 !important; color: #713f12 !important; }
     html.light .alert-success { background: #f0fdf4 !important; border-color: #86efac !important; color: #166534 !important; }
     html.light .alert-error { background: #fef2f2 !important; border-color: #fca5a5 !important; color: #991b1b !important; }
     html.light #event-modal > div { background: #ffffff !important; }
@@ -480,6 +486,8 @@ html.dark .stat-action:hover { background: #273447 !important; }
 html.dark .progress-bar { background: #334155 !important; }
 html.dark .badge-lulus { background: #14532d !important; color: #86efac !important; }
 html.dark .badge-tolak { background: #7f1d1d !important; color: #fca5a5 !important; }
+html.dark .badge-batal { background: #4c1d95 !important; color: #ddd6fe !important; }
+html.dark .badge-tunggu { background: #713f12 !important; color: #fde047 !important; }
 html.dark .alert-success { background: #052e16 !important; border-color: #166534 !important; color: #86efac !important; }
 html.dark .alert-error { background: #450a0a !important; border-color: #991b1b !important; color: #fca5a5 !important; }
 html.dark #event-modal > div { background: #1e293b !important; }

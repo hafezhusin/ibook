@@ -7,6 +7,11 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ms.js"></script>
 <style>
+    /* ── Skeleton shimmer (stagger reveal) ───────────────────── */
+    @keyframes statReveal {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
     .stat-card-v2 {
         background: #fff;
         border-radius: 14px;
@@ -17,8 +22,12 @@
         transition: box-shadow .2s, transform .15s;
         text-decoration: none;
         color: inherit;
+        /* Stagger: tiap kad muncul ikut urutan dengan delay */
+        animation: statReveal 0.45s cubic-bezier(.22,1,.36,1) both;
+        animation-delay: calc(var(--stat-i, 0) * 0.08s + 0.1s);
     }
     .stat-card-v2:hover { box-shadow: 0 4px 16px rgba(0,0,0,.13); transform: translateY(-2px); }
+    @media (prefers-reduced-motion: reduce) { .stat-card-v2 { animation: none; } }
     .stat-accent-bar { height: 4px; width: 100%; }
     .stat-body { padding: 20px 20px 14px; flex: 1; }
     .stat-icon-wrap {
@@ -277,7 +286,7 @@
             $trendBg    = $trendNaik ? '#dcfce7' : '#fee2e2';
             $trendIcon  = $trendNaik ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down';
         @endphp
-        <a href="{{ route('tempahan.index') }}" class="stat-card-v2" aria-label="Jumlah Tempahan Bulan Ini: {{ $jumlahTempahan }}. Klik untuk lihat semua.">
+        <a href="{{ route('tempahan.index') }}" class="stat-card-v2" style="--stat-i:0" aria-label="Jumlah Tempahan Bulan Ini: {{ $jumlahTempahan }}. Klik untuk lihat semua.">
             <div class="stat-accent-bar" style="background:#f59e0b"></div>
             <div class="stat-body">
                 <div class="flex items-center justify-between">
@@ -322,7 +331,7 @@
         {{-- Kad 2 — Bilik Tersedia Hari Ini --}}
         @php $adaBilikTersedia = $jumlahBilikTersedia > 0; @endphp
         <a href="{{ route('ketersediaan') }}?tarikh={{ today()->format('Y-m-d') }}&sesi=semua&peserta=1"
-           class="stat-card-v2"
+           class="stat-card-v2" style="--stat-i:1"
            aria-label="Bilik Tersedia Hari Ini: {{ $jumlahBilikTersedia }} daripada {{ $jumlahBilikAktif }}. Klik untuk semak.">
             <div class="stat-accent-bar" style="background:{{ $adaBilikTersedia ? '#16a34a' : '#dc2626' }}"></div>
             <div class="stat-body">
@@ -348,7 +357,7 @@
         </a>
 
         {{-- Kad 3 — Mesyuarat Hari Ini --}}
-        <a href="{{ route('kalendar') }}" class="stat-card-v2" aria-label="Mesyuarat Hari Ini: {{ $mesyuaratHariIni }}. Klik untuk lihat kalendar.">
+        <a href="{{ route('kalendar') }}" class="stat-card-v2" style="--stat-i:2" aria-label="Mesyuarat Hari Ini: {{ $mesyuaratHariIni }}. Klik untuk lihat kalendar.">
             <div class="stat-accent-bar" style="background:#2563eb"></div>
             <div class="stat-body">
                 <div class="flex items-center justify-between">
@@ -379,7 +388,7 @@
             $julatBg    = $kadarPenggunaan >= 80 ? '#fee2e2' : ($kadarPenggunaan >= 50 ? '#fef3c7' : '#dcfce7');
             $julatClr   = $kadarPenggunaan >= 80 ? '#991b1b' : ($kadarPenggunaan >= 50 ? '#92400e' : '#166534');
         @endphp
-        <a href="{{ route('laporan') }}" class="stat-card-v2" aria-label="Kadar Penggunaan Bilik: {{ $kadarPenggunaan }} peratus. Klik untuk lihat laporan.">
+        <a href="{{ route('laporan') }}" class="stat-card-v2" style="--stat-i:3" aria-label="Kadar Penggunaan Bilik: {{ $kadarPenggunaan }} peratus. Klik untuk lihat laporan.">
             <div class="stat-accent-bar" style="background:{{ $warnaGrad }}"></div>
             <div class="stat-body">
                 <div class="flex items-center justify-between">

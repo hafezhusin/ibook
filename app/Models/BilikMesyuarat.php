@@ -85,36 +85,56 @@ class BilikMesyuarat extends Model
     /**
      * Scope: tapis bilik mengikut bahagian pengguna + tetapan cross-booking.
      *
-     * Logik tiga peringkat:
-     *   1. Pentadbir sistem → nampak SEMUA bilik (tiada tapis)
-     *   2. Master switch ON + bahagian cross_booking_aktif=1 → bilik sendiri + bilik bahagian luar
-     *   3. Default → hanya bilik bahagian sendiri (atau NULL = bahagian utama)
+     * Logik:
+     *   - Bilik dari bahagian yang NYAHAKTIF (aktif=false) → tersembunyi untuk SEMUA peranan
+     *     (kecuali halaman pengurusan bilik admin yang tidak guna scope ini)
+     *   - Pentadbir sistem → nampak semua bilik dari bahagian aktif + bilik tanpa bahagian
+     *   - Master switch ON + bahagian cross_booking_aktif=1 → bilik sendiri + bilik bahagian luar (aktif)
+     *   - Default → hanya bilik bahagian sendiri (bahagian mesti aktif)
      */
     public function scopeUntukPengguna(Builder $query, User $pengguna): Builder
     {
-        // Pentadbir sistem — akses penuh tanpa tapis
+        // Closure bantu: tapis bilik dari bahagian yang nyahaktif
+        // Bilik tanpa bahagian (NULL) kekal kelihatan — tiada kaitan dengan bahagian
+        $bahagianAktifSahaja = function (Builder $q) {
+            $q->whereNull('bahagian_id')
+              ->orWhereHas('bahagian', fn (Builder $q2) => $q2->where('aktif', true));
+        };
+
+        // Pentadbir sistem — nampak semua bilik KECUALI bilik dari bahagian nyahaktif
+        // (halaman pengurusan BilikController::index() tidak guna scope ini — kekal tunjuk semua)
         if ($pengguna->isPentadbir()) {
-            return $query;
+            return $query->where($bahagianAktifSahaja);
         }
 
         $bahagianId = $pengguna->bahagian_id;
+
+        // Pengguna belum ditetapkan bahagian — beri akses sementara (bahagian aktif sahaja)
+        // (admin perlu assign bahagian kepada pengguna ini)
+        if (! $bahagianId) {
+            return $query->where($bahagianAktifSahaja);
+        }
+
         $masterAktif = \App\Models\Tetapan::get('cross_booking_aktif', '0') === '1';
 
         if ($masterAktif) {
-            // Bilik bahagian sendiri ATAU bahagian luar yang cross_booking_aktif = 1
+            // Bilik bahagian sendiri (aktif) ATAU bahagian luar yang cross_booking_aktif=1 (aktif)
+            // Bilik tanpa bahagian (NULL) TIDAK dikongsi — perlu assign dahulu
             return $query->where(function (Builder $q) use ($bahagianId) {
-                $q->where('bahagian_id', $bahagianId)
-                  ->orWhereNull('bahagian_id')
-                  ->orWhereHas('bahagian', fn (Builder $q2) =>
-                      $q2->where('cross_booking_aktif', true)->where('aktif', true)
-                  );
+                $q->where(function (Builder $q2) use ($bahagianId) {
+                    $q2->where('bahagian_id', $bahagianId)
+                       ->whereHas('bahagian', fn (Builder $q3) => $q3->where('aktif', true));
+                })
+                ->orWhereHas('bahagian', fn (Builder $q2) =>
+                    $q2->where('cross_booking_aktif', true)->where('aktif', true)
+                );
             });
         }
 
-        // Default: hanya bilik bahagian sendiri
-        return $query->where(function (Builder $q) use ($bahagianId) {
-            $q->where('bahagian_id', $bahagianId)->orWhereNull('bahagian_id');
-        });
+        // Default: bilik bahagian sendiri sahaja, bahagian mesti aktif
+        // Bilik tanpa bahagian_id (NULL) TIDAK ditunjukkan — perlu ditetapkan dahulu
+        return $query->where('bahagian_id', $bahagianId)
+                     ->whereHas('bahagian', fn (Builder $q) => $q->where('aktif', true));
     }
 
     public function isAktif(): bool

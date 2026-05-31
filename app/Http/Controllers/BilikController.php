@@ -101,8 +101,24 @@ class BilikController extends Controller
             unset($data['gambar']);
         }
 
+        // Rakam nilai LAMA sebelum kemaskini (before/after snapshot)
+        $fieldsDiPantau = ['nama', 'kapasiti', 'lokasi', 'status', 'bahagian_id'];
+        $sebelum = $bilik->only($fieldsDiPantau);
+        $sebelum['kemudahan'] = json_encode($bilik->kemudahan ?? []);
+
         $bilik->update($data);
-        AuditLogger::catat('kemaskini_bilik', $bilik, ['nama' => $bilik->nama]);
+
+        // Bina diff sebelum vs selepas
+        $selepas = $bilik->only($fieldsDiPantau);
+        $selepas['kemudahan'] = json_encode($bilik->kemudahan ?? []);
+        $perubahan = [];
+        foreach (array_merge($fieldsDiPantau, ['kemudahan']) as $f) {
+            if ((string) ($sebelum[$f] ?? '') !== (string) ($selepas[$f] ?? '')) {
+                $perubahan[$f] = ['lama' => $sebelum[$f], 'baru' => $selepas[$f]];
+            }
+        }
+
+        AuditLogger::catat('kemaskini_bilik', $bilik, ['nama' => $bilik->nama, 'perubahan' => $perubahan]);
 
         return redirect()->route('bilik.index')
             ->with('success', 'Maklumat bilik mesyuarat berjaya dikemaskini.');

@@ -16,6 +16,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Mail\KodOTP;
+use App\Models\SesiAktif;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
@@ -133,6 +134,22 @@ class DuaFaktorController extends Controller
         Auth::login($user, $remember);
         $request->session()->regenerate();
         $user->update(['last_login_at' => now()]);
+
+        // Track sesi aktif
+        try {
+            SesiAktif::where('pengguna_id', $user->id)
+                ->where('session_id', $request->session()->getId())
+                ->delete();
+            SesiAktif::create([
+                'pengguna_id'       => $user->id,
+                'session_id'        => $request->session()->getId(),
+                'ip_address'        => $request->ip(),
+                'user_agent'        => substr($request->userAgent() ?? '', 0, 500),
+                'kaedah'            => '2fa',
+                'log_masuk_pada'    => now(),
+                'aktiviti_terakhir' => now(),
+            ]);
+        } catch (\Throwable) {}
 
         AuditLogger::catat('log_masuk_berjaya', null, [
             'kaedah' => '2FA',

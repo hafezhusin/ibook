@@ -138,6 +138,14 @@
                 </a>
             </li>
             <li>
+                <a href="{{ route('sesi-aktif.index') }}"
+                   class="sidebar-link"
+                   {{ request()->routeIs('sesi-aktif*') ? 'aria-current=page' : '' }}>
+                    <i class="fa-solid fa-users-rectangle w-5" aria-hidden="true"></i>
+                    <span>Sesi Aktif</span>
+                </a>
+            </li>
+            <li>
                 <a href="{{ route('tetapan.index') }}"
                    class="sidebar-link"
                    {{ request()->routeIs('tetapan*') ? 'aria-current=page' : '' }}>

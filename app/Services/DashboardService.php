@@ -107,6 +107,10 @@ class DashboardService
         } elseif ($bahagianFilter) {
             $query->whereIn('bilik_id', $bilikIds);
         }
+        // Kecualikan tempahan dibatalkan (auto-batal sistem) dari semua statistik.
+        // Termasuk: jumlah bulan ini, trend bulanan, kategori.
+        // Tidak perlu kira: mesyuaratHariIni, penggunaanMap, akan_datang — dah ada filter DILULUSKAN.
+        $query->where('status', '!=', Tempahan::STATUS_DIBATALKAN);
 
         // Tempahan bulan ini & bulan lepas (untuk trend)
         $jumlahTempahan = (clone $query)

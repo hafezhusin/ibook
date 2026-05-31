@@ -65,6 +65,7 @@ class LaporanController extends Controller
             $mengikutKategori = Tempahan::selectRaw('kategori, COUNT(*) as jumlah')
                 ->whereYear('tarikh', $tahun)
                 ->whereIn('user_id', $userIdUnit)
+                ->where('status', '!=', Tempahan::STATUS_DIBATALKAN)
                 ->groupBy('kategori')->get();
 
             $totalDiluluskan = Tempahan::whereYear('tarikh', $tahun)
@@ -155,6 +156,7 @@ class LaporanController extends Controller
         $mengikutKategori = Tempahan::selectRaw('kategori, COUNT(*) as jumlah')
             ->whereYear('tarikh', $tahun)
             ->when($bilikId, fn ($q) => $q->where('bilik_id', $bilikId))
+            ->where('status', '!=', Tempahan::STATUS_DIBATALKAN)
             ->groupBy('kategori')
             ->get();
 
@@ -173,6 +175,7 @@ class LaporanController extends Controller
         $top10Pengguna = DB::table('tempahan')
             ->join('users', 'tempahan.user_id', '=', 'users.id')
             ->whereYear('tempahan.tarikh', $tahun)
+            ->where('tempahan.status', '!=', Tempahan::STATUS_DIBATALKAN)
             ->select(
                 'users.id',
                 'users.name',

@@ -316,6 +316,7 @@ flatpickr('#cek-tarikh', {
     locale: 'ms',
     dateFormat: 'Y-m-d',
     minDate: 'today',
+    defaultDate: 'today',
     disableMobile: true,
     onChange: function(selectedDates, dateStr) {
         autoSemak(dateStr);
@@ -657,6 +658,9 @@ if (urlParams.has('mode') && urlParams.get('mode') === 'jadual') {
     fp.setDate(urlParams.get('tarikh'));
     if (urlParams.has('sesi'))    cekSesi.value    = urlParams.get('sesi');
     if (urlParams.has('peserta')) cekPeserta.value = urlParams.get('peserta');
+    semak();
+} else {
+    // Default: auto-semak hari ini pada muat pertama (tanpa parameter URL)
     semak();
 }
 </script>

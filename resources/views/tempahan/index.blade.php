@@ -53,6 +53,8 @@
 }
 .st-sah     { background:#dcfce7; color:#15803d; }
 .st-ditolak { background:#fee2e2; color:#b91c1c; }
+.st-batal   { background:#f3e8ff; color:#7c3aed; }
+.st-tunggu  { background:#fef9c3; color:#854d0e; }
 
 /* ── Action dropdown ─────────────────────────────────────── */
 .action-wrap { position:relative; display:inline-block; }
@@ -123,6 +125,8 @@
     .tapis-chip.aktif { background:#0f172a !important; border-color:#f59e0b !important; color:#f59e0b !important; }
     .st-sah     { background:#14532d !important; color:#86efac !important; }
     .st-ditolak { background:#7f1d1d !important; color:#fca5a5 !important; }
+    .st-batal   { background:#4c1d95 !important; color:#ddd6fe !important; }
+    .st-tunggu  { background:#713f12 !important; color:#fde047 !important; }
     .action-trigger { background:#334155 !important; border-color:#475569 !important; color:#e2e8f0 !important; }
     .action-trigger:hover { background:#475569 !important; }
     .action-dd { background:#1e293b !important; border-color:#334155 !important; }
@@ -152,6 +156,7 @@
         'bulan_ini'   => 'Bulan Ini',
         'akan_datang' => 'Akan Datang',
     ];
+    $isAdminAtauUrusSetia = !auth()->user()->isStaf();
 @endphp
 
 {{-- ══ Pengepala ════════════════════════════════════════════════════ --}}
@@ -208,7 +213,7 @@
         <span class="normal-case font-normal text-gray-400 ml-1">— {{ auth()->user()->jabatan }}</span>
         @endif
     </h2>
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div class="grid grid-cols-2 {{ $isAdminAtauUrusSetia ? 'lg:grid-cols-5' : 'lg:grid-cols-4' }} gap-3">
 
         @php
             $cards = [
@@ -261,6 +266,53 @@
         @endif
         @endforeach
 
+        {{-- Kad Perlu Tindakan — hanya Pentadbir Sistem & Urus Setia --}}
+        @if($isAdminAtauUrusSetia && isset($ringkasan['menunggu']))
+        @php $aktifMenunggu = $sf === 'menunggu'; @endphp
+        @if($aktifMenunggu)
+        {{-- Aktif: tunjuk rekod yang sedang dipapar --}}
+        <div class="wl-card aktif" style="--wl-color:#dc2626"
+             aria-current="true"
+             aria-label="Perlu Tindakan: menunjukkan {{ $tempahan->total() }} rekod menunggu (aktif)">
+            <div class="wl-icon" style="background:#fee2e2">
+                <i class="fa-solid fa-clock-rotate-left" style="color:#dc2626" aria-hidden="true"></i>
+            </div>
+            <div class="flex-1">
+                <div class="flex items-baseline gap-2">
+                    <div class="wl-num" style="color:#dc2626">{{ $tempahan->total() }}</div>
+                    @if($ringkasan['menunggu'] !== $tempahan->total())
+                    <span class="text-xs text-gray-400" title="Jumlah global: {{ $ringkasan['menunggu'] }}">/ {{ $ringkasan['menunggu'] }}</span>
+                    @endif
+                </div>
+                <div class="wl-lbl">Perlu Tindakan ✓</div>
+            </div>
+            <a href="{{ route('tempahan.index', request()->except(['status','page'])) }}"
+               class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs hover:bg-red-100 hover:text-red-500 text-gray-400 transition-colors"
+               title="Padam tapisan Perlu Tindakan"
+               aria-label="Padam tapisan Perlu Tindakan">
+                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </a>
+        </div>
+        @else
+        {{-- Tidak aktif: pautan ke senarai menunggu --}}
+        <a href="{{ route('tempahan.index', array_merge($baseParams, ['status' => 'menunggu'])) }}"
+           class="wl-card" style="--wl-color:#dc2626"
+           aria-label="Perlu Tindakan: {{ $ringkasan['menunggu'] }} tempahan menunggu kelulusan">
+            <div class="wl-icon" style="background:#fee2e2; position:relative;">
+                <i class="fa-solid fa-clock-rotate-left" style="color:#dc2626" aria-hidden="true"></i>
+                @if($ringkasan['menunggu'] > 0)
+                <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping opacity-75" aria-hidden="true"></span>
+                <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full" aria-hidden="true"></span>
+                @endif
+            </div>
+            <div>
+                <div class="wl-num" style="color:#dc2626">{{ $ringkasan['menunggu'] }}</div>
+                <div class="wl-lbl">Perlu Tindakan</div>
+            </div>
+        </a>
+        @endif
+        @endif
+
     </div>
     <p class="text-xs text-gray-400 mt-2 pl-1">
         <i class="fa-solid fa-circle-info mr-1" aria-hidden="true"></i>
@@ -305,8 +357,10 @@
                 <label for="filter-status" class="sr-only">Tapis status</label>
                 <select id="filter-status" name="status" class="form-input w-auto text-sm">
                     <option value="">Semua Status</option>
+                    <option value="menunggu"   {{ $sf === 'menunggu'   ? 'selected' : '' }}>◔ Menunggu</option>
                     <option value="diluluskan" {{ $sf === 'diluluskan' ? 'selected' : '' }}>✓ Sah</option>
                     <option value="ditolak"    {{ $sf === 'ditolak'    ? 'selected' : '' }}>✕ Ditolak</option>
+                    <option value="dibatalkan" {{ $sf === 'dibatalkan' ? 'selected' : '' }}>⊘ Dibatalkan</option>
                 </select>
             </div>
 
@@ -420,7 +474,7 @@
 @if($hasFilter)
 @php
     $bilikNama    = request('bilik_id') ? ($bilik->firstWhere('id', request('bilik_id'))?->nama ?? '—') : null;
-    $statusLabel  = ['diluluskan'=>'Sah ✓','ditolak'=>'Ditolak ✕'][request('status')] ?? null;
+    $statusLabel  = ['diluluskan'=>'Sah ✓','ditolak'=>'Ditolak ✕','dibatalkan'=>'Dibatalkan ⊘','menunggu'=>'Menunggu ◔'][request('status')] ?? null;
     $tarikhLabel  = $chipLabel[$tf] ?? null;
     $kategoriLbl  = $kategori[request('kategori')] ?? null;
     $dariLabel    = request('tarikh_dari') ? \Carbon\Carbon::parse(request('tarikh_dari'))->format('d/m/Y') : null;
@@ -544,6 +598,14 @@
                         @if($t->status === 'diluluskan')
                             <span class="st-badge st-sah" role="status">
                                 <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" aria-hidden="true"></span>Sah
+                            </span>
+                        @elseif($t->status === 'dibatalkan')
+                            <span class="st-badge st-batal" role="status">
+                                <span class="w-1.5 h-1.5 rounded-full bg-violet-500 inline-block" aria-hidden="true"></span>Dibatalkan
+                            </span>
+                        @elseif($t->status === 'menunggu')
+                            <span class="st-badge st-tunggu" role="status">
+                                <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block" aria-hidden="true"></span>Menunggu
                             </span>
                         @else
                             <span class="st-badge st-ditolak" role="status">

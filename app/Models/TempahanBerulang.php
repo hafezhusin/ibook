@@ -109,7 +109,7 @@ class TempahanBerulang extends Model
     public function tempahanAktif(): HasMany
     {
         return $this->hasMany(Tempahan::class, 'tempahan_berulang_id')
-            ->where('status', '!=', Tempahan::STATUS_DITOLAK);
+            ->whereNotIn('status', [Tempahan::STATUS_DITOLAK, Tempahan::STATUS_DIBATALKAN]);
     }
 
     public function bilik(): BelongsTo

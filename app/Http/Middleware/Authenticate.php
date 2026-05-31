@@ -14,6 +14,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\SesiAktif;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -43,6 +44,17 @@ class Authenticate
             return redirect()->route('login')
                 ->with('error', 'Akaun anda telah dikemaskini oleh pentadbir. Sila log masuk semula.');
         }
+
+        // Kemaskini aktiviti_terakhir sesi — dihadkan 1x setiap 2 minit untuk jimat DB writes
+        try {
+            $sessionId = $request->session()->getId();
+            $cacheKey  = 'sesi_ts_'.substr($sessionId, 0, 20);
+            if (! Cache::has($cacheKey)) {
+                SesiAktif::where('session_id', $sessionId)
+                    ->update(['aktiviti_terakhir' => now()]);
+                Cache::put($cacheKey, true, now()->addMinutes(2));
+            }
+        } catch (\Throwable) {}
 
         return $next($request);
     }

@@ -112,16 +112,18 @@ class TempahanController extends Controller
                 'SUM(CASE WHEN tarikh = ? AND status = ? THEN 1 ELSE 0 END) AS hari_ini,
                  SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) AS baharu,
                  SUM(CASE WHEN tarikh = ? AND status = ? THEN 1 ELSE 0 END) AS esok,
-                 SUM(CASE WHEN tarikh >= ? AND tarikh <= ? THEN 1 ELSE 0 END) AS bulan_ini',
-                [$today, Tempahan::STATUS_DILULUSKAN, $sub24Jam, $esok, Tempahan::STATUS_DILULUSKAN, $mulaBulan, $akhirBulan]
+                 SUM(CASE WHEN tarikh >= ? AND tarikh <= ? AND status != ? THEN 1 ELSE 0 END) AS bulan_ini,
+                 SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) AS menunggu',
+                [$today, Tempahan::STATUS_DILULUSKAN, $sub24Jam, $esok, Tempahan::STATUS_DILULUSKAN, $mulaBulan, $akhirBulan, Tempahan::STATUS_DIBATALKAN, Tempahan::STATUS_MENUNGGU]
             )
             ->first();
 
         $ringkasan = [
             'hari_ini' => (int) ($ringkasanAgg->hari_ini ?? 0),
-            'baharu' => (int) ($ringkasanAgg->baharu ?? 0),
-            'esok' => (int) ($ringkasanAgg->esok ?? 0),
-            'bulan_ini' => (int) ($ringkasanAgg->bulan_ini ?? 0),
+            'baharu'   => (int) ($ringkasanAgg->baharu ?? 0),
+            'esok'     => (int) ($ringkasanAgg->esok ?? 0),
+            'bulan_ini'=> (int) ($ringkasanAgg->bulan_ini ?? 0),
+            'menunggu' => (int) ($ringkasanAgg->menunggu ?? 0),
         ];
 
         return view('tempahan.index', compact('tempahan', 'bilik', 'ringkasan', 'kategori'));
@@ -182,7 +184,7 @@ class TempahanController extends Controller
                     $konflik = Tempahan::where('bilik_id', $validated['bilik_id'])
                         ->whereDate('tarikh', $validated['tarikh'])
                         ->where('sesi', $sesi)
-                        ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+                        ->whereNotIn('status', [Tempahan::STATUS_DITOLAK, Tempahan::STATUS_DIBATALKAN])
                         ->lockForUpdate()
                         ->exists();
                     if ($konflik) {
@@ -194,6 +196,15 @@ class TempahanController extends Controller
                     // Lempar exception untuk rollback transaksi & keluar
                     throw new \RuntimeException('konflik_sesi');
                 }
+
+                // Staf perlu kelulusan; Pentadbir & Urus Setia auto-lulus
+                $statusAwal = Auth::user()->isStaf()
+                    ? Tempahan::STATUS_MENUNGGU
+                    : Tempahan::STATUS_DILULUSKAN;
+
+                // Jika auto-lulus, rekod pelulus sekarang
+                $diluluskanOleh = $statusAwal === Tempahan::STATUS_DILULUSKAN ? Auth::id() : null;
+                $diluluskanPada = $statusAwal === Tempahan::STATUS_DILULUSKAN ? now() : null;
 
                 foreach ($validated['sesi'] as $sesi) {
                     $masaSesi = Tempahan::MASA_SESI[$sesi];
@@ -209,7 +220,9 @@ class TempahanController extends Controller
                         'nama_pengerusi' => $validated['nama_pengerusi'],
                         'tujuan' => $validated['tujuan'] ?? null,
                         'user_id' => Auth::id(),
-                        'status' => Tempahan::STATUS_DILULUSKAN,
+                        'status' => $statusAwal,
+                        'diluluskan_oleh' => $diluluskanOleh,
+                        'diluluskan_pada' => $diluluskanPada,
                     ]);
                 }
             });
@@ -235,11 +248,18 @@ class TempahanController extends Controller
         (new TempahanMailService)->hantarSelepasStore($tempahanDibuat, $validated, $bilik, Auth::user());
 
         $jumlahSesi = count($validated['sesi']);
+        $isMenunggu = Auth::user()->isStaf();
 
-        return redirect()->route('tempahan.index', ['tarikh_filter' => 'baharu'])
-            ->with('success', $jumlahSesi > 1
+        $mesejBerjaya = $isMenunggu
+            ? ($jumlahSesi > 1
+                ? "Permohonan ({$jumlahSesi} sesi) dihantar — menunggu kelulusan Urus Setia."
+                : 'Permohonan dihantar — menunggu kelulusan Urus Setia.')
+            : ($jumlahSesi > 1
                 ? "Tempahan ({$jumlahSesi} sesi) berjaya dibuat."
                 : 'Tempahan berjaya dibuat.');
+
+        return redirect()->route('tempahan.index', ['tarikh_filter' => 'baharu'])
+            ->with('success', $mesejBerjaya);
     }
 
     public function show(Tempahan $tempahan)
@@ -278,7 +298,7 @@ class TempahanController extends Controller
         $konflik = Tempahan::where('bilik_id', $validated['bilik_id'])
             ->whereDate('tarikh', $validated['tarikh'])
             ->where('sesi', $validated['sesi'])
-            ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+            ->whereNotIn('status', [Tempahan::STATUS_DITOLAK, Tempahan::STATUS_DIBATALKAN])
             ->where('id', '!=', $tempahan->id)
             ->exists();
 
@@ -290,6 +310,10 @@ class TempahanController extends Controller
 
         // Rekod sama ada ini adalah pindaan oleh orang lain (audit)
         $adalahPindaanUnit = $tempahan->user_id !== $user->id;
+
+        // Rakam nilai LAMA sebelum kemaskini (before/after snapshot)
+        $fieldsDiPantau = ['nama_mesyuarat', 'tarikh', 'bilik_id', 'sesi', 'bilangan_peserta', 'kategori', 'nama_pengerusi', 'tujuan'];
+        $sebelum = $tempahan->only($fieldsDiPantau);
 
         $masaSesi = Tempahan::MASA_SESI[$validated['sesi']];
         $tempahan->update([
@@ -308,9 +332,19 @@ class TempahanController extends Controller
         ]);
         KalendarCacheService::bump();
 
+        // Bina diff sebelum vs selepas
+        $selepas = $tempahan->only($fieldsDiPantau);
+        $perubahan = [];
+        foreach ($fieldsDiPantau as $f) {
+            if ((string) ($sebelum[$f] ?? '') !== (string) ($selepas[$f] ?? '')) {
+                $perubahan[$f] = ['lama' => $sebelum[$f], 'baru' => $selepas[$f]];
+            }
+        }
+
         AuditLogger::catat('kemaskini_tempahan', $tempahan, [
             'pindaan_unit' => $adalahPindaanUnit,
             'user_id_asal' => $tempahan->user_id,
+            'perubahan'    => $perubahan,
         ]);
 
         $mesej = $adalahPindaanUnit
@@ -318,6 +352,119 @@ class TempahanController extends Controller
             : 'Tempahan berjaya dikemaskini.';
 
         return redirect()->route('tempahan.index')->with('success', $mesej);
+    }
+
+    /**
+     * Luluskan tempahan berstatus 'menunggu'.
+     * Hanya Pentadbir Sistem & Urus Setia dibenarkan.
+     */
+    public function luluskan(Tempahan $tempahan)
+    {
+        abort_unless(
+            Auth::user()->isPentadbir() || Auth::user()->isUrusSetia(),
+            403, 'Akses ditolak.'
+        );
+
+        if ($tempahan->status !== Tempahan::STATUS_MENUNGGU) {
+            return back()->with('error', 'Hanya tempahan berstatus "menunggu" boleh diluluskan.');
+        }
+
+        // Semak konflik: pastikan tiada tempahan lain yang sudah diluluskan untuk slot yang sama
+        $konflik = Tempahan::where('bilik_id', $tempahan->bilik_id)
+            ->where('tarikh', $tempahan->tarikh)
+            ->where('masa_mula', $tempahan->masa_mula)
+            ->where('masa_tamat', $tempahan->masa_tamat)
+            ->where('status', Tempahan::STATUS_DILULUSKAN)
+            ->where('id', '!=', $tempahan->id)
+            ->first();
+
+        if ($konflik) {
+            return back()->with('error',
+                "Tidak dapat diluluskan — slot ini telah ditempah oleh \"{$konflik->nama_mesyuarat}\" (#{$konflik->no_rujukan}). ".
+                'Sila tolak tempahan ini atau pilih slot lain.'
+            );
+        }
+
+        try {
+            $tempahan->update([
+                'status'           => Tempahan::STATUS_DILULUSKAN,
+                'diluluskan_oleh'  => Auth::id(),
+                'diluluskan_pada'  => now(),
+                'dikemaskini_oleh' => Auth::id(),
+                'dikemaskini_pada' => now(),
+            ]);
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Tangkap duplicate-key constraint yang mungkin berlaku secara race condition
+            if ($e->errorInfo[1] === 1062) {
+                return back()->with('error', 'Tidak dapat diluluskan — konflik slot dikesan. Sila muat semula dan cuba lagi.');
+            }
+            throw $e;
+        }
+
+        KalendarCacheService::bump();
+
+        AuditLogger::catat('lulus_tempahan', $tempahan, [
+            'nama_mesyuarat'  => $tempahan->nama_mesyuarat,
+            'user_id_pemohon' => $tempahan->user_id,
+        ]);
+
+        // Hantar e-mel kepada pemohon
+        (new TempahanMailService)->hantarSelepasLuluskan(
+            $tempahan->load(['pengguna', 'bilik']),
+            Auth::user()
+        );
+
+        return back()->with('success', "Tempahan '{$tempahan->nama_mesyuarat}' berjaya diluluskan.");
+    }
+
+    /**
+     * Tolak tempahan berstatus 'menunggu'.
+     * Hanya Pentadbir Sistem & Urus Setia dibenarkan.
+     */
+    public function tolak(Request $request, Tempahan $tempahan)
+    {
+        abort_unless(
+            Auth::user()->isPentadbir() || Auth::user()->isUrusSetia(),
+            403, 'Akses ditolak.'
+        );
+
+        $request->validate([
+            'catatan_penolakan' => ['nullable', 'string', 'max:500'],
+        ], [
+            'catatan_penolakan.max' => 'Catatan penolakan tidak boleh melebihi 500 aksara.',
+        ]);
+
+        if ($tempahan->status !== Tempahan::STATUS_MENUNGGU) {
+            return back()->with('error', 'Hanya tempahan berstatus "menunggu" boleh ditolak.');
+        }
+
+        $catatan = $request->catatan_penolakan ?? '';
+
+        $tempahan->update([
+            'status'             => Tempahan::STATUS_DITOLAK,
+            'catatan_penolakan'  => $catatan ?: null,
+            'diluluskan_oleh'    => Auth::id(),
+            'diluluskan_pada'    => now(),
+            'dikemaskini_oleh'   => Auth::id(),
+            'dikemaskini_pada'   => now(),
+        ]);
+
+        KalendarCacheService::bump();
+
+        AuditLogger::catat('tolak_tempahan', $tempahan, [
+            'nama_mesyuarat'    => $tempahan->nama_mesyuarat,
+            'user_id_pemohon'   => $tempahan->user_id,
+            'catatan_penolakan' => $catatan,
+        ]);
+
+        // Hantar e-mel kepada pemohon
+        (new TempahanMailService)->hantarSelepasTolaK(
+            $tempahan->load(['pengguna', 'bilik']),
+            Auth::user(),
+            $catatan
+        );
+
+        return back()->with('success', "Tempahan '{$tempahan->nama_mesyuarat}' telah ditolak.");
     }
 
     public function cekKonflik(Request $request)
@@ -334,7 +481,7 @@ class TempahanController extends Controller
         $sesiKonflik = Tempahan::where('bilik_id', $bilikId)
             ->whereDate('tarikh', $tarikh)
             ->whereIn('sesi', ['pagi', 'petang'])
-            ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+            ->whereNotIn('status', [Tempahan::STATUS_DITOLAK, Tempahan::STATUS_DIBATALKAN])
             ->pluck('sesi');
 
         $bilik = BilikMesyuarat::find($bilikId);

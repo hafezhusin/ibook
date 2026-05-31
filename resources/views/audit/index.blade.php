@@ -187,7 +187,12 @@
             {{-- Pengguna --}}
             <td class="px-4 py-3 align-top">
                 @if($log->pengguna)
-                <div class="font-medium text-gray-800 text-xs">{{ $log->pengguna->name }}</div>
+                <a href="{{ route('audit.timeline', $log->pengguna) }}"
+                   class="font-medium text-gray-800 text-xs hover:text-amber-600 hover:underline inline-flex items-center gap-1 group"
+                   title="Lihat timeline aktiviti {{ $log->pengguna->name }}">
+                    {{ $log->pengguna->name }}
+                    <i class="fa-solid fa-clock-rotate-left text-gray-300 group-hover:text-amber-500 text-[10px] transition-colors" aria-hidden="true"></i>
+                </a>
                 @elseif($isBahaya && isset($log->butiran['email_dicuba']))
                 <div class="font-mono text-xs text-red-500">{{ $log->butiran['email_dicuba'] }}</div>
                 <div class="text-xs text-gray-400 italic">(tidak berdaftar)</div>
@@ -242,8 +247,8 @@
             <td class="px-4 py-3 text-center align-top">
                 @if($log->butiran)
                 <button type="button"
-                    class="text-amber-500 hover:text-amber-600 transition text-xs font-medium"
-                    onclick="toggleButiran({{ $log->id }})"
+                    class="toggle-butiran text-amber-500 hover:text-amber-600 transition text-xs font-medium"
+                    data-log-id="{{ $log->id }}"
                     aria-expanded="false"
                     aria-controls="butiran-{{ $log->id }}">
                     <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
@@ -259,7 +264,94 @@
         @if($log->butiran)
         <tr id="butiran-{{ $log->id }}" class="hidden {{ $isBahaya ? 'bg-red-50/80' : 'bg-amber-50/50' }}" aria-hidden="true">
             <td colspan="7" class="px-6 py-3 border-b {{ $isBahaya ? 'border-red-100' : 'border-amber-100' }}">
-                <pre class="text-xs text-gray-700 bg-white border border-gray-200 rounded-lg p-3 overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap">{{ json_encode($log->butiran, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
+
+                {{-- Paparan diff cantik jika ada perubahan before/after --}}
+                @if(!empty($log->butiran['perubahan']) && is_array($log->butiran['perubahan']))
+                <div class="mb-3">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-code-compare text-amber-400 mr-1" aria-hidden="true"></i>
+                        Perubahan ({{ count($log->butiran['perubahan']) }} medan)
+                    </p>
+                    <table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-500 text-left">
+                                <th class="px-3 py-2 font-semibold w-1/4">Medan</th>
+                                <th class="px-3 py-2 font-semibold w-5/12 text-red-600">
+                                    <i class="fa-solid fa-minus mr-1" aria-hidden="true"></i>Sebelum
+                                </th>
+                                <th class="px-3 py-2 font-semibold w-5/12 text-green-600">
+                                    <i class="fa-solid fa-plus mr-1" aria-hidden="true"></i>Selepas
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                            @foreach($log->butiran['perubahan'] as $medan => $nilai)
+                            <tr>
+                                <td class="px-3 py-2 font-mono text-gray-600 font-semibold align-top">{{ $medan }}</td>
+                                <td class="px-3 py-2 align-top">
+                                    <span class="inline-block bg-red-50 text-red-700 rounded px-1.5 py-0.5 font-mono break-all">
+                                        {{ $nilai['lama'] !== null && $nilai['lama'] !== '' ? $nilai['lama'] : '—' }}
+                                    </span>
+                                </td>
+                                <td class="px-3 py-2 align-top">
+                                    <span class="inline-block bg-green-50 text-green-700 rounded px-1.5 py-0.5 font-mono break-all">
+                                        {{ $nilai['baru'] !== null && $nilai['baru'] !== '' ? $nilai['baru'] : '—' }}
+                                    </span>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                {{-- Butiran lain (bukan perubahan) --}}
+                @php $butiranLain = array_diff_key($log->butiran, ['perubahan' => null]); @endphp
+                @if(!empty($butiranLain))
+                <table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden mt-2">
+                    <tbody class="divide-y divide-gray-100 bg-white">
+                        @foreach($butiranLain as $kunci => $nilai)
+                        <tr>
+                            <td class="px-3 py-2 font-mono font-semibold text-gray-500 w-1/3 align-top bg-gray-50">{{ $kunci }}</td>
+                            <td class="px-3 py-2 text-gray-700 align-top break-all">
+                                @if(is_array($nilai))
+                                    <span class="font-mono text-gray-500">{{ json_encode($nilai, JSON_UNESCAPED_UNICODE) }}</span>
+                                @elseif(is_bool($nilai))
+                                    <span class="{{ $nilai ? 'text-green-600' : 'text-red-500' }} font-semibold">{{ $nilai ? 'ya' : 'tidak' }}</span>
+                                @elseif($nilai === null || $nilai === '')
+                                    <span class="text-gray-300 italic">—</span>
+                                @else
+                                    {{ $nilai }}
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                @endif
+
+                @else
+                {{-- Paparan key-value (tanpa perubahan) --}}
+                <table class="w-full text-xs border border-gray-200 rounded-lg overflow-hidden">
+                    <tbody class="divide-y divide-gray-100 bg-white">
+                        @foreach($log->butiran as $kunci => $nilai)
+                        <tr>
+                            <td class="px-3 py-2 font-mono font-semibold text-gray-500 w-1/3 align-top bg-gray-50">{{ $kunci }}</td>
+                            <td class="px-3 py-2 text-gray-700 align-top break-all">
+                                @if(is_array($nilai))
+                                    <span class="font-mono text-gray-500">{{ json_encode($nilai, JSON_UNESCAPED_UNICODE) }}</span>
+                                @elseif(is_bool($nilai))
+                                    <span class="{{ $nilai ? 'text-green-600' : 'text-red-500' }} font-semibold">{{ $nilai ? 'ya' : 'tidak' }}</span>
+                                @elseif($nilai === null || $nilai === '')
+                                    <span class="text-gray-300 italic">—</span>
+                                @else
+                                    {{ $nilai }}
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                @endif
+
                 @if($log->record_hash)
                 <p class="text-xs text-gray-400 mt-2 font-mono">
                     <span class="text-gray-500 font-semibold">hash:</span> {{ $log->record_hash }}
@@ -288,15 +380,20 @@
 
 @push('scripts')
 <script nonce="{{ $cspNonce }}">
-function toggleButiran(id) {
+document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.toggle-butiran');
+    if (!btn) return;
+
+    const id   = btn.dataset.logId;
     const row  = document.getElementById('butiran-' + id);
-    const btn  = document.querySelector('[aria-controls="butiran-' + id + '"]');
     const icon = btn.querySelector('i');
-    const open = row.classList.toggle('hidden');
-    btn.setAttribute('aria-expanded', open ? 'false' : 'true');
-    row.setAttribute('aria-hidden', open ? 'true' : 'false');
-    icon.classList.toggle('fa-chevron-down', open);
-    icon.classList.toggle('fa-chevron-up', !open);
-}
+    if (!row) return;
+
+    const isHidden = row.classList.toggle('hidden');
+    btn.setAttribute('aria-expanded', isHidden ? 'false' : 'true');
+    row.setAttribute('aria-hidden', isHidden ? 'true' : 'false');
+    icon.classList.toggle('fa-chevron-down', isHidden);
+    icon.classList.toggle('fa-chevron-up', !isHidden);
+});
 </script>
 @endpush

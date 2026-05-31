@@ -67,7 +67,7 @@ class KetersediaanController extends Controller
         $ditempahMap = Cache::remember($cacheKey, 60, function () use ($tarikh, $sesiList) {
             return Tempahan::where('tarikh', $tarikh)
                 ->whereIn('sesi', $sesiList)
-                ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+                ->whereNotIn('status', [Tempahan::STATUS_DITOLAK, Tempahan::STATUS_DIBATALKAN])
                 ->get(['bilik_id', 'sesi'])
                 ->groupBy('bilik_id')
                 ->map(fn ($rows) => $rows->pluck('sesi')->all());
@@ -157,7 +157,7 @@ class KetersediaanController extends Controller
         $cacheKey = 'ketersediaan_minggu_'.$mula->toDateString();
         $ditempahMap = Cache::remember($cacheKey, 60, function () use ($mula, $tamat) {
             $rows = Tempahan::whereBetween('tarikh', [$mula->toDateString(), $tamat->toDateString()])
-                ->where('status', '!=', Tempahan::STATUS_DITOLAK)
+                ->whereNotIn('status', [Tempahan::STATUS_DITOLAK, Tempahan::STATUS_DIBATALKAN])
                 ->get(['bilik_id', 'tarikh', 'sesi']);
 
             // Bina map: [bilik_id][tarikh_string] => [sesi, ...]

@@ -26,6 +26,11 @@ class UpdateTempahanRequest extends FormRequest
         $tempahan = $this->route('tempahan');
         $user = $this->user();
 
+        // Tempahan dibatalkan tidak boleh diedit — perlindungan server-side
+        if ($tempahan->isDibatalkan()) {
+            return false;
+        }
+
         if ($user->isStaf() && ! $tempahan->bolehDiEditOleh($user)) {
             return false;
         }

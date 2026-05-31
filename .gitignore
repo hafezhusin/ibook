@@ -42,3 +42,8 @@ SESSION_LOG.md
 public/test.php
 test.php
 update-headers.ps1
+
+# ── Prod credentials & local artifacts — jangan commit ────────
+.env-prod-check
+coverage.xml
+/public/vendor/

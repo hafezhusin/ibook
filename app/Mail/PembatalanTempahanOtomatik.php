@@ -16,40 +16,41 @@ namespace App\Mail;
 
 use App\Models\Tetapan;
 use Illuminate\Bus\Queueable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class PengesahanTempahan extends Mailable
+/**
+ * Notifikasi kepada pemohon apabila tempahan mereka dibatalkan secara
+ * automatik ekoran bahagian pemilik bilik dinyahaktifkan.
+ */
+class PembatalanTempahanOtomatik extends Mailable
 {
     use Queueable, SerializesModels;
 
     /**
-     * @param  string  $noRujukan  e.g. TMP-2026-A3F9B2C1
-     * @param  string  $tarikhLabel  formatted date string
-     * @param  array  $semuaSesi  ['pagi'] or ['pagi','petang']
+     * @param  string  $pemohonNama       Nama penuh pemohon
+     * @param  string  $pemohonEmail      E-mel pemohon
+     * @param  Collection  $tempahanDibatal  Koleksi Tempahan yang dibatalkan (sudah load bilik)
+     * @param  string  $bahagianKod       Kod bahagian yang dinyahaktifkan
+     * @param  string  $tarikhBatal       Tarikh pembatalan (format d/m/Y)
      */
     public function __construct(
-        public string $noRujukan,
-        public string $namaMesyuarat,
-        public string $tarikhLabel,
-        public array $semuaSesi,
-        public string $bilikNama,
-        public int $bilanganPeserta,
-        public string $kategoriLabel,
-        public string $namaPengerusi,
-        public string $tujuan,
         public string $pemohonNama,
         public string $pemohonEmail,
-        public bool $isMenunggu = false,
+        public Collection $tempahanDibatal,
+        public string $bahagianKod,
+        public string $tarikhBatal,
     ) {}
 
     public function envelope(): Envelope
     {
-        $subjek = $this->isMenunggu
-            ? '[iBook] Permohonan Diterima — '.$this->noRujukan
-            : '[iBook] Pengesahan Tempahan — '.$this->noRujukan;
+        $jumlah = $this->tempahanDibatal->count();
+        $subjek = $jumlah > 1
+            ? "[iBook] {$jumlah} Tempahan Anda Telah Dibatalkan Secara Automatik"
+            : '[iBook] Tempahan Anda Telah Dibatalkan Secara Automatik';
 
         return new Envelope(subject: $subjek);
     }
@@ -57,7 +58,7 @@ class PengesahanTempahan extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.pengesahan-tempahan',
+            view: 'emails.pembatalan-tempahan-otomatik',
             with: ['tetapan' => Tetapan::getAll()],
         );
     }

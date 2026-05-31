@@ -138,6 +138,10 @@ class PenggunaController extends Controller
             unset($validated['name']);
         }
 
+        // Rakam nilai LAMA sebelum kemaskini (before/after snapshot)
+        $fieldsDiPantau = ['name', 'email', 'jabatan', 'peranan', 'bahagian_id', 'aktif'];
+        $sebelum = $pengguna->only($fieldsDiPantau);
+
         $pengguna->update($validated);
 
         // Paksa log keluar sesi aktif jika peranan atau status aktif berubah
@@ -145,9 +149,19 @@ class PenggunaController extends Controller
             Cache::put("paksa_log_keluar_{$pengguna->id}", true, now()->addHours(24));
         }
 
+        // Bina diff sebelum vs selepas
+        $selepas = $pengguna->only($fieldsDiPantau);
+        $perubahan = [];
+        foreach ($fieldsDiPantau as $f) {
+            if ((string) ($sebelum[$f] ?? '') !== (string) ($selepas[$f] ?? '')) {
+                $perubahan[$f] = ['lama' => $sebelum[$f], 'baru' => $selepas[$f]];
+            }
+        }
+
         AuditLogger::catat('kemaskini_pengguna', $pengguna, [
-            'peranan' => $pengguna->peranan,
-            'aktif' => $pengguna->aktif,
+            'peranan'    => $pengguna->peranan,
+            'aktif'      => $pengguna->aktif,
+            'perubahan'  => $perubahan,
         ]);
 
         return redirect()->route('pengguna.index')

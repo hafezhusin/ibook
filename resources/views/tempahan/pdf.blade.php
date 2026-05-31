@@ -8,8 +8,10 @@
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     th { background: #1a1a2e; color: #fff; padding: 8px 10px; text-align: left; font-size: 11px; }
     td { padding: 7px 10px; border-bottom: 1px solid #eee; font-size: 11px; }
-    .badge-lulus { color: #065f46; font-weight: bold; }
-    .badge-tolak { color: #991b1b; font-weight: bold; }
+    .badge-lulus  { color: #065f46; font-weight: bold; }
+    .badge-tolak  { color: #991b1b; font-weight: bold; }
+    .badge-batal  { color: #5b21b6; font-weight: bold; }
+    .badge-tunggu { color: #713f12; font-weight: bold; }
     .header { border-bottom: 2px solid #f59e0b; padding-bottom: 10px; margin-bottom: 15px; }
 </style>
 </head>
@@ -40,9 +42,15 @@
             <td>{{ $t->masa_label }}</td>
             <td>{{ $t->bilik->nama ?? '-' }}</td>
             <td>{{ $t->pengguna->name ?? '-' }}</td>
-            <td class="badge-{{ $t->status === 'diluluskan' ? 'lulus' : 'tolak' }}">
-                {{ ucfirst($t->status) }}
-            </td>
+            @php
+            $badgePdf = match($t->status) {
+                'diluluskan' => 'lulus',
+                'dibatalkan' => 'batal',
+                'menunggu'   => 'tunggu',
+                default      => 'tolak',
+            };
+            @endphp
+            <td class="badge-{{ $badgePdf }}">{{ ucfirst($t->status) }}</td>
         </tr>
         @empty
         <tr><td colspan="7" style="text-align:center;">Tiada rekod</td></tr>

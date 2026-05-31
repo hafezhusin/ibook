@@ -44,6 +44,23 @@
 
 {{-- ===== PANEL MUDAH ALIH (hanya mobile / tablet) ===== --}}
 <div class="lg:hidden mb-3 space-y-2">
+    {{-- Dropdown tapis bahagian (mobile) --}}
+    @if($bahagian->count() > 1)
+    <div class="bg-white rounded-xl shadow-sm p-3 flex items-center gap-3">
+        <label for="mob-filter-bahagian"
+               class="text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap flex-shrink-0">
+            <i class="fa-solid fa-building-columns text-amber-400 mr-1" aria-hidden="true"></i>Bahagian:
+        </label>
+        <select id="mob-filter-bahagian"
+                class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                aria-label="Tapis mengikut bahagian">
+            <option value="">Semua Bahagian</option>
+            @foreach($bahagian as $bhg)
+            <option value="{{ $bhg->id }}">{{ $bhg->kod }} — {{ $bhg->nama }}</option>
+            @endforeach
+        </select>
+    </div>
+    @endif
     {{-- Dropdown tapis bilik --}}
     <div class="bg-white rounded-xl shadow-sm p-3 flex items-center gap-3">
         <label for="mob-filter-bilik"
@@ -54,7 +71,7 @@
                 class="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white">
             <option value="">Semua Bilik</option>
             @foreach($bilik as $b)
-            <option value="{{ $b->id }}">{{ $b->nama }}</option>
+            <option value="{{ $b->id }}" data-bahagian-id="{{ $b->bahagian_id ?? '' }}">{{ $b->nama }}</option>
             @endforeach
         </select>
     </div>
@@ -85,6 +102,25 @@
                     Tapis Bilik
                 </p>
             </div>
+
+            {{-- Filter Bahagian (sidebar) — hanya papar jika ada lebih 1 bahagian --}}
+            @if($bahagian->count() > 1)
+            <div class="px-3 pt-3 pb-2 border-b border-gray-100 flex-shrink-0">
+                <label for="filter-bahagian-sidebar"
+                       class="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1.5">
+                    <i class="fa-solid fa-building-columns text-amber-400 mr-1" aria-hidden="true"></i>Bahagian
+                </label>
+                <select id="filter-bahagian-sidebar"
+                        class="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        aria-label="Tapis mengikut bahagian">
+                    <option value="">Semua Bahagian</option>
+                    @foreach($bahagian as $bhg)
+                    <option value="{{ $bhg->id }}">{{ $bhg->kod }} — {{ $bhg->nama }}</option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+
             <div class="p-3 space-y-1.5 overflow-y-auto flex-1" role="list" aria-labelledby="label-tapis-bilik">
 
                 {{-- Semua Bilik --}}
@@ -105,6 +141,7 @@
                     $adaPelbagaiLokasi = $bilikByLokasi->count() > 1;
                 @endphp
                 @foreach($bilikByLokasi as $lokasi => $kumpulan)
+                <div class="kumpulan-lokasi">
                     @if($adaPelbagaiLokasi)
                     <div class="px-3 pt-3 pb-0.5" role="presentation">
                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
@@ -117,7 +154,8 @@
                         <button type="button"
                             class="bilik-btn"
                             aria-pressed="false"
-                            data-bilik-id="{{ $b->id }}">
+                            data-bilik-id="{{ $b->id }}"
+                            data-bahagian-id="{{ $b->bahagian_id ?? '' }}">
                             <div class="font-semibold text-gray-800 text-sm leading-snug">{{ $b->nama }}</div>
                             <div class="text-xs text-gray-400 mt-0.5">
                                 <i class="fa-solid fa-users text-amber-400 mr-1" aria-hidden="true"></i>
@@ -126,6 +164,7 @@
                         </button>
                     </div>
                     @endforeach
+                </div>
                 @endforeach
             </div>
         </div>
@@ -298,7 +337,8 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/ms.global.min.js"></script>
 <script nonce="{{ $cspNonce }}">
 let calendar;
-let selectedBilikId = null;
+let selectedBilikId   = null;
+let selectedBahagianId = null;
 const totalBilik = {{ $bilik->count() }};
 
 // ── Privasi: pentadbir nampak nama penuh, lain-lain nama disamarkan ──
@@ -328,6 +368,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     + '&end=' + encodeURIComponent(info.endStr);
             if (selectedBilikId) {
                 url += '&bilik_id=' + selectedBilikId;
+            } else if (selectedBahagianId) {
+                url += '&bahagian_id=' + selectedBahagianId;
             }
             fetch(url, { cache: 'no-store' })
                 .then(function (r) { return r.json(); })
@@ -422,6 +464,61 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     calendar.render();
 });
+
+// ---- Filter bahagian ----
+function filterBahagian(bahagianId) {
+    selectedBahagianId = bahagianId ? Number(bahagianId) : null;
+
+    // Reset pemilihan bilik → Semua Bilik
+    selectedBilikId = null;
+    document.querySelectorAll('.bilik-btn').forEach(function (b) {
+        b.classList.remove('aktif');
+        b.setAttribute('aria-pressed', 'false');
+    });
+    var btnSemua = document.getElementById('btn-semua');
+    if (btnSemua) { btnSemua.classList.add('aktif'); btnSemua.setAttribute('aria-pressed', 'true'); }
+
+    // Tunjuk / sembunyi bilik mengikut bahagian (sidebar desktop)
+    if (selectedBahagianId) {
+        document.querySelectorAll('.bilik-btn[data-bilik-id]').forEach(function (btn) {
+            if (!btn.getAttribute('data-bilik-id')) return; // skip "Semua Bilik"
+            var item = btn.closest('[role="listitem"]');
+            if (item) {
+                item.style.display = (btn.getAttribute('data-bahagian-id') == selectedBahagianId) ? '' : 'none';
+            }
+        });
+    } else {
+        document.querySelectorAll('[role="listitem"]').forEach(function (item) {
+            item.style.display = '';
+        });
+    }
+    kemaskiniVisibilitiKumpulanLokasi();
+
+    // Tapis pilihan mobile bilik dropdown
+    var mobBilik = document.getElementById('mob-filter-bilik');
+    if (mobBilik) {
+        mobBilik.value = '';
+        Array.from(mobBilik.options).forEach(function (opt) {
+            if (!opt.value) { opt.style.display = ''; return; } // "Semua Bilik"
+            opt.style.display = (!selectedBahagianId || opt.getAttribute('data-bahagian-id') == selectedBahagianId) ? '' : 'none';
+        });
+    }
+
+    // Sync dropdown mobile bahagian
+    var mobBhg = document.getElementById('mob-filter-bahagian');
+    if (mobBhg) mobBhg.value = bahagianId || '';
+
+    calendar.refetchEvents();
+}
+
+// ---- Sembunyi kumpulan lokasi yang tiada bilik kelihatan ----
+function kemaskiniVisibilitiKumpulanLokasi() {
+    document.querySelectorAll('.kumpulan-lokasi').forEach(function (kumpulan) {
+        var adaNampak = Array.from(kumpulan.querySelectorAll('[role="listitem"]'))
+            .some(function (item) { return item.style.display !== 'none'; });
+        kumpulan.style.display = adaNampak ? '' : 'none';
+    });
+}
 
 // ---- Filter bilik (desktop sidebar) ----
 function filterBilik(bilikId, el) {
@@ -564,6 +661,25 @@ document.addEventListener('DOMContentLoaded', function () {
             filterBilik(bilikId ? Number(bilikId) : null, btn);
         });
     });
+
+    // Dropdown tapis bahagian (desktop sidebar)
+    var sidebarBhg = document.getElementById('filter-bahagian-sidebar');
+    if (sidebarBhg) {
+        sidebarBhg.addEventListener('change', function () {
+            filterBahagian(this.value);
+        });
+    }
+
+    // Dropdown tapis bahagian (mobile)
+    var mobBhg = document.getElementById('mob-filter-bahagian');
+    if (mobBhg) {
+        mobBhg.addEventListener('change', function () {
+            filterBahagian(this.value);
+            // Sync sidebar
+            var sidebarSel = document.getElementById('filter-bahagian-sidebar');
+            if (sidebarSel) sidebarSel.value = this.value;
+        });
+    }
 
     // Mobile dropdown tapis bilik
     var mobSel = document.getElementById('mob-filter-bilik');

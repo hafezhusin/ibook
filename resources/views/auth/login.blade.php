@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
           integrity="sha512-Avb2QiuDEEvB4bZJYdft2mNjVShBftLdPG8FJ0V7irTLQ8Uo0qcPxh4Plq7G5tGm0rU+1SPhVotteLpBERwTkw=="
           crossorigin="anonymous" referrerpolicy="no-referrer"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
+    {{-- FullCalendar 6: CSS injected by JS bundle — no separate CSS link needed --}}
     <style>
         body { font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
 
@@ -70,6 +70,31 @@
 
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+        }
+
+        /* ── CSP-safe hover: tiada inline onmouseover/onmouseout ── */
+        .btn-login-submit {
+            background: rgba(245,158,11,0.7);
+            transition: background .2s, box-shadow .2s;
+        }
+        .btn-login-submit:hover,
+        .btn-login-submit:focus-visible {
+            background: #f59e0b !important;
+        }
+        .manual-pdf-link {
+            border-color: rgba(22,163,74,0.3);
+            transition: border-color .2s, background .2s;
+        }
+        .manual-pdf-link:hover {
+            border-color: rgba(22,163,74,0.6) !important;
+        }
+        .btn-sso-google {
+            background: #f59e0b;
+            transition: background .2s, box-shadow .2s;
+        }
+        .btn-sso-google:hover,
+        .btn-sso-google:focus-visible {
+            background: #d97706 !important;
         }
     </style>
 </head>
@@ -140,10 +165,8 @@
 
         {{-- ═══ PRIMARY: Google SSO ═══ --}}
         <a href="{{ route('auth.google') }}"
-           class="flex items-center justify-center gap-3 w-full py-3.5 rounded-xl font-bold text-sm transition-all shadow-lg mb-2"
-           style="background:#f59e0b; color:#1a1a2e;"
-           onmouseover="this.style.background='#d97706'"
-           onmouseout="this.style.background='#f59e0b'">
+           class="btn-sso-google flex items-center justify-center gap-3 w-full py-3.5 rounded-xl font-bold text-sm shadow-lg mb-2"
+           style="color:#1a1a2e;">
             <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
                 <path fill="#1a1a2e" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
                 <path fill="#1a1a2e" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
@@ -204,10 +227,7 @@
                     </a>
                 </div>
                 <button type="submit"
-                    class="w-full font-bold py-3 rounded-lg transition-all text-white shadow-lg"
-                    style="background:rgba(245,158,11,0.7)"
-                    onmouseover="this.style.background='#f59e0b'"
-                    onmouseout="this.style.background='rgba(245,158,11,0.7)'">
+                    class="btn-login-submit w-full font-bold py-3 rounded-lg text-white shadow-lg">
                     <i class="fa-solid fa-right-to-bracket mr-2" aria-hidden="true"></i>Log Masuk
                 </button>
             </form>
@@ -229,10 +249,8 @@
         <a href="/docs/Manual_Pengguna_Staf_iBook2.pdf"
             target="_blank"
             rel="noopener noreferrer"
-            class="mt-5 flex items-center gap-3 p-4 rounded-xl border transition-all group"
-            style="background:rgba(22,163,74,0.08); border-color:rgba(22,163,74,0.3)"
-            onmouseover="this.style.borderColor='rgba(22,163,74,0.6)'"
-            onmouseout="this.style.borderColor='rgba(22,163,74,0.3)'"
+            class="manual-pdf-link mt-5 flex items-center gap-3 p-4 rounded-xl border group"
+            style="background:rgba(22,163,74,0.08);"
             aria-label="Buka Manual Pengguna Staf iBook 2.0 dalam format PDF (buka dalam tab baharu)">
             <span class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style="background:rgba(22,163,74,0.2)">
                 <i class="fa-solid fa-file-pdf text-green-400 text-lg group-hover:scale-110 transition-transform" aria-hidden="true"></i>
@@ -333,8 +351,8 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/ms.global.min.js"></script>
+{{-- FullCalendar 6.1.11 — self-hosted (tahan proxy kerajaan / CDN block) --}}
+<script src="/vendor/fullcalendar/index.global.min.js"></script>
 <script nonce="{{ $cspNonce }}">
 let calendar;
 let selectedBilik = null;
@@ -489,13 +507,23 @@ document.getElementById('btn-toggle-pwd')?.addEventListener('click', togglePwd);
     const chevron = document.getElementById('chevron-email');
     if (!btn || !section) return;
 
-    // Auto-expand if there were email form errors (e.g. wrong password)
-    const hasErrors = {{ ($errors->any() || session('error')) ? 'true' : 'false' }};
-    const isEmailError = {{ ($errors->has('email') || $errors->has('password')) ? 'true' : 'false' }};
-    if (isEmailError) { expand(); }
+    var LS_KEY = 'ibook_login_method';
+
+    // Auto-expand jika: (1) ada ralat e-mel/kata laluan, ATAU (2) pengguna sebelum ini guna e-mel
+    var isEmailError = {{ ($errors->has('email') || $errors->has('password')) ? 'true' : 'false' }};
+    var preferEmail  = false;
+    try { preferEmail = localStorage.getItem(LS_KEY) === 'email'; } catch(e) {}
+
+    if (isEmailError || preferEmail) { expand(); }
 
     btn.addEventListener('click', function() {
-        if (section.classList.contains('hidden')) { expand(); } else { collapse(); }
+        if (section.classList.contains('hidden')) {
+            expand();
+            try { localStorage.setItem(LS_KEY, 'email'); } catch(e) {}
+        } else {
+            collapse();
+            try { localStorage.setItem(LS_KEY, 'sso'); } catch(e) {}
+        }
     });
 
     function expand() {

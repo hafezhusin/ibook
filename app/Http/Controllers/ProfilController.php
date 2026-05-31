@@ -58,8 +58,22 @@ class ProfilController extends Controller
             unset($validated['jabatan']);
         }
 
+        // Rakam nilai LAMA sebelum kemaskini (before/after snapshot)
+        $fieldsDiPantau = ['name', 'jabatan'];
+        $sebelum = $user->only($fieldsDiPantau);
+
         $user->update($validated);
-        AuditLogger::catat('kemaskini_profil', $user);
+
+        // Bina diff sebelum vs selepas
+        $selepas = $user->only($fieldsDiPantau);
+        $perubahan = [];
+        foreach ($fieldsDiPantau as $f) {
+            if ((string) ($sebelum[$f] ?? '') !== (string) ($selepas[$f] ?? '')) {
+                $perubahan[$f] = ['lama' => $sebelum[$f], 'baru' => $selepas[$f]];
+            }
+        }
+
+        AuditLogger::catat('kemaskini_profil', $user, $perubahan ? ['perubahan' => $perubahan] : []);
 
         return back()->with('success', 'Maklumat profil berjaya dikemaskini.');
     }

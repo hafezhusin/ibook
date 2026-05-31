@@ -18,6 +18,7 @@ use App\Exports\AuditLogExport;
 use App\Models\ActivityLog;
 use App\Models\User;
 use App\Services\AuditLogger;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -94,6 +95,131 @@ class AuditLogController extends Controller
             'amalanBahaya',
             'ipMencurigai',
         ));
+    }
+
+    /**
+     * Timeline aktiviti seorang pengguna — semua tindakan secara kronologi.
+     * Boleh ditapis mengikut julat tarikh.
+     */
+    public function timeline(User $pengguna, Request $request)
+    {
+        abort_unless(auth()->user()->isPentadbir(), 403, 'Akses terhad kepada Pentadbir Sistem sahaja.');
+
+        $query = ActivityLog::where('pengguna_id', $pengguna->id)
+            ->orderByDesc('dicipta_pada')
+            ->orderByDesc('id');
+
+        if ($request->filled('tarikh_dari')) {
+            $query->whereDate('dicipta_pada', '>=', $request->tarikh_dari);
+        }
+        if ($request->filled('tarikh_hingga')) {
+            $query->whereDate('dicipta_pada', '<=', $request->tarikh_hingga);
+        }
+
+        $logs = $query->paginate(50)->withQueryString();
+
+        // Kumpulkan mengikut tarikh untuk paparan timeline berkumpul
+        $logsByTarikh = $logs->getCollection()
+            ->groupBy(fn ($l) => $l->dicipta_pada->format('Y-m-d'));
+
+        // Statistik ringkas pengguna ini
+        $jumlahKeseluruhan = ActivityLog::where('pengguna_id', $pengguna->id)->count();
+
+        $tindakanPopular = ActivityLog::where('pengguna_id', $pengguna->id)
+            ->selectRaw('tindakan, COUNT(*) as kiraan')
+            ->groupBy('tindakan')
+            ->orderByDesc('kiraan')
+            ->first();
+
+        $aktivitiTerkini = ActivityLog::where('pengguna_id', $pengguna->id)
+            ->latest('dicipta_pada')
+            ->value('dicipta_pada');
+
+        $jumlahKeselamatanGagal = ActivityLog::where('pengguna_id', $pengguna->id)
+            ->where('tindakan', 'log_masuk_gagal')
+            ->count();
+
+        return view('audit.timeline', compact(
+            'pengguna',
+            'logs',
+            'logsByTarikh',
+            'jumlahKeseluruhan',
+            'tindakanPopular',
+            'aktivitiTerkini',
+            'jumlahKeselamatanGagal',
+        ));
+    }
+
+    /**
+     * Eksport timeline pengguna ke PDF untuk tujuan audit formal.
+     */
+    public function timelinePdf(User $pengguna, Request $request)
+    {
+        abort_unless(auth()->user()->isPentadbir(), 403, 'Akses terhad kepada Pentadbir Sistem sahaja.');
+
+        $query = ActivityLog::where('pengguna_id', $pengguna->id)
+            ->orderBy('dicipta_pada')
+            ->orderBy('id');
+
+        if ($request->filled('tarikh_dari')) {
+            $query->whereDate('dicipta_pada', '>=', $request->tarikh_dari);
+        }
+        if ($request->filled('tarikh_hingga')) {
+            $query->whereDate('dicipta_pada', '<=', $request->tarikh_hingga);
+        }
+
+        // Ambil semua rekod (tanpa pagination) untuk PDF
+        $logs = $query->get();
+
+        // Kumpulkan mengikut tarikh
+        $logsByTarikh = $logs->groupBy(fn ($l) => $l->dicipta_pada->format('Y-m-d'));
+
+        // Statistik
+        $jumlahKeseluruhan = ActivityLog::where('pengguna_id', $pengguna->id)->count();
+
+        $tindakanPopular = ActivityLog::where('pengguna_id', $pengguna->id)
+            ->selectRaw('tindakan, COUNT(*) as kiraan')
+            ->groupBy('tindakan')
+            ->orderByDesc('kiraan')
+            ->first();
+
+        $aktivitiTerkini = ActivityLog::where('pengguna_id', $pengguna->id)
+            ->latest('dicipta_pada')
+            ->value('dicipta_pada');
+
+        $jumlahKeselamatanGagal = ActivityLog::where('pengguna_id', $pengguna->id)
+            ->where('tindakan', 'log_masuk_gagal')
+            ->count();
+
+        AuditLogger::catat('eksport_timeline_pdf', $pengguna, [
+            'pengguna_id'   => $pengguna->id,
+            'pengguna_nama' => $pengguna->name,
+            'jumlah_rekod'  => $logs->count(),
+            'tarikh_dari'   => $request->tarikh_dari,
+            'tarikh_hingga' => $request->tarikh_hingga,
+        ]);
+
+        $pdf = Pdf::loadView('audit.timeline-pdf', compact(
+            'pengguna',
+            'logs',
+            'logsByTarikh',
+            'jumlahKeseluruhan',
+            'tindakanPopular',
+            'aktivitiTerkini',
+            'jumlahKeselamatanGagal',
+        ))
+            ->setPaper('a4', 'portrait')
+            ->setOption([
+                'defaultFont'         => 'DejaVu Sans',
+                'isRemoteEnabled'     => false,
+                'isHtml5ParserEnabled'=> true,
+                'chroot'              => public_path(),
+                'dpi'                 => 96,
+            ]);
+
+        $namafail = 'Timeline_'.str_replace(' ', '_', $pengguna->name).'_'.now()->format('Ymd').'.pdf';
+
+        return $pdf->download($namafail);
     }
 
     /**

@@ -95,8 +95,9 @@ class TempahanExport implements FromCollection, WithColumnWidths, WithHeadings, 
 
         $statusLabel = match ($t->status) {
             'diluluskan' => 'Diluluskan',
-            'ditolak' => 'Ditolak',
-            default => 'Menunggu',
+            'ditolak'    => 'Ditolak',
+            'dibatalkan' => 'Dibatalkan',
+            default      => 'Menunggu',
         };
 
         return [

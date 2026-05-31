@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Pengesahan Tempahan</title>
+<title>Tempahan Diluluskan</title>
 </head>
 <body style="margin:0;padding:0;background:#f0f2f5;font-family:Arial,Helvetica,sans-serif;color:#333;">
 
@@ -25,95 +25,71 @@
 
           {{-- Status badge --}}
           <div style="text-align:center;margin-bottom:24px;">
-            @if(!empty($isMenunggu))
-            <span style="display:inline-block;background:#fef3c7;color:#b45309;font-size:13px;font-weight:700;padding:7px 20px;border-radius:100px;letter-spacing:0.3px;">
-              &#9202;&nbsp; Permohonan Diterima — Menunggu Kelulusan
-            </span>
-            @else
             <span style="display:inline-block;background:#dcfce7;color:#15803d;font-size:13px;font-weight:700;padding:7px 20px;border-radius:100px;letter-spacing:0.3px;">
-              &#10003;&nbsp; Tempahan Berjaya Didaftarkan
+              &#10003;&nbsp; Tempahan Diluluskan
             </span>
-            @endif
           </div>
 
-          <p style="margin:0 0 6px;font-size:15px;">Salam <strong>{{ $pemohonNama }}</strong>,</p>
-          @if(!empty($isMenunggu))
+          <p style="margin:0 0 6px;font-size:15px;">Salam <strong>{{ $tempahan->pengguna->name ?? 'Pemohon' }}</strong>,</p>
           <p style="margin:0 0 24px;font-size:14px;color:#555;line-height:1.6;">
-            Permohonan bilik mesyuarat anda telah berjaya dihantar dan sedang menunggu kelulusan Urus Setia.
-            Anda akan menerima e-mel lanjut apabila permohonan diluluskan atau ditolak.
+            Tempahan bilik mesyuarat anda telah <strong style="color:#15803d;">diluluskan</strong> oleh
+            <strong>{{ $pelulus->name }}</strong>. Berikut adalah butiran tempahan yang telah disahkan.
           </p>
-          @else
-          <p style="margin:0 0 24px;font-size:14px;color:#555;line-height:1.6;">
-            Tempahan bilik mesyuarat anda telah berjaya didaftarkan dalam sistem <strong>iBook 2.0</strong>.
-            Berikut adalah butiran tempahan anda untuk simpanan rekod.
-          </p>
-          @endif
 
           {{-- Details table --}}
           <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;font-size:14px;">
             <tr style="background:#f8fafc;">
               <td colspan="2" style="padding:12px 16px;border-bottom:2px solid #e5e7eb;">
                 <span style="color:#6b7280;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">No. Rujukan</span><br>
-                <strong style="font-size:16px;color:#1A1A2E;letter-spacing:0.5px;">{{ $noRujukan }}</strong>
+                <strong style="font-size:16px;color:#1A1A2E;letter-spacing:0.5px;">{{ $tempahan->no_rujukan }}</strong>
               </td>
             </tr>
             <tr>
               <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#6b7280;width:40%;vertical-align:top;">Nama Mesyuarat</td>
-              <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;font-weight:600;color:#111827;">{{ $namaMesyuarat }}</td>
+              <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;font-weight:600;color:#111827;">{{ $tempahan->nama_mesyuarat }}</td>
             </tr>
             <tr style="background:#fafafa;">
               <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#6b7280;vertical-align:top;">Tarikh</td>
-              <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#111827;">{{ $tarikhLabel }}</td>
+              <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#111827;">
+                {{ $tempahan->tarikh->locale('ms')->isoFormat('dddd, D MMMM YYYY') }}
+              </td>
             </tr>
             <tr>
               <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#6b7280;vertical-align:top;">Sesi</td>
               <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#111827;">
-                @foreach($semuaSesi as $sesi)
-                  @if($sesi === 'pagi')
-                    <span style="display:inline-block;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:600;padding:2px 10px;border-radius:4px;margin-right:4px;">Pagi (9:00 AM – 1:00 PM)</span>
-                  @else
-                    <span style="display:inline-block;background:#fef3c7;color:#b45309;font-size:12px;font-weight:600;padding:2px 10px;border-radius:4px;margin-right:4px;">Petang (2:00 PM – 6:00 PM)</span>
-                  @endif
-                @endforeach
+                @if($tempahan->sesi === 'pagi')
+                  <span style="display:inline-block;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:600;padding:2px 10px;border-radius:4px;">Pagi (9:00 AM – 1:00 PM)</span>
+                @else
+                  <span style="display:inline-block;background:#fef3c7;color:#b45309;font-size:12px;font-weight:600;padding:2px 10px;border-radius:4px;">Petang (2:00 PM – 6:00 PM)</span>
+                @endif
               </td>
             </tr>
             <tr style="background:#fafafa;">
               <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#6b7280;vertical-align:top;">Bilik Mesyuarat</td>
-              <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#111827;">{{ $bilikNama }}</td>
+              <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#111827;">{{ $tempahan->bilik->nama ?? '-' }}</td>
             </tr>
             <tr>
               <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#6b7280;vertical-align:top;">Bilangan Peserta</td>
-              <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#111827;">{{ $bilanganPeserta }} orang</td>
+              <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#111827;">{{ $tempahan->bilangan_peserta }} orang</td>
             </tr>
             <tr style="background:#fafafa;">
               <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#6b7280;vertical-align:top;">Kategori</td>
-              <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#111827;">{{ $kategoriLabel }}</td>
+              <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#111827;">{{ $tempahan->kategori_label }}</td>
             </tr>
             <tr>
               <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#6b7280;vertical-align:top;">Pengerusi</td>
-              <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#111827;">{{ $namaPengerusi }}</td>
+              <td style="padding:10px 16px;border-bottom:1px solid #f3f4f6;color:#111827;">{{ $tempahan->nama_pengerusi }}</td>
             </tr>
-            <tr style="background:#fafafa;">
+            <tr style="background:#dcfce7;">
               <td style="padding:10px 16px;color:#6b7280;vertical-align:top;">Status</td>
-              @if(!empty($isMenunggu))
-              <td style="padding:10px 16px;font-weight:700;color:#b45309;">&#9202; Menunggu Kelulusan</td>
-              @else
-              <td style="padding:10px 16px;font-weight:700;color:#15803d;">&#10003; Diluluskan</td>
-              @endif
+              <td style="padding:10px 16px;font-weight:700;color:#15803d;">&#10003; Diluluskan oleh {{ $pelulus->name }}</td>
             </tr>
           </table>
 
-          @if($tujuan)
-          <p style="margin:16px 0 0;font-size:13px;color:#6b7280;line-height:1.5;">
-            <strong style="color:#374151;">Tujuan:</strong> {{ $tujuan }}
-          </p>
-          @endif
-
-          <div style="margin-top:24px;padding:14px 16px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;">
-            <p style="margin:0;font-size:13px;color:#92400e;line-height:1.5;">
+          <div style="margin-top:20px;padding:14px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;">
+            <p style="margin:0;font-size:13px;color:#166534;line-height:1.5;">
               <strong>&#9888; Peringatan:</strong>
-              Tempahan ini adalah tertakluk kepada ketersediaan bilik. Sila pastikan bilik digunakan mengikut tempoh yang ditetapkan.
-              Sebarang pembatalan perlu dibuat melalui sistem iBook 2.0.
+              Sila gunakan bilik mengikut tempoh yang ditetapkan. Sebarang pembatalan perlu dibuat melalui sistem iBook 2.0.
             </p>
           </div>
 
